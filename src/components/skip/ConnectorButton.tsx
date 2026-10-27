@@ -15,14 +15,10 @@ export function ConnectorButton({
   toolkit,
   name,
   className,
-  buttonClassName,
-  onStatusChange,
 }: {
   toolkit: string
   name: string
   className?: string
-  buttonClassName?: string
-  onStatusChange?: (status: ConnectorStatus) => void
 }) {
   const [status, setStatus] = useState<ConnectorStatus | null>(null)
   const [busy, setBusy] = useState(false)
@@ -38,11 +34,7 @@ export function ConnectorButton({
     setError(null)
     listConnectors()
       .then((all) => {
-        if (!cancelled) {
-          const s = all.find((c) => c.toolkit === toolkit)?.status ?? 'not_connected'
-          setStatus(s)
-          onStatusChange?.(s)
-        }
+        if (!cancelled) setStatus(all.find((c) => c.toolkit === toolkit)?.status ?? null)
       })
       .catch((e: unknown) => {
         if (!cancelled) setError(errorText(e))
@@ -59,11 +51,7 @@ export function ConnectorButton({
     const refresh = () => {
       listConnectors()
         .then((all) => {
-          if (!cancelled) {
-            const s = all.find((c) => c.toolkit === toolkit)?.status ?? 'not_connected'
-            setStatus(s)
-            onStatusChange?.(s)
-          }
+          if (!cancelled) setStatus(all.find((c) => c.toolkit === toolkit)?.status ?? null)
         })
         .catch(() => {
           // The next click or load reports it; a background refresh must not.
@@ -83,9 +71,7 @@ export function ConnectorButton({
     try {
       if (status === 'connected') {
         await disconnect(toolkit)
-        const nextStatus = 'not_connected' as const
-        setStatus(nextStatus)
-        onStatusChange?.(nextStatus)
+        setStatus('not_connected')
       } else {
         await connect(toolkit)
       }
@@ -114,10 +100,7 @@ export function ConnectorButton({
         onClick={onClick}
         disabled={busy || status === null}
         aria-busy={busy}
-        className={
-          buttonClassName ||
-          'inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-50'
-        }
+        className="inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-50"
       >
         {label}
       </button>

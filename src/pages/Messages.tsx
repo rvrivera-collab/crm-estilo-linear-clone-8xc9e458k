@@ -366,12 +366,7 @@ export default function Messages() {
             </button>
 
             {/* Botão de Conectar/Desconectar do Conector */}
-            <ConnectorButton
-              toolkit="whatsapp"
-              name="WhatsApp"
-              buttonClassName="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50"
-              onStatusChange={(status) => setConnectorStatus(status)}
-            />
+            <ConnectorButton toolkit="whatsapp" name="WhatsApp" />
 
             <button
               onClick={() => {
@@ -847,7 +842,7 @@ export default function Messages() {
 
                       let iconColor = 'border-emerald-500 text-emerald-600'
                       let cardBorder = 'border-[#e2e8f0]'
-                      let badge = 'WhatsApp'
+                      let badge = isZapSent ? 'WhatsApp API Oficial' : 'WhatsApp'
 
                       if (isCoupon) {
                         iconColor = 'border-rose-400 text-rose-600'
@@ -860,7 +855,7 @@ export default function Messages() {
                         badge = '⭐ Fidelidade'
                       } else if (isZapFail) {
                         iconColor = 'border-amber-400 text-amber-600'
-                        badge = 'Registro Manual / Link'
+                        badge = 'WhatsApp Web (Link)'
                       }
 
                       return (
@@ -914,20 +909,35 @@ export default function Messages() {
 
                             {/* Rodapé com detalhes de entrega e fallback */}
                             <div className="mt-3 flex items-center justify-between text-[10px] text-[#64748b]">
-                              <span className="font-mono text-[9px]">
-                                Canal: {evt.channel || 'whatsapp'}
+                              <span className="font-mono text-[9px] flex items-center gap-1.5">
+                                <span>Canal: {evt.channel || 'whatsapp'}</span>
+                                {isZapSent && (
+                                  <span className="text-emerald-700 font-bold">
+                                    · Enviado via API
+                                  </span>
+                                )}
+                                {isZapFail && (
+                                  <span className="text-amber-700 font-semibold">
+                                    · Envio manual / wa.me
+                                  </span>
+                                )}
                               </span>
 
                               {activeContact.phone && (
                                 <a
                                   href={`https://wa.me/${activeContact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                    evt.description || evt.title,
+                                    evt.description
+                                      ? evt.description.replace(/^[\s\S]*?"([\s\S]*?)"$/, '$1')
+                                      : evt.title,
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800"
                                 >
-                                  Reenviar no WhatsApp Web <ExternalLink className="size-2.5" />
+                                  {isZapSent
+                                    ? 'Abrir conversa no WhatsApp Web'
+                                    : 'Disparar via WhatsApp Web'}{' '}
+                                  <ExternalLink className="size-2.5" />
                                 </a>
                               )}
                             </div>

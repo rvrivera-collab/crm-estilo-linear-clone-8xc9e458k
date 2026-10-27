@@ -336,11 +336,7 @@ export default function Settings() {
                     </p>
                   </div>
                   <div className="shrink-0">
-                    <ConnectorButton
-                      toolkit="whatsapp"
-                      name="WhatsApp"
-                      buttonClassName="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50"
-                    />
+                    <ConnectorButton toolkit="whatsapp" name="WhatsApp" />
                   </div>
                 </div>
                 <p className="text-[10px] text-[#64748b]">

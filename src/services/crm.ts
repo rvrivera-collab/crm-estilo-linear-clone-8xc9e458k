@@ -56,6 +56,8 @@ export async function sendDisneyWhatsApp(params: {
     success: boolean
     whatsappSent: boolean
     phoneMissing: boolean
+    sendMethod?: 'api' | 'link' | 'none'
+    usedPhoneNumberId?: string | null
     warning?: string | null
     journeyEventId?: string
     cleanedPhone?: string

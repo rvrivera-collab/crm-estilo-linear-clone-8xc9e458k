@@ -143,22 +143,24 @@ export function SendWhatsAppModal({
 
       if (res.whatsappSent) {
         toast({
-          title: '✨ Mensagem de Encantamento enviada!',
-          description: `Disparada com sucesso pela sua conta de WhatsApp para ${currentContact.name}.`,
+          title: '✨ Mensagem de Encantamento enviada via API!',
+          description: `Disparada com sucesso para ${currentContact.name} pela conta oficial de WhatsApp Cloud API (Número ID: ${res.usedPhoneNumberId || 'padrão'}).`,
         })
         if (onSent) onSent()
         onClose()
       } else {
-        // Conexão precisa de ativação em Conectores ou número aguarda resposta
+        // Envio automático via API não concluiu: oferecer fallback direto via wa.me
         setWaFallbackUrl(res.waFallbackUrl || null)
         const friendlyWarning =
-          res.warning || 'Conexão do WhatsApp do dono pendente de ativação na aba Conectores.'
+          res.warning ||
+          'Envio via API indisponível no momento. Use o link do WhatsApp para envio com 1 clique.'
         setLastWarning(friendlyWarning)
 
         toast({
-          title: 'Atenção aos Detalhes',
+          variant: 'default',
+          title: 'Disparo via Link WhatsApp (wa.me)',
           description:
-            'A mensagem foi registrada na jornada! Você também pode enviá-la via link direto abaixo.',
+            'A mensagem foi preparada e registrada na jornada! Clique em "Abrir no WhatsApp" para enviar diretamente.',
         })
         if (onSent) onSent()
       }
