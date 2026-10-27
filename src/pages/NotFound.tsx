@@ -1,25 +1,22 @@
-/* 404 Page - Displays when a user attempts to access a non-existent route - translate to the language of the user */
-import { useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { ArrowLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Brand } from '@/components/Brand'
 
-const NotFound = () => {
-  const location = useLocation()
-
-  useEffect(() => {
-    console.error('404 Error: User attempted to access non-existent route:', location.pathname)
-  }, [location.pathname])
-
+export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <main className="grid min-h-screen place-items-center bg-[#ffffff] p-6 text-[#1c1c1e]">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
+        <Brand className="mb-10 justify-center" />
+        <p className="font-mono text-[52px] font-bold leading-none text-[#e2e8f0]">404</p>
+        <h1 className="mt-5 text-lg font-extrabold text-[#1c1c1e]">Página não encontrada</h1>
+        <p className="mt-2 text-xs text-[#64748b]">O endereço pode ter mudado ou não existe.</p>
+        <Link
+          to="/"
+          className="mt-6 inline-flex h-8 items-center gap-1.5 rounded-md bg-amber-500 px-3 text-[10px] font-bold text-white transition hover:bg-amber-600 shadow-xs"
+        >
+          <ArrowLeft className="size-3.5" /> Voltar ao dashboard
+        </Link>
       </div>
-    </div>
+    </main>
   )
 }
-
-export default NotFound
