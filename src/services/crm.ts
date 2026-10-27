@@ -7,8 +7,11 @@ import type {
   CustomMetric,
   Deal,
   EmailTemplate,
+  AgendaEvent,
+  AgendaEventType,
   Empresa,
   JourneyEvent,
+  LoyaltyLevelInfo,
   Order,
   OrderStage,
   Purchase,
@@ -17,7 +20,6 @@ import type {
   Stage,
   UserRecord,
 } from '@/types/crm'
-
 export async function listJourneyEvents(contactId?: string) {
   const filter = contactId ? `contact = "${contactId}"` : ''
   return pb.collection<JourneyEvent>('journey_events').getFullList({
@@ -950,4 +952,167 @@ export async function captureLeadPublic(params: {
     method: 'POST',
     body: JSON.stringify(params),
   })
+}
+
+// ==========================================
+// AGENDA E EVENTOS (CALENDÁRIO LINEAR)
+// ==========================================
+
+export const AGENDA_TYPE_LABELS: Record<AgendaEventType, string> = {
+  follow_up: 'Ligação de follow-up',
+  reuniao_degustacao: 'Reunião ou degustação',
+  entrega: 'Entrega',
+  lembrete_pessoal: 'Lembrete pessoal',
+  outro: 'Outro',
+}
+
+export const AGENDA_TYPE_COLORS: Record<
+  AgendaEventType,
+  { bg: string; text: string; border: string; dot: string }
+> = {
+  follow_up: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    dot: 'bg-blue-500',
+  },
+  reuniao_degustacao: {
+    bg: 'bg-amber-50',
+    text: 'text-amber-800',
+    border: 'border-amber-200',
+    dot: 'bg-amber-600',
+  },
+  entrega: {
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    dot: 'bg-emerald-600',
+  },
+  lembrete_pessoal: {
+    bg: 'bg-purple-50',
+    text: 'text-purple-700',
+    border: 'border-purple-200',
+    dot: 'bg-purple-600',
+  },
+  outro: {
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    border: 'border-slate-200',
+    dot: 'bg-slate-500',
+  },
+}
+
+export async function listAgendaEvents(filterStr?: string): Promise<AgendaEvent[]> {
+  return pb.collection<AgendaEvent>('agenda_events').getFullList({
+    filter: filterStr || '',
+    sort: 'date,time,created',
+    expand: 'customer,owner',
+  })
+}
+
+export async function createAgendaEvent(data: {
+  title: string
+  date: string
+  time?: string
+  type: AgendaEventType
+  customer?: string
+  notes?: string
+  done?: boolean
+}): Promise<AgendaEvent> {
+  const ownerId = pb.authStore.record?.id
+  const dateFormatted = data.date.includes('T') ? data.date : `${data.date} 12:00:00.000Z`
+  const newEvent = await pb.collection<AgendaEvent>('agenda_events').create(
+    {
+      title: data.title.trim(),
+      date: dateFormatted,
+      time: data.time || '',
+      type: data.type,
+      customer: data.customer || null,
+      owner: ownerId || null,
+      notes: data.notes || '',
+      done: Boolean(data.done),
+    },
+    { expand: 'customer,owner' },
+  )
+
+  // Se o evento foi vinculado a um cliente, registrar na Linha do Tempo Disney
+  if (data.customer) {
+    try {
+      const typeLabel = AGENDA_TYPE_LABELS[data.type] || data.type
+      await pb.collection('journey_events').create({
+        contact: data.customer,
+        owner: ownerId,
+        type: 'agenda_criada',
+        title: `📅 Agendamento Criado: ${data.title}`,
+        description: `Compromisso (${typeLabel}) agendado para ${data.date}${data.time ? ` às ${data.time}` : ''}.${data.notes ? ` Notas: ${data.notes}` : ''}`,
+        channel: 'agenda',
+        metadata: {
+          agendaEventId: newEvent.id,
+          date: data.date,
+          time: data.time,
+          type: data.type,
+        },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return newEvent
+}
+
+export async function updateAgendaEvent(
+  id: string,
+  data: Partial<{
+    title: string
+    date: string
+    time: string
+    type: AgendaEventType
+    customer: string | null
+    notes: string
+    done: boolean
+  }>,
+): Promise<AgendaEvent> {
+  const previous = await pb
+    .collection<AgendaEvent>('agenda_events')
+    .getOne(id)
+    .catch(() => null)
+
+  const payload: Record<string, unknown> = { ...data }
+  if (data.date && !data.date.includes('T')) {
+    payload.date = `${data.date} 12:00:00.000Z`
+  }
+
+  const updated = await pb.collection<AgendaEvent>('agenda_events').update(id, payload, {
+    expand: 'customer,owner',
+  })
+
+  // Se foi marcado como concluído e antes não era, e está vinculado a um cliente, registrar na jornada Disney
+  if (data.done === true && previous && !previous.done && updated.customer) {
+    const ownerId = pb.authStore.record?.id
+    try {
+      await pb.collection('journey_events').create({
+        contact: updated.customer,
+        owner: ownerId,
+        type: 'agenda_concluida',
+        title: `✅ Compromisso Concluído: ${updated.title}`,
+        description: `Compromisso realizado com sucesso.${updated.notes ? ` Notas: ${updated.notes}` : ''}`,
+        channel: 'agenda',
+        metadata: {
+          agendaEventId: updated.id,
+          date: updated.date,
+          time: updated.time,
+          type: updated.type,
+        },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return updated
+}
+
+export async function deleteAgendaEvent(id: string): Promise<boolean> {
+  return pb.collection('agenda_events').delete(id)
 }

@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Building2,
   Cake,
+  Calendar,
   ChevronDown,
   ChevronsLeft,
   CircleUserRound,
@@ -57,7 +58,8 @@ const primary = [
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
-  { to: '/pedidos', label: 'Pedidos (Funil / Cards)', icon: ShoppingBag, badge: 'Novo' },
+  { to: '/agenda', label: 'Agenda', icon: Calendar, badge: 'Novo' },
+  { to: '/pedidos', label: 'Pedidos (Funil / Cards)', icon: ShoppingBag },
   { to: '/indicacoes', label: 'Indicações', icon: Gift, badge: 'Clube' },
   { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
   { to: '/contatos', label: 'Clientes & Fidelidade', icon: Coffee },

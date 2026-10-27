@@ -12,6 +12,7 @@ import CaptureForms from '@/pages/CaptureForms'
 import Contacts from '@/pages/Contacts'
 import CustomerJourney from '@/pages/CustomerJourney'
 import Deals from '@/pages/Deals'
+import Agenda from '@/pages/Agenda'
 import Indicacoes from '@/pages/Indicacoes'
 import Orders from '@/pages/Orders'
 import Reminders from '@/pages/Reminders'
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="ask" element={<Ask />} />
                 <Route path="dashboard" element={<Index />} />
                 <Route path="jornada" element={<CustomerJourney />} />
+                <Route path="agenda" element={<Agenda />} />
                 <Route path="pedidos" element={<Orders />} />
                 <Route path="indicacoes" element={<Indicacoes />} />
                 <Route path="lembretes" element={<Reminders />} />

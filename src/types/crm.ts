@@ -138,6 +138,10 @@ export interface JourneyEvent extends RecordModel {
     | 'pedido_criado'
     | 'pedido_movido'
     | 'avaliacao_google_solicitada'
+    | 'indicacao_feita'
+    | 'recompensa_indicacao'
+    | 'agenda_criada'
+    | 'agenda_concluida'
   title: string
   description?: string
   channel?: string
@@ -182,6 +186,28 @@ export interface Referral extends RecordModel {
     referrer?: Contact
     owner?: UserRecord
     contact_converted?: Contact
+  }
+}
+
+export type AgendaEventType =
+  | 'follow_up'
+  | 'reuniao_degustacao'
+  | 'entrega'
+  | 'lembrete_pessoal'
+  | 'outro'
+
+export interface AgendaEvent extends RecordModel {
+  title: string
+  date: string
+  time?: string
+  type: AgendaEventType
+  customer?: string
+  owner?: string
+  notes?: string
+  done?: boolean
+  expand?: {
+    customer?: Contact
+    owner?: UserRecord
   }
 }
 
@@ -579,6 +605,7 @@ export type CrmData = {
   deals: Deal[]
   orders: Order[]
   referrals: Referral[]
+  agendaEvents: AgendaEvent[]
   activities: Activity[]
   users: UserRecord[]
   loading: boolean
