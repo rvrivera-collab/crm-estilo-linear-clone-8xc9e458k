@@ -207,6 +207,7 @@ export interface SpreadsheetImportSummary {
   clientsUpdated: number
   clientsUnchanged: number
   purchasesImported: number
+  retriesCount?: number
   warnings: string[]
   contactsTouchedCount: number
 }

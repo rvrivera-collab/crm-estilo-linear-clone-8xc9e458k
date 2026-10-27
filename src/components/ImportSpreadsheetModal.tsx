@@ -2,10 +2,12 @@ import { useRef, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
+  Clock,
   Coffee,
   FileSpreadsheet,
   Loader2,
   RefreshCw,
+  ShieldCheck,
   Upload,
   UserCheck,
   UserPlus,
@@ -138,7 +140,6 @@ export function ImportSpreadsheetModal({ open, onClose, onSuccess }: ImportSprea
                   existentes são atualizados nos campos vazios, sem criar registros duplicados.
                 </div>
               </div>
-
               {/* Seletor de Arquivo */}
               <div
                 onClick={() => {
@@ -180,7 +181,6 @@ export function ImportSpreadsheetModal({ open, onClose, onSuccess }: ImportSprea
                   </div>
                 )}
               </div>
-
               {/* Erros amigáveis */}
               {errorMessage && (
                 <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800">
@@ -191,7 +191,6 @@ export function ImportSpreadsheetModal({ open, onClose, onSuccess }: ImportSprea
                   </div>
                 </div>
               )}
-
               {/* Progresso durante importação */}
               {isProcessing && progress && (
                 <div className="rounded-lg border border-[#e2e8f0] bg-[#fafbfc] p-3.5 space-y-2.5">
@@ -212,15 +211,44 @@ export function ImportSpreadsheetModal({ open, onClose, onSuccess }: ImportSprea
                     />
                   </div>
 
-                  {progress.totalClients > 0 && (
-                    <p className="text-[10px] text-[#64748b] text-right font-mono">
-                      {progress.processedClients} de {progress.totalClients} clientes analisados
-                      {progress.processedPurchases > 0 &&
-                        ` · ${progress.processedPurchases} vendas`}
-                    </p>
-                  )}
+                  {/* Contadores em tempo real durante o processamento */}
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-[#64748b] font-mono">
+                    <div className="flex items-center gap-2">
+                      {progress.createdClients !== undefined && (
+                        <span className="text-emerald-700 font-medium">
+                          +{progress.createdClients} novos
+                        </span>
+                      )}
+                      {progress.updatedClients !== undefined && progress.updatedClients > 0 && (
+                        <span className="text-blue-700 font-medium">
+                          {progress.updatedClients} atualizados
+                        </span>
+                      )}
+                      {progress.unchangedClients !== undefined && progress.unchangedClients > 0 && (
+                        <span className="text-slate-500">
+                          {progress.unchangedClients} inalterados
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {progress.retriesCount !== undefined && progress.retriesCount > 0 && (
+                        <span className="flex items-center gap-0.5 text-amber-700 font-semibold bg-amber-100/70 px-1.5 py-0.5 rounded">
+                          <Clock className="size-2.5" />
+                          {progress.retriesCount} retentativas
+                        </span>
+                      )}
+                      {progress.totalClients > 0 && (
+                        <span>
+                          {progress.processedClients}/{progress.totalClients} clientes
+                          {progress.processedPurchases > 0 &&
+                            ` · ${progress.processedPurchases} vendas`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+              )}{' '}
             </>
           ) : (
             /* Tela de Sucesso com Resumo */
@@ -286,6 +314,25 @@ export function ImportSpreadsheetModal({ open, onClose, onSuccess }: ImportSprea
                     Compras
                   </span>
                 </div>
+              </div>
+
+              {/* Detalhes extras de segurança e retentativas */}
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-[11px] text-[#475569]">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="size-3.5 text-emerald-600" />
+                  <span>
+                    Total de clientes sincronizados:{' '}
+                    <strong className="text-[#1c1c1e]">
+                      {summary.clientsCreated + summary.clientsUpdated + summary.clientsUnchanged}
+                    </strong>
+                  </span>
+                </div>
+                {summary.retriesCount !== undefined && summary.retriesCount > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] text-amber-700 font-medium">
+                    <Clock className="size-3" />
+                    {summary.retriesCount} retentativas tratadas automaticamente
+                  </span>
+                )}
               </div>
 
               {summary.warnings.length > 0 && (
