@@ -71,6 +71,7 @@
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "vaul": "^1.1.2",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

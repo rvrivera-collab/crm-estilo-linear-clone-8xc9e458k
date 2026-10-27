@@ -2,10 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Award,
   Cake,
+  ChevronDown,
   Coffee,
+  Download,
   Edit3,
+  FileSpreadsheet,
+  FileText,
   Filter,
   History,
+  Loader2,
   Mail,
   Phone,
   Search,
@@ -17,7 +22,17 @@ import { ContactDrawer } from '@/components/ContactDrawer'
 import { ContactDialog } from '@/components/forms/ContactDialog'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { UserAvatar } from '@/components/UserAvatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useCrm } from '@/contexts/CrmContext'
+import { toast } from '@/hooks/use-toast'
+import { exportContactsSpreadsheet } from '@/lib/export-excel'
 import { cn } from '@/lib/utils'
 import {
   datePt,
@@ -38,6 +53,7 @@ export default function Contacts() {
   const [loyaltyFilter, setLoyaltyFilter] = useState<'todos' | '1' | '2' | '3' | '4' | '5'>('todos')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
   const detail = contacts.find((contact) => contact.id === params.get('contact')) || null
   useEffect(() => {
     const handler = () => {
@@ -61,6 +77,37 @@ export default function Contacts() {
       }),
     [contacts, query, status, loyaltyFilter],
   )
+  const isFiltered = query.trim() !== '' || status !== 'todos' || loyaltyFilter !== 'todos'
+
+  const handleExport = async (scope: 'filtered' | 'all', format: 'xlsx' | 'csv' = 'xlsx') => {
+    try {
+      setIsExporting(true)
+      const res = await exportContactsSpreadsheet({
+        contacts: filtered,
+        allContacts: contacts,
+        format,
+        scope,
+        includePurchases: format === 'xlsx', // CSV exporta a tabela de clientes
+      })
+
+      toast({
+        title: 'Planilha exportada com sucesso!',
+        description: `${res.count} cliente(s) exportado(s) em ${res.fileName}${
+          res.purchasesCount > 0 ? ` com ${res.purchasesCount} compras na aba 'Compras'.` : '.'
+        }`,
+      })
+    } catch (err) {
+      console.error('Erro ao exportar planilha:', err)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao exportar planilha',
+        description: 'Ocorreu uma falha ao gerar o arquivo. Tente novamente.',
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (loading) return <PageSkeleton />
   return (
     <div className="flex h-full min-h-0 flex-col bg-white">
@@ -78,15 +125,105 @@ export default function Contacts() {
             </p>
           </div>
           <div className="flex-1" />
-          <button
-            onClick={() => {
-              setEditing(null)
-              setDialogOpen(true)
-            }}
-            className="flex h-8 items-center gap-1.5 rounded-md bg-amber-500 px-3 text-[11px] font-bold text-white shadow-xs transition hover:bg-amber-600"
-          >
-            <UserPlus className="size-3.5" /> Novo cliente
-          </button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  className="flex h-8 items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-2.5 text-[11px] font-medium text-[#475569] shadow-2xs transition hover:bg-[#f8fafc] hover:text-[#1c1c1e] disabled:opacity-50"
+                  title="Exportar base em planilha"
+                >
+                  {isExporting ? (
+                    <Loader2 className="size-3.5 animate-spin text-amber-600" />
+                  ) : (
+                    <Download className="size-3.5 text-[#64748b]" />
+                  )}
+                  <span>Exportar planilha</span>
+                  <ChevronDown className="size-3 text-[#94a3b8]" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 text-[11px]">
+                <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-wider text-[#94a3b8]">
+                  Exportar em Excel (.xlsx)
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => handleExport('filtered', 'xlsx')}
+                  className="flex cursor-pointer items-center gap-2 py-1.5"
+                >
+                  <FileSpreadsheet className="size-3.5 text-emerald-600" />
+                  <div className="flex flex-col">
+                    <span className="font-medium text-[#1c1c1e]">Lista atual visível (.xlsx)</span>
+                    <span className="text-[10px] text-[#64748b]">
+                      {filtered.length} cliente(s) {isFiltered ? '(filtros ativos)' : ''} + aba
+                      Compras
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+
+                {isFiltered && (
+                  <DropdownMenuItem
+                    onClick={() => handleExport('all', 'xlsx')}
+                    className="flex cursor-pointer items-center gap-2 py-1.5"
+                  >
+                    <FileSpreadsheet className="size-3.5 text-emerald-700" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-[#1c1c1e]">
+                        Toda a base completa (.xlsx)
+                      </span>
+                      <span className="text-[10px] text-[#64748b]">
+                        Todos os {contacts.length} clientes sem filtros + aba Compras
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-wider text-[#94a3b8]">
+                  Opção alternativa (.csv)
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => handleExport('filtered', 'csv')}
+                  className="flex cursor-pointer items-center gap-2 py-1.5"
+                >
+                  <FileText className="size-3.5 text-blue-600" />
+                  <div className="flex flex-col">
+                    <span className="font-medium text-[#1c1c1e]">Exportar como CSV (.csv)</span>
+                    <span className="text-[10px] text-[#64748b]">
+                      {filtered.length} cliente(s) formatados em UTF-8
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+                {isFiltered && (
+                  <DropdownMenuItem
+                    onClick={() => handleExport('all', 'csv')}
+                    className="flex cursor-pointer items-center gap-2 py-1.5"
+                  >
+                    <FileText className="size-3.5 text-blue-700" />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-[#1c1c1e]">
+                        Toda a base como CSV (.csv)
+                      </span>
+                      <span className="text-[10px] text-[#64748b]">
+                        Todos os {contacts.length} clientes em UTF-8
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <button
+              onClick={() => {
+                setEditing(null)
+                setDialogOpen(true)
+              }}
+              className="flex h-8 items-center gap-1.5 rounded-md bg-amber-500 px-3 text-[11px] font-bold text-white shadow-xs transition hover:bg-amber-600"
+            >
+              <UserPlus className="size-3.5" /> Novo cliente
+            </button>
+          </div>
         </div>
 
         <div data-tour-id="contacts-search-bar" className="mt-4 flex flex-wrap gap-2">
