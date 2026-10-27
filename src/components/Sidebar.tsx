@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import {
   BarChart3,
+  Bell,
   BriefcaseBusiness,
   Building2,
+  Cake,
   ChevronDown,
   ChevronsLeft,
   CircleUserRound,
+  Coffee,
   Compass,
   ContactRound,
+  History,
   LayoutTemplate,
   LoaderCircle,
   LogOut,
@@ -18,6 +22,7 @@ import {
   Settings,
   Sparkles,
   Trash2,
+  Users,
   X,
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -45,11 +50,12 @@ const primary = [{ to: '/ask', label: 'Agent', icon: Sparkles, badge: 'IA' }]
 
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
+  { to: '/contatos', label: 'Clientes & Fidelidade', icon: Coffee },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },
   { to: '/recuperacao', label: 'Recuperação', icon: RefreshCw },
   { to: '/negocios', label: 'Negócios', icon: BriefcaseBusiness },
-  { to: '/contatos', label: 'Contatos', icon: ContactRound },
-  { to: '/empresas', label: 'Empresas', icon: Building2 },
+  { to: '/empresas', label: 'Empresas / B2B', icon: Building2 },
   { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/formularios', label: 'Formulário de Captação', icon: LayoutTemplate },
 ]
@@ -186,27 +192,51 @@ export function Sidebar({
             ))}
           </div>
 
-          <SidebarSection title="Vendas" compact={compact} open={salesOpen} setOpen={setSalesOpen}>
-            {sales.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                title={compact ? label : undefined}
-                onClick={closeMobile}
-                className={({ isActive }) =>
-                  cn(
-                    'flex h-8 items-center rounded-md text-[12px] transition',
-                    compact ? 'justify-center' : 'gap-2 px-2',
-                    isActive
-                      ? 'bg-[#e2e8f0] text-[#1c1c1e] font-semibold'
-                      : 'text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1c1c1e]',
-                  )
-                }
-              >
-                <Icon className="size-3.5 shrink-0 text-[#64748b]" />
-                {!compact && <span>{label}</span>}
-              </NavLink>
-            ))}
+          <SidebarSection
+            title="Cafés & Clientes"
+            compact={compact}
+            open={salesOpen}
+            setOpen={setSalesOpen}
+          >
+            {sales.map(
+              ({
+                to,
+                label,
+                icon: Icon,
+                badge,
+              }: {
+                to: string
+                label: string
+                icon: any
+                badge?: string
+              }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  title={compact ? label : undefined}
+                  onClick={closeMobile}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex h-8 items-center rounded-md text-[12px] transition',
+                      compact ? 'justify-center' : 'justify-between px-2',
+                      isActive
+                        ? 'bg-[#e2e8f0] text-[#1c1c1e] font-semibold'
+                        : 'text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1c1c1e]',
+                    )
+                  }
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Icon className="size-3.5 shrink-0 text-[#64748b]" />
+                    {!compact && <span className="truncate">{label}</span>}
+                  </div>
+                  {!compact && badge && (
+                    <span className="rounded border border-rose-300 bg-rose-50 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-700">
+                      {badge}
+                    </span>
+                  )}
+                </NavLink>
+              ),
+            )}
           </SidebarSection>
           <SidebarSection title="Conversas" compact={compact} open={askOpen} setOpen={setAskOpen}>
             <button

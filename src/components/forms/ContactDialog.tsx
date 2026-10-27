@@ -29,6 +29,8 @@ export function ContactDialog({
       name: contact?.name || '',
       email: contact?.email || '',
       phone: contact?.phone || '',
+      birthday: contact?.birthday ? contact.birthday.split('T')[0] : '',
+      favorite_coffee: contact?.favorite_coffee || '',
       company:
         contact?.company ||
         presetCompanyName ||
@@ -91,7 +93,13 @@ export function ContactDialog({
         name: form.name.trim(),
         email: form.email.trim(),
         company: form.company.trim(),
+        favorite_coffee: form.favorite_coffee.trim(),
         owner: contact?.owner || user?.id,
+      }
+      if (form.birthday) {
+        data.birthday = new Date(`${form.birthday}T00:00:00.000Z`).toISOString()
+      } else {
+        data.birthday = null
       }
       if (finalEmpresaId) {
         data.empresa = finalEmpresaId
@@ -213,6 +221,24 @@ export function ContactDialog({
                 </div>
               )}
             </div>
+          </Field>
+          <Field label="Data de Aniversário" error={errors.birthday}>
+            <input
+              type="date"
+              value={form.birthday}
+              onChange={(e) => setForm({ ...form, birthday: e.target.value })}
+            />
+          </Field>
+          <Field
+            label="Café Favorito / Perfil Preferido"
+            error={errors.favorite_coffee}
+            className="sm:col-span-2"
+          >
+            <input
+              placeholder="Ex: Catuaí Amarelo, Torra Média, Grãos para V60..."
+              value={form.favorite_coffee}
+              onChange={(e) => setForm({ ...form, favorite_coffee: e.target.value })}
+            />
           </Field>
           <Field label="Cargo" error={errors.position}>
             <input

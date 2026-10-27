@@ -72,6 +72,32 @@ export interface Empresa extends RecordModel {
   }
 }
 
+export interface LoyaltyLevelInfo {
+  level: number
+  name: string
+  badgeColor: string
+  minPurchases: number
+  maxPurchases: number
+  nextThreshold: number
+  remainingToNext: number
+  progressPct: number
+  discountPct: number
+  description: string
+}
+
+export interface Purchase extends RecordModel {
+  contact: string
+  owner: string
+  amount: number
+  purchase_date: string
+  items_description?: string
+  notes?: string
+  expand?: {
+    contact?: Contact
+    owner?: UserRecord
+  }
+}
+
 export interface Contact extends RecordModel {
   name: string
   email: string
@@ -82,8 +108,136 @@ export interface Contact extends RecordModel {
   status: 'lead' | 'ativo' | 'inativo'
   owner: string
   notes: string
+  birthday?: string
+  purchase_count?: number
+  last_purchase_date?: string
+  total_spent?: number
+  last_coupon_code?: string
+  last_coupon_date?: string
+  last_reengagement_date?: string
+  favorite_coffee?: string
   custom_fields?: Record<string, string | number | boolean>
   expand?: { owner?: UserRecord; empresa?: Empresa }
+}
+
+export function getLoyaltyLevel(purchasesCount = 0): LoyaltyLevelInfo {
+  const count = Math.max(0, purchasesCount)
+  // Cada 10 compras sobe 1 nível:
+  // 0–9: Nível 1 ("Grão")
+  // 10–19: Nível 2 ("Torra")
+  // 20–29: Nível 3 ("Blend")
+  // 30–39: Nível 4 ("Barista")
+  // 40+: Nível 5 ("Mestre Cafeteiro")
+  const level = Math.floor(count / 10) + 1
+
+  const levelsMeta: Record<
+    number,
+    { name: string; badgeColor: string; discountPct: number; description: string }
+  > = {
+    1: {
+      name: 'Grão',
+      badgeColor: 'border-amber-700/30 bg-amber-800/10 text-amber-900',
+      discountPct: 5,
+      description: 'Cliente iniciante na jornada dos cafés especiais (0 a 9 compras)',
+    },
+    2: {
+      name: 'Torra Artesanal',
+      badgeColor: 'border-orange-600/30 bg-orange-600/10 text-orange-800',
+      discountPct: 10,
+      description: 'Apreciador frequente de métodos e microlotes (10 a 19 compras)',
+    },
+    3: {
+      name: 'Blend Nobre',
+      badgeColor: 'border-amber-600/30 bg-amber-500/15 text-amber-800',
+      discountPct: 15,
+      description: 'Cliente fiel e conhecedor de perfis sensoriais (20 a 29 compras)',
+    },
+    4: {
+      name: 'Barista',
+      badgeColor: 'border-emerald-600/30 bg-emerald-600/10 text-emerald-800',
+      discountPct: 20,
+      description: 'Especialista em métodos de extração e origens (30 a 39 compras)',
+    },
+    5: {
+      name: 'Mestre Cafeteiro',
+      badgeColor: 'border-purple-600/30 bg-purple-600/10 text-purple-800',
+      discountPct: 25,
+      description: 'Nível máximo VIP dos cafés especiais (40+ compras)',
+    },
+  }
+
+  const meta = levelsMeta[Math.min(level, 5)] || levelsMeta[5]
+  const minPurchases = (level - 1) * 10
+  const maxPurchases = minPurchases + 9
+  const nextThreshold = level * 10
+  const remainingToNext = level >= 5 ? 0 : Math.max(0, nextThreshold - count)
+  const currentInTier = count - minPurchases
+  const progressPct = level >= 5 ? 100 : Math.min(100, Math.round((currentInTier / 10) * 100))
+
+  return {
+    level,
+    name: meta.name,
+    badgeColor: meta.badgeColor,
+    minPurchases,
+    maxPurchases,
+    nextThreshold,
+    remainingToNext,
+    progressPct,
+    discountPct: meta.discountPct,
+    description: meta.description,
+  }
+}
+
+export function getBirthdayInfo(birthdayStr?: string) {
+  if (!birthdayStr)
+    return { isToday: false, isNext7Days: false, daysUntil: null, formattedDate: '—' }
+  try {
+    const birthDate = new Date(birthdayStr)
+    if (isNaN(birthDate.getTime()))
+      return { isToday: false, isNext7Days: false, daysUntil: null, formattedDate: '—' }
+
+    const now = new Date()
+    const birthMonth = birthDate.getUTCMonth()
+    const birthDay = birthDate.getUTCDate()
+
+    const currentYear = now.getUTCFullYear()
+    // Comparar considerando o dia no ano corrente
+    let nextBday = new Date(Date.UTC(currentYear, birthMonth, birthDay))
+    const todayUTC = new Date(Date.UTC(currentYear, now.getUTCMonth(), now.getUTCDate()))
+
+    // Se já passou este ano (e não é hoje), o próximo é no ano que vem
+    if (nextBday.getTime() < todayUTC.getTime()) {
+      nextBday = new Date(Date.UTC(currentYear + 1, birthMonth, birthDay))
+    }
+
+    const diffMs = nextBday.getTime() - todayUTC.getTime()
+    const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24))
+
+    const isToday = daysUntil === 0
+    const isNext7Days = daysUntil >= 0 && daysUntil <= 7
+
+    const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      timeZone: 'UTC',
+    }).format(birthDate)
+
+    return {
+      isToday,
+      isNext7Days,
+      daysUntil,
+      formattedDate,
+    }
+  } catch {
+    return { isToday: false, isNext7Days: false, daysUntil: null, formattedDate: '—' }
+  }
+}
+
+export function getDaysSinceLastPurchase(lastPurchaseStr?: string) {
+  if (!lastPurchaseStr) return null
+  const diff = Date.now() - new Date(lastPurchaseStr).getTime()
+  if (isNaN(diff)) return null
+  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
 }
 
 export type DealTemperature = 'quente' | 'morno' | 'frio'

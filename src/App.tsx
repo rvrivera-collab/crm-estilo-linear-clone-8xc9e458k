@@ -11,6 +11,7 @@ import Campaigns from '@/pages/Campaigns'
 import CaptureForms from '@/pages/CaptureForms'
 import Contacts from '@/pages/Contacts'
 import Deals from '@/pages/Deals'
+import Reminders from '@/pages/Reminders'
 import Empresas from '@/pages/Empresas'
 import ForgotPassword from '@/pages/ForgotPassword'
 import Index from '@/pages/Index'
@@ -45,6 +46,7 @@ export default function App() {
                 <Route index element={<Navigate to="/ask" replace />} />
                 <Route path="ask" element={<Ask />} />
                 <Route path="dashboard" element={<Index />} />
+                <Route path="lembretes" element={<Reminders />} />
                 <Route path="pipeline" element={<Pipeline />} />
                 <Route path="recuperacao" element={<Recovery />} />
                 <Route path="negocios" element={<Deals />} />

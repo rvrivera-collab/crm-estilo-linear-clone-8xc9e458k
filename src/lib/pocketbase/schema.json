@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-27T01:21:38.717Z",
+  "generatedAt": "2026-10-27T01:32:01.367Z",
   "collections": [
     {
       "name": "users",
       "type": "auth",
       "apiRules": {
-        "list": "id = @request.auth.id",
-        "view": "id = @request.auth.id",
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
         "create": "",
         "update": "id = @request.auth.id",
         "delete": "id = @request.auth.id"
@@ -37,11 +37,986 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["admin", "member"]
+        },
+        {
+          "name": "tour_seen_pages",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tour_disabled",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
         "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "pipeline_stages",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "color",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "order",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_pipeline_stages_order ON pipeline_stages (`order`)"]
+    },
+    {
+      "name": "contacts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "company",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "position",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["lead", "ativo", "inativo"]
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "custom_fields",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "empresa",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "empresas"
+        },
+        {
+          "name": "birthday",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "purchase_count",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_purchase_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_spent",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_coupon_code",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_coupon_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_reengagement_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "favorite_coffee",
+          "type": "text",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_contacts_status ON contacts (status)",
+        "CREATE INDEX idx_contacts_owner ON contacts (owner)",
+        "CREATE INDEX idx_contacts_created ON contacts (created)",
+        "CREATE INDEX `idx_contacts_birthday` ON `contacts` (birthday)",
+        "CREATE INDEX `idx_contacts_last_purchase` ON `contacts` (last_purchase_date)"
+      ]
+    },
+    {
+      "name": "deals",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stage",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "pipeline_stages"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["aberto", "ganho", "perdido"]
+        },
+        {
+          "name": "contact",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "expected_close",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "position",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "temperature",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["quente", "morno", "frio"]
+        },
+        {
+          "name": "last_contact_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "campaign",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "campaigns"
+        },
+        {
+          "name": "empresa",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "empresas"
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_deals_code ON deals (code)",
+        "CREATE INDEX idx_deals_stage ON deals (stage)",
+        "CREATE INDEX idx_deals_owner ON deals (owner)",
+        "CREATE INDEX idx_deals_status ON deals (status)",
+        "CREATE INDEX idx_deals_position ON deals (position)",
+        "CREATE INDEX `idx_deals_campaign` ON `deals` (campaign)"
+      ]
+    },
+    {
+      "name": "activities",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (author = @request.auth.id || deal.owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && (author = @request.auth.id || deal.owner = @request.auth.id)",
+        "create": "@request.auth.id != '' && author = @request.auth.id",
+        "update": "@request.auth.id != '' && author = @request.auth.id",
+        "delete": "@request.auth.id != '' && author = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["nota", "email", "ligacao", "reuniao", "sistema"]
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "contact",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "deal",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "deals"
+        },
+        {
+          "name": "author",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_activities_deal ON activities (deal)",
+        "CREATE INDEX idx_activities_contact ON activities (contact)",
+        "CREATE INDEX idx_activities_created ON activities (created)"
+      ]
+    },
+    {
+      "name": "ask_conversations",
+      "type": "base",
+      "apiRules": {
+        "list": "user = @request.auth.id",
+        "view": "user = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "user = @request.auth.id",
+        "delete": "user = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_ask_conversations_user ON ask_conversations (user)"]
+    },
+    {
+      "name": "ask_messages",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && conversation.user = @request.auth.id",
+        "view": "@request.auth.id != '' && conversation.user = @request.auth.id",
+        "create": "@request.auth.id != '' && conversation.user = @request.auth.id",
+        "update": "@request.auth.id != '' && conversation.user = @request.auth.id",
+        "delete": "@request.auth.id != '' && conversation.user = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "conversation",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "ask_conversations"
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["user", "assistant"]
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_ask_messages_conversation_created ON ask_messages (conversation, created)"
+      ]
+    },
+    {
+      "name": "email_templates",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (owner = null || owner = '' || owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && (owner = null || owner = '' || owner = @request.auth.id)",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_email_templates_name ON email_templates (name)",
+        "CREATE INDEX `idx_email_templates_owner` ON `email_templates` (owner)"
+      ]
+    },
+    {
+      "name": "capture_forms",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "subtitle",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "submit_text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "success_message",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "accent_color",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "logo",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "show_phone",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "require_phone",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "show_company",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "require_company",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "show_position",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "require_position",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "show_message",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "require_message",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "custom_fields",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_capture_forms_created ON capture_forms (created)",
+        "CREATE INDEX `idx_capture_forms_owner` ON `capture_forms` (owner)"
+      ]
+    },
+    {
+      "name": "campaigns",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "form",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "capture_forms"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ativa", "pausada", "encerrada"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_campaigns_created ON campaigns (created)",
+        "CREATE INDEX idx_campaigns_status ON campaigns (status)",
+        "CREATE INDEX idx_campaigns_form ON campaigns (form)",
+        "CREATE INDEX `idx_campaigns_owner` ON `campaigns` (owner)"
+      ]
+    },
+    {
+      "name": "custom_metrics",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "aggregation",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "count_deals",
+            "sum_value",
+            "avg_value",
+            "win_rate",
+            "ticket_medio",
+            "won_deals",
+            "lost_deals"
+          ]
+        },
+        {
+          "name": "stage",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pipeline_stages"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["aberto", "ganho", "perdido"]
+        },
+        {
+          "name": "order",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_custom_metrics_order ON custom_metrics (`order`)",
+        "CREATE INDEX idx_custom_metrics_created ON custom_metrics (created)",
+        "CREATE INDEX `idx_custom_metrics_owner` ON `custom_metrics` (owner)"
+      ]
+    },
+    {
+      "name": "empresas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "sector",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "size",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pequena", "média", "grande"]
+        },
+        {
+          "name": "website",
+          "type": "url",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_empresas_name ON empresas (name)",
+        "CREATE INDEX idx_empresas_owner ON empresas (owner)",
+        "CREATE INDEX idx_empresas_created ON empresas (created)"
+      ]
+    },
+    {
+      "name": "purchases",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "contact",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "purchase_date",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "items_description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_purchases_contact ON purchases (contact)",
+        "CREATE INDEX idx_purchases_date ON purchases (purchase_date)",
+        "CREATE INDEX idx_purchases_owner ON purchases (owner)"
       ]
     }
   ]

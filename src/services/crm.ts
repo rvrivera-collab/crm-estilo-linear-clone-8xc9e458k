@@ -8,6 +8,7 @@ import type {
   Deal,
   EmailTemplate,
   Empresa,
+  Purchase,
   Stage,
   UserRecord,
 } from '@/types/crm'
@@ -83,6 +84,157 @@ export async function createContact(data: Record<string, unknown>) {
 
 export async function updateContact(id: string, data: Record<string, unknown>) {
   return pb.collection<Contact>('contacts').update(id, data, { expand: 'owner,empresa' })
+}
+
+export async function deleteContact(id: string) {
+  return pb.collection('contacts').delete(id)
+}
+
+// ==========================================
+// COMPRAS E FIDELIDADE (CAFÉS ESPECIAIS)
+// ==========================================
+
+export async function listPurchases(contactId?: string) {
+  const filter = contactId ? `contact = "${contactId}"` : ''
+  return pb.collection<Purchase>('purchases').getFullList({
+    filter,
+    sort: '-purchase_date,-created',
+    expand: 'contact,owner',
+  })
+}
+
+export async function registerPurchase(params: {
+  contactId: string
+  amount: number
+  purchaseDate?: string
+  itemsDescription?: string
+  notes?: string
+}) {
+  const ownerId = pb.authStore.record?.id
+  const purchaseDate = params.purchaseDate || new Date().toISOString()
+
+  // 1. Criar compra na collection purchases
+  const purchase = await pb.collection<Purchase>('purchases').create({
+    contact: params.contactId,
+    owner: ownerId,
+    amount: params.amount,
+    purchase_date: purchaseDate,
+    items_description: params.itemsDescription || '',
+    notes: params.notes || '',
+  })
+
+  // 2. Atualizar o contador e data no cliente de forma atômica/persistida
+  const contact = await pb.collection<Contact>('contacts').getOne(params.contactId)
+  const currentCount = Number(contact.purchase_count || 0)
+  const currentTotal = Number(contact.total_spent || 0)
+
+  // Comparar se a nova data é mais recente que a atual
+  let latestDate = contact.last_purchase_date
+  if (!latestDate || new Date(purchaseDate).getTime() >= new Date(latestDate).getTime()) {
+    latestDate = purchaseDate
+  }
+
+  const updatedContact = await pb.collection<Contact>('contacts').update(params.contactId, {
+    purchase_count: currentCount + 1,
+    total_spent: currentTotal + Number(params.amount),
+    last_purchase_date: latestDate,
+  })
+
+  // 3. Registrar activity de histórico
+  try {
+    await pb.collection<Activity>('activities').create({
+      type: 'sistema',
+      content: `Compra de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(params.amount)} registrada${params.itemsDescription ? ` (${params.itemsDescription})` : ''}. Total de compras acumuladas: ${currentCount + 1}.`,
+      contact: params.contactId,
+      author: ownerId,
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return { purchase, contact: updatedContact }
+}
+
+export async function deletePurchase(purchaseId: string, contactId: string) {
+  // Remover a compra
+  await pb.collection('purchases').delete(purchaseId)
+
+  // Recalcular compras restantes do cliente para manter consistência
+  const remaining = await pb.collection<Purchase>('purchases').getFullList({
+    filter: `contact = "${contactId}"`,
+    sort: '-purchase_date',
+  })
+
+  const newCount = remaining.length
+  const newTotal = remaining.reduce((acc, p) => acc + (Number(p.amount) || 0), 0)
+  const newLastDate = remaining.length > 0 ? remaining[0].purchase_date : null
+
+  return pb.collection<Contact>('contacts').update(contactId, {
+    purchase_count: newCount,
+    total_spent: newTotal,
+    last_purchase_date: newLastDate,
+  })
+}
+
+// ==========================================
+// GERAÇÃO DE CUPOM DE ANIVERSÁRIO
+// ==========================================
+
+export function generateBirthdayCouponCode(prefix = 'CAFE-NIVERSARIO'): string {
+  const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${prefix}-${randomChars}`
+}
+
+export async function applyBirthdayCouponToContact(contactId: string, discountPct = 15) {
+  const couponCode = generateBirthdayCouponCode()
+  const todayIso = new Date().toISOString()
+  const ownerId = pb.authStore.record?.id
+
+  // 1. Atualizar o cliente com o cupom gerado e a data
+  const contact = await pb.collection<Contact>('contacts').update(contactId, {
+    last_coupon_code: couponCode,
+    last_coupon_date: todayIso,
+  })
+
+  // 2. Registrar no histórico de atividades
+  try {
+    await pb.collection<Activity>('activities').create({
+      type: 'sistema',
+      content: `🎉 Cupom de Aniversário gerado: ${couponCode} (${discountPct}% de desconto) atribuído ao cliente.`,
+      contact: contactId,
+      author: ownerId,
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return { contact, couponCode }
+}
+
+// ==========================================
+// TRATAR RETOMADA DE RECORRÊNCIA (30+ DIAS)
+// ==========================================
+
+export async function markReengagementTreated(contactId: string, notes?: string) {
+  const todayIso = new Date().toISOString()
+  const ownerId = pb.authStore.record?.id
+
+  const contact = await pb.collection<Contact>('contacts').update(contactId, {
+    last_reengagement_date: todayIso,
+  })
+
+  try {
+    await pb.collection<Activity>('activities').create({
+      type: 'sistema',
+      content: `☕ Contato de retenção / recorrência realizado: ${notes || 'Contato realizado para apresentar novas safras e incentivar recompra.'}`,
+      contact: contactId,
+      author: ownerId,
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return contact
 }
 
 export async function createActivity(data: Record<string, unknown>) {

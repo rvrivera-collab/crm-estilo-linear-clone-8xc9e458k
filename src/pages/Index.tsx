@@ -1,13 +1,19 @@
 import { useMemo, useState, useEffect } from 'react'
 import {
   ArrowRight,
+  Award,
+  Bell,
   Briefcase,
-  CheckCircle2,
+  Cake,
   Calendar,
+  CheckCircle2,
+  Clock,
   Clock3,
+  Coffee,
   DollarSign,
   FileText,
   Filter,
+  History,
   Layers,
   Mail,
   Megaphone,
@@ -15,10 +21,14 @@ import {
   Phone,
   RefreshCw,
   Search,
+  ShoppingBag,
   Snowflake,
+  Sparkles,
+  Ticket,
   TrendingDown,
   TrendingUp,
   UserCheck,
+  Users,
   Video,
   X,
   Zap,
@@ -26,6 +36,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { useCrm } from '@/contexts/CrmContext'
+import { getBirthdayInfo, getDaysSinceLastPurchase, getLoyaltyLevel } from '@/types/crm'
 import {
   createCustomMetric,
   deleteCustomMetric,
@@ -66,9 +77,46 @@ const activityIcons: Record<Activity['type'], typeof Clock3> = {
 }
 
 export default function Index() {
-  const { stages, deals, activities, loading, refresh } = useCrm()
+  const { stages, deals, activities, contacts, loading, refresh } = useCrm()
   const navigate = useNavigate()
   const { toast } = useToast()
+
+  // KPIs de Cafés Especiais
+  const coffeeMetrics = useMemo(() => {
+    let bdayToday = 0
+    let bdayNext7Days = 0
+    let needReengagement = 0
+    const loyaltyCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    let totalPurchasesSum = 0
+    let totalSpentSum = 0
+
+    contacts.forEach((c) => {
+      const bday = getBirthdayInfo(c.birthday)
+      if (bday.isToday) bdayToday++
+      if (bday.isNext7Days) bdayNext7Days++
+
+      const daysSince = getDaysSinceLastPurchase(c.last_purchase_date)
+      if (daysSince !== null && daysSince >= 30) {
+        needReengagement++
+      }
+
+      const loyalty = getLoyaltyLevel(c.purchase_count || 0)
+      loyaltyCounts[loyalty.level] = (loyaltyCounts[loyalty.level] || 0) + 1
+
+      totalPurchasesSum += c.purchase_count || 0
+      totalSpentSum += c.total_spent || 0
+    })
+
+    return {
+      totalCustomers: contacts.length,
+      bdayToday,
+      bdayNext7Days,
+      needReengagement,
+      loyaltyCounts,
+      totalPurchasesSum,
+      totalSpentSum,
+    }
+  }, [contacts])
 
   // Filtros de período exatamente como em skiprec.goskip.app:
   // 7 dias | 30 dias | 90 dias | Este mês | Tudo + campo "até [data]"
@@ -465,13 +513,13 @@ export default function Index() {
     <div className="h-full w-full overflow-y-auto">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-6 sm:py-6 space-y-4">
         {/* ============================================================ */}
-        {/* 1. HEADER: Exatamente o estilo e layout de skiprec.goskip.app */}
+        {/* 1. HEADER: Exatamente o estilo e layout Linear */}
         {/* ============================================================ */}
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Resumo de recuperação · CRM
+              <span className="font-mono text-[11px] font-semibold text-amber-700 uppercase tracking-wider">
+                CRM Cafés Especiais
               </span>
               <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-emerald-700">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -479,11 +527,25 @@ export default function Index() {
               </span>
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Pipelines Overview
+              Painel de Clientes & Vendas
             </h1>
           </div>
 
           <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => navigate('/lembretes')}
+              className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-800 shadow-2xs hover:bg-rose-100 transition"
+            >
+              <Bell className="size-3.5 text-rose-600" />
+              <span>Ver Lembretes</span>
+              {coffeeMetrics.bdayToday > 0 && (
+                <span className="rounded-full bg-rose-600 px-1.5 py-0.2 text-[9px] font-bold text-white">
+                  {coffeeMetrics.bdayToday} hoje
+                </span>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={handleManualRefresh}
@@ -499,14 +561,126 @@ export default function Index() {
 
             <button
               type="button"
-              onClick={() => navigate('/pipeline')}
-              className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3.5 py-2 text-xs font-semibold text-background hover:opacity-90 transition shadow-2xs"
+              onClick={() => navigate('/contatos')}
+              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-600 transition shadow-2xs"
             >
-              <span>Ver Pipeline</span>
-              <ArrowRight className="size-3.5" />
+              <Coffee className="size-3.5" />
+              <span>Ver Clientes</span>
             </button>
           </div>
         </header>
+
+        {/* ============================================================ */}
+        {/* 1.1 CARDS DE DESTAQUE: CAFÉS ESPECIAIS & FIDELIDADE           */}
+        {/* ============================================================ */}
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Card: Total de Clientes */}
+          <article
+            onClick={() => navigate('/contatos')}
+            className="cursor-pointer rounded-lg border border-border bg-card p-4 shadow-2xs hover:border-amber-400 transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Total de Clientes
+                </span>
+                <Users className="size-3.5 text-amber-600" />
+              </div>
+              <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-foreground">
+                {coffeeMetrics.totalCustomers}
+              </p>
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {coffeeMetrics.totalPurchasesSum} compras registradas
+            </p>
+          </article>
+
+          {/* Card: Aniversários Hoje */}
+          <article
+            onClick={() => navigate('/lembretes')}
+            className={cn(
+              'cursor-pointer rounded-lg border p-4 shadow-2xs transition flex flex-col justify-between',
+              coffeeMetrics.bdayToday > 0
+                ? 'border-rose-300 bg-rose-50/40 hover:border-rose-400'
+                : 'border-border bg-card hover:border-muted-foreground/30',
+            )}
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-rose-800 uppercase tracking-wider">
+                  Aniversariantes Hoje
+                </span>
+                <Cake className="size-3.5 text-rose-600" />
+              </div>
+              <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-rose-950">
+                {coffeeMetrics.bdayToday}
+              </p>
+            </div>
+            <p className="mt-2 text-[11px] text-rose-800">
+              {coffeeMetrics.bdayNext7Days} nos próximos 7 dias · Gerar cupom
+            </p>
+          </article>
+
+          {/* Card: Retomada (30+ dias sem comprar) */}
+          <article
+            onClick={() => navigate('/lembretes')}
+            className={cn(
+              'cursor-pointer rounded-lg border p-4 shadow-2xs transition flex flex-col justify-between',
+              coffeeMetrics.needReengagement > 0
+                ? 'border-orange-300 bg-orange-50/40 hover:border-orange-400'
+                : 'border-border bg-card hover:border-muted-foreground/30',
+            )}
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-orange-800 uppercase tracking-wider">
+                  Retomar Contato (30d+)
+                </span>
+                <History className="size-3.5 text-orange-600" />
+              </div>
+              <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-orange-950">
+                {coffeeMetrics.needReengagement}
+              </p>
+            </div>
+            <p className="mt-2 text-[11px] text-orange-800">Garantir recorrência de compras</p>
+          </article>
+
+          {/* Card: Níveis de Fidelidade */}
+          <article
+            onClick={() => navigate('/contatos')}
+            className="cursor-pointer rounded-lg border border-amber-200/90 bg-amber-50/30 p-4 shadow-2xs hover:border-amber-400 transition flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-amber-900 uppercase tracking-wider">
+                  Programa Fidelidade
+                </span>
+                <Award className="size-3.5 text-amber-700" />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1 text-[10px] font-mono font-bold">
+                <span
+                  className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900"
+                  title="Grão (0-9 compras)"
+                >
+                  Grão: {coffeeMetrics.loyaltyCounts[1] || 0}
+                </span>
+                <span
+                  className="rounded bg-orange-100 px-1.5 py-0.5 text-orange-900"
+                  title="Torra (10-19 compras)"
+                >
+                  Torra: {coffeeMetrics.loyaltyCounts[2] || 0}
+                </span>
+                <span
+                  className="rounded bg-amber-200 px-1.5 py-0.5 text-amber-950"
+                  title="Blend (20-29 compras)"
+                >
+                  Blend: {coffeeMetrics.loyaltyCounts[3] || 0}
+                </span>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-amber-800">Subida de nível a cada 10 compras</p>
+          </article>
+        </section>
         {/* ============================================================ */}
         {/* 2. FILTROS DE PERÍODO & CAMPO "ATÉ"                          */}
         {/* ============================================================ */}

@@ -9,7 +9,7 @@ export function Brand({ compact = false, className }: { compact?: boolean; class
       </div>
       {!compact && (
         <span className="text-[13px] font-extrabold tracking-[-0.02em] text-[#1c1c1e]">
-          CRM Adapta
+          Café Especial <span className="text-amber-700 font-mono text-[10px]">CRM</span>
         </span>
       )}
     </div>
