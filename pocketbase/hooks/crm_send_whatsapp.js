@@ -82,110 +82,36 @@ routerAdd(
               return null
             }
 
-            // Helper para extrair lista de IDs de WABA (WhatsApp Business Account) a partir de respostas
-            const extractWabaIds = (res) => {
-              if (!res || !res.data) return []
-              const raw = res.data
-              let list = []
-              if (Array.isArray(raw)) {
-                list = raw
-              } else if (raw && Array.isArray(raw.data)) {
-                list = raw.data
-              } else if (raw && Array.isArray(raw.accounts)) {
-                list = raw.accounts
-              } else if (raw && typeof raw === 'object') {
-                if (raw.id || raw.waba_id) list = [raw]
-              }
-
-              const found = []
-              for (let i = 0; i < list.length; i++) {
-                const item = list[i]
-                if (item) {
-                  const id = item.waba_id || item.id || item.account_id
-                  if (id && typeof id === 'string') {
-                    found.push(id)
-                  } else if (id && typeof id === 'number') {
-                    found.push(String(id))
-                  }
-                }
-              }
-              return found
-            }
-
-            // Função centralizada para resolver o phone_number_id em um executor (user ou owner)
+            // Função para resolver o phone_number_id chamando WHATSAPP_GET_PHONE_NUMBERS sem passar waba_id.
+            // O erro histórico era "Invalid waba_id - deve ser WABA ID, não BM ID".
+            // Sem parâmetro waba_id, o conector descobre os números registrados na conta.
             const resolvePhoneForExecutor = (executeFn, label) => {
-              // 1. Tenta WHATSAPP_GET_PHONE_NUMBERS SEM waba_id (toolkit resolve sozinho)
               try {
+                // Chama WHATSAPP_GET_PHONE_NUMBERS sem passar waba_id
                 const res = executeFn('WHATSAPP_GET_PHONE_NUMBERS', {})
                 const phoneId = extractPhoneNumberId(res)
-                if (phoneId) return phoneId
+                if (phoneId) {
+                  console.log(`[${label}] phone_number_id ativo encontrado: ${phoneId}`)
+                  return phoneId
+                }
 
                 console.log(
-                  `[${label}] WHATSAPP_GET_PHONE_NUMBERS sem waba_id não retornou phone_number_id direto:`,
+                  `[${label}] WHATSAPP_GET_PHONE_NUMBERS sem waba_id não retornou phone_number_id:`,
                   res ? res.error || JSON.stringify(res.data || res) : 'sem resposta',
                 )
-
-                // 2. Se falhar ou não achar, tenta descobrir WABA IDs reais
-                // Primeiro tenta listar WABAs pertencentes (OWNED)
-                let discoveredWabas = []
-                try {
-                  const ownedRes = executeFn('WHATSAPP_GET_OWNED_BUSINESS_ACCOUNTS', {})
-                  discoveredWabas = extractWabaIds(ownedRes)
-                } catch (eOwned) {
-                  console.log(`[${label}] Falha ao buscar OWNED accounts:`, eOwned.message)
-                }
-
-                // Se não achou, tenta WABAs de clientes (CLIENT)
-                if (discoveredWabas.length === 0) {
-                  try {
-                    const clientRes = executeFn('WHATSAPP_GET_CLIENT_BUSINESS_ACCOUNTS', {})
-                    discoveredWabas = extractWabaIds(clientRes)
-                  } catch (eClient) {
-                    console.log(`[${label}] Falha ao buscar CLIENT accounts:`, eClient.message)
-                  }
-                }
-
-                // Para cada WABA ID descoberto, tenta WHATSAPP_GET_PHONE_NUMBERS com waba_id
-                for (let j = 0; j < discoveredWabas.length; j++) {
-                  const targetWaba = discoveredWabas[j]
-                  try {
-                    const wabaNumsRes = executeFn('WHATSAPP_GET_PHONE_NUMBERS', {
-                      waba_id: targetWaba,
-                    })
-                    const wabaPhoneId = extractPhoneNumberId(wabaNumsRes)
-                    if (wabaPhoneId) {
-                      console.log(
-                        `[${label}] phone_number_id encontrado no WABA ${targetWaba}: ${wabaPhoneId}`,
-                      )
-                      return wabaPhoneId
-                    }
-                  } catch (eWabaCall) {
-                    console.log(
-                      `[${label}] Falha ao buscar números no WABA ${targetWaba}:`,
-                      eWabaCall.message,
-                    )
-                  }
-                }
               } catch (err) {
-                console.log(`[${label}] Erro na resolução de phone_number_id:`, err.message)
+                console.log(`[${label}] Erro ao chamar WHATSAPP_GET_PHONE_NUMBERS:`, err.message)
               }
               return null
             }
 
-            // 1. Tentar resolver phone_number_id com a conta do usuário logado ($connectors.execute(e.auth))
+            // Prioridade: Modo OWNER ($connectors.executeAsOwner) conforme configurado pelo dono,
+            // com fallback para a conta do usuário logado ($connectors.execute(e.auth)) se aplicável.
             let resolvedPhoneId = null
             let authMode = null
 
-            if (typeof $connectors.execute === 'function' && e.auth) {
-              const userExec = (tool, args) => $connectors.execute(e.auth, tool, args)
-              resolvedPhoneId = resolvePhoneForExecutor(userExec, 'user')
-              if (resolvedPhoneId) {
-                authMode = 'user'
-              }
-            }
-
-            // 2. Fallback: se não resolveu com o usuário, tentar como owner ($connectors.executeAsOwner)
-            if (!resolvedPhoneId && typeof $connectors.executeAsOwner === 'function') {
+            // 1. Tentar como owner primeiro ($connectors.executeAsOwner)
+            if (typeof $connectors.executeAsOwner === 'function') {
               const ownerExec = (tool, args) => $connectors.executeAsOwner(tool, args)
               resolvedPhoneId = resolvePhoneForExecutor(ownerExec, 'owner')
               if (resolvedPhoneId) {
@@ -193,35 +119,27 @@ routerAdd(
               }
             }
 
+            // 2. Se não resolveu como owner, tentar com a conta do usuário logado ($connectors.execute(e.auth))
+            if (!resolvedPhoneId && typeof $connectors.execute === 'function' && e.auth) {
+              const userExec = (tool, args) => $connectors.execute(e.auth, tool, args)
+              resolvedPhoneId = resolvePhoneForExecutor(userExec, 'user')
+              if (resolvedPhoneId) {
+                authMode = 'user'
+              }
+            }
+
             // Se não encontrou nenhum phone_number_id real, NÃO enviar com 'default' nem id inválido,
             // pois a Graph API rejeita com HTTP 400 "Object with ID 'default' does not exist".
             if (!resolvedPhoneId) {
               connectorWarning =
-                'Sua conta conectada não possui um número de telefone verificado no WhatsApp Business. Acesse a Central do WhatsApp Business para adicionar e verificar o número da sua empresa. Você pode usar o envio com um clique pelo link direto abaixo.'
+                'Nenhum número de WhatsApp Business ativo foi encontrado na conta conectada. Verifique se o número está registrado e aprovado na Meta Cloud API. Você pode usar o envio com um clique pelo link direto do WhatsApp (wa.me) abaixo.'
               console.log('Aviso: nenhum phone_number_id retornado por WHATSAPP_GET_PHONE_NUMBERS.')
             } else {
               usedPhoneNumberId = resolvedPhoneId
               let sendResult = null
 
-              // Disparo com a conta resolvida
-              if (authMode === 'user' && typeof $connectors.execute === 'function' && e.auth) {
-                try {
-                  sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
-                    to_number: cleanedPhone,
-                    text: messageText,
-                    phone_number_id: resolvedPhoneId,
-                  })
-                } catch (uSendErr) {
-                  console.log('Exceção ao disparar WHATSAPP_SEND_MESSAGE (user):', uSendErr.message)
-                }
-              }
-
-              // Se não enviou ou falhou e temos executeAsOwner como alternativa
-              if (
-                (!sendResult || !sendResult.successful) &&
-                typeof $connectors.executeAsOwner === 'function' &&
-                authMode !== 'user'
-              ) {
+              // Disparo prioritário via executeAsOwner se authMode for owner
+              if (authMode === 'owner' && typeof $connectors.executeAsOwner === 'function') {
                 try {
                   sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
                     to_number: cleanedPhone,
@@ -233,6 +151,49 @@ routerAdd(
                     'Exceção ao disparar WHATSAPP_SEND_MESSAGE (owner):',
                     oSendErr.message,
                   )
+                }
+              } else if (
+                authMode === 'user' &&
+                typeof $connectors.execute === 'function' &&
+                e.auth
+              ) {
+                try {
+                  sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
+                    to_number: cleanedPhone,
+                    text: messageText,
+                    phone_number_id: resolvedPhoneId,
+                  })
+                } catch (uSendErr) {
+                  console.log('Exceção ao disparar WHATSAPP_SEND_MESSAGE (user):', uSendErr.message)
+                }
+              }
+
+              // Fallback cruzado se a tentativa primária falhou
+              if (!sendResult || !sendResult.successful) {
+                if (authMode !== 'owner' && typeof $connectors.executeAsOwner === 'function') {
+                  try {
+                    sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
+                      to_number: cleanedPhone,
+                      text: messageText,
+                      phone_number_id: resolvedPhoneId,
+                    })
+                  } catch (oFallbackErr) {
+                    console.log('Fallback executeAsOwner falhou:', oFallbackErr.message)
+                  }
+                } else if (
+                  authMode !== 'user' &&
+                  typeof $connectors.execute === 'function' &&
+                  e.auth
+                ) {
+                  try {
+                    sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
+                      to_number: cleanedPhone,
+                      text: messageText,
+                      phone_number_id: resolvedPhoneId,
+                    })
+                  } catch (uFallbackErr) {
+                    console.log('Fallback execute user falhou:', uFallbackErr.message)
+                  }
                 }
               }
 
