@@ -50,6 +50,7 @@ const primary = [{ to: '/ask', label: 'Agent', icon: Sparkles, badge: 'IA' }]
 
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
   { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
   { to: '/contatos', label: 'Clientes & Fidelidade', icon: Coffee },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },

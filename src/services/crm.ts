@@ -8,10 +8,62 @@ import type {
   Deal,
   EmailTemplate,
   Empresa,
+  JourneyEvent,
   Purchase,
   Stage,
   UserRecord,
 } from '@/types/crm'
+
+export async function listJourneyEvents(contactId?: string) {
+  const filter = contactId ? `contact = "${contactId}"` : ''
+  return pb.collection<JourneyEvent>('journey_events').getFullList({
+    filter,
+    sort: '-created',
+    expand: 'contact,owner',
+  })
+}
+
+export async function createJourneyEvent(data: {
+  contactId: string
+  type: JourneyEvent['type']
+  title: string
+  description?: string
+  channel?: string
+  metadata?: Record<string, unknown>
+}) {
+  const ownerId = pb.authStore.record?.id
+  return pb.collection<JourneyEvent>('journey_events').create({
+    contact: data.contactId,
+    owner: ownerId,
+    type: data.type,
+    title: data.title,
+    description: data.description || '',
+    channel: data.channel || 'crm',
+    metadata: data.metadata || {},
+  })
+}
+
+export async function sendDisneyWhatsApp(params: {
+  contactId: string
+  message: string
+  phone?: string
+  momentType?: 'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
+  title?: string
+}) {
+  return pb.send<{
+    success: boolean
+    whatsappSent: boolean
+    phoneMissing: boolean
+    warning?: string | null
+    journeyEventId?: string
+    cleanedPhone?: string
+    waFallbackUrl?: string | null
+    message: string
+  }>('/backend/v1/crm/send-whatsapp', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+}
 
 export async function listStages() {
   return pb.collection<Stage>('pipeline_stages').getFullList({ sort: 'order' })
@@ -79,7 +131,24 @@ export async function updateDeal(id: string, data: Record<string, unknown>) {
 }
 
 export async function createContact(data: Record<string, unknown>) {
-  return pb.collection<Contact>('contacts').create(data, { expand: 'owner,empresa' })
+  const newContact = await pb
+    .collection<Contact>('contacts')
+    .create(data, { expand: 'owner,empresa' })
+  const ownerId = pb.authStore.record?.id || (data.owner as string)
+  // Registrar evento inicial de boas-vindas na Linha do Tempo
+  try {
+    await pb.collection('journey_events').create({
+      contact: newContact.id,
+      owner: ownerId,
+      type: 'cadastro',
+      title: 'Boas-vindas à Cafeteria',
+      description: `Cliente ${newContact.name} cadastrado na base. Início da jornada com atendimento personalizado e atenção aos detalhes.`,
+      channel: (data.acquisition_channel as string) || 'presencial',
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+  return newContact
 }
 
 export async function updateContact(id: string, data: Record<string, unknown>) {
@@ -140,7 +209,7 @@ export async function registerPurchase(params: {
     last_purchase_date: latestDate,
   })
 
-  // 3. Registrar activity de histórico
+  // 3. Registrar activity de histórico e evento de jornada
   try {
     await pb.collection<Activity>('activities').create({
       type: 'sistema',
@@ -150,6 +219,44 @@ export async function registerPurchase(params: {
     })
   } catch {
     /* intentionally ignored */
+  }
+
+  // 4. Registrar na Linha do Tempo da Jornada (journey_events)
+  try {
+    await pb.collection('journey_events').create({
+      contact: params.contactId,
+      owner: ownerId,
+      type: 'compra',
+      title: `Nova Compra Registrada (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(params.amount)})`,
+      description: `${params.itemsDescription ? `Itens: ${params.itemsDescription}. ` : ''}Total acumulado: ${currentCount + 1} compras.`,
+      channel: 'loja',
+      metadata: {
+        amount: params.amount,
+        itemsDescription: params.itemsDescription,
+        purchaseCount: currentCount + 1,
+      },
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  // 5. Verificar se atingiu marco de novo nível de fidelidade (múltiplo de 10)
+  const previousLevel = Math.floor(currentCount / 10) + 1
+  const newLevel = Math.floor((currentCount + 1) / 10) + 1
+  if (newLevel > previousLevel) {
+    try {
+      await pb.collection('journey_events').create({
+        contact: params.contactId,
+        owner: ownerId,
+        type: 'nivel_alcancado',
+        title: `⭐ Avanço de Nível de Fidelidade: Nível ${newLevel}`,
+        description: `O cliente conquistou um novo patamar no Clube de Fidelidade Disney ao atingir ${currentCount + 1} compras!`,
+        channel: 'clube',
+        metadata: { newLevel, previousLevel },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
   }
 
   return { purchase, contact: updatedContact }
@@ -196,13 +303,27 @@ export async function applyBirthdayCouponToContact(contactId: string, discountPc
     last_coupon_date: todayIso,
   })
 
-  // 2. Registrar no histórico de atividades
+  // 2. Registrar no histórico de atividades e na jornada
   try {
     await pb.collection<Activity>('activities').create({
       type: 'sistema',
       content: `🎉 Cupom de Aniversário gerado: ${couponCode} (${discountPct}% de desconto) atribuído ao cliente.`,
       contact: contactId,
       author: ownerId,
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  try {
+    await pb.collection('journey_events').create({
+      contact: contactId,
+      owner: ownerId,
+      type: 'cupom_aniversario',
+      title: `🎁 Cupom de Encantamento: ${couponCode}`,
+      description: `Presente de ${discountPct}% OFF gerado para celebrar o aniversário.`,
+      channel: 'crm',
+      metadata: { couponCode, discountPct },
     })
   } catch {
     /* intentionally ignored */
@@ -229,6 +350,19 @@ export async function markReengagementTreated(contactId: string, notes?: string)
       content: `☕ Contato de retenção / recorrência realizado: ${notes || 'Contato realizado para apresentar novas safras e incentivar recompra.'}`,
       contact: contactId,
       author: ownerId,
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  try {
+    await pb.collection('journey_events').create({
+      contact: contactId,
+      owner: ownerId,
+      type: 'reengajamento',
+      title: '☕ Contato de Reengajamento & Retomada Realizado',
+      description: notes || 'Contato realizado para apresentar novas safras e acolher o cliente.',
+      channel: 'crm',
     })
   } catch {
     /* intentionally ignored */

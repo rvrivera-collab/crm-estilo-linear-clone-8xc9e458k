@@ -107,6 +107,31 @@ export default function Index() {
       totalSpentSum += c.total_spent || 0
     })
 
+    // Estágios da Jornada Disney para visão do todo
+    const journeyStageCounts: Record<string, number> = {
+      novo: 0,
+      ativo: 0,
+      em_risco: 0,
+      reengajamento: 0,
+      fa_incentivador: 0,
+    }
+
+    contacts.forEach((c) => {
+      const stage =
+        (c.purchase_count || 0) >= 20
+          ? 'fa_incentivador'
+          : getDaysSinceLastPurchase(c.last_purchase_date) !== null &&
+              (getDaysSinceLastPurchase(c.last_purchase_date) || 0) >= 60
+            ? 'reengajamento'
+            : getDaysSinceLastPurchase(c.last_purchase_date) !== null &&
+                (getDaysSinceLastPurchase(c.last_purchase_date) || 0) >= 30
+              ? 'em_risco'
+              : (c.purchase_count || 0) <= 1
+                ? 'novo'
+                : 'ativo'
+      journeyStageCounts[stage] = (journeyStageCounts[stage] || 0) + 1
+    })
+
     return {
       totalCustomers: contacts.length,
       bdayToday,
@@ -115,6 +140,7 @@ export default function Index() {
       loyaltyCounts,
       totalPurchasesSum,
       totalSpentSum,
+      journeyStageCounts,
     }
   }, [contacts])
 
@@ -571,7 +597,107 @@ export default function Index() {
         </header>
 
         {/* ============================================================ */}
-        {/* 1.1 CARDS DE DESTAQUE: CAFÉS ESPECIAIS & FIDELIDADE           */}
+        {/* 1.1 RESUMO DA SAÚDE DA JORNADA DO CLIENTE (EXPERIÊNCIA DISNEY) */}
+        {/* ============================================================ */}
+        <section className="rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50/50 via-white to-orange-50/30 p-4 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-700 font-bold">
+                  Saúde da Jornada Disney · Visão do Todo
+                </span>
+                <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-900">
+                  <Sparkles className="size-2.5" /> Encantamento & Atenção aos Detalhes
+                </span>
+              </div>
+              <h2 className="text-sm font-extrabold text-[#1c1c1e] mt-0.5">
+                Distribuição dos Clientes por Estágio de Experiência
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/jornada')}
+              className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 hover:text-amber-950 underline transition"
+            >
+              Abrir Quadro Geral da Jornada <ArrowRight className="size-3" />
+            </button>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+            <div
+              onClick={() => navigate('/jornada')}
+              className="cursor-pointer rounded-md border border-blue-200 bg-blue-50/40 p-2.5 hover:bg-blue-50 transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-blue-900 uppercase">1. Novos</span>
+                <Sparkles className="size-3 text-blue-600" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-blue-950">
+                {coffeeMetrics.journeyStageCounts.novo || 0}
+              </p>
+              <p className="text-[9px] text-blue-800 leading-tight">Boas-vindas & sensorial</p>
+            </div>
+
+            <div
+              onClick={() => navigate('/jornada')}
+              className="cursor-pointer rounded-md border border-emerald-200 bg-emerald-50/40 p-2.5 hover:bg-emerald-50 transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-emerald-900 uppercase">2. Ativos</span>
+                <UserCheck className="size-3 text-emerald-600" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-emerald-950">
+                {coffeeMetrics.journeyStageCounts.ativo || 0}
+              </p>
+              <p className="text-[9px] text-emerald-800 leading-tight">Recompra &lt; 30 dias</p>
+            </div>
+
+            <div
+              onClick={() => navigate('/lembretes')}
+              className="cursor-pointer rounded-md border border-orange-200 bg-orange-50/40 p-2.5 hover:bg-orange-50 transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-orange-900 uppercase">3. Em Risco</span>
+                <Clock className="size-3 text-orange-600" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-orange-950">
+                {coffeeMetrics.journeyStageCounts.em_risco || 0}
+              </p>
+              <p className="text-[9px] text-orange-800 leading-tight">30–59d sem comprar</p>
+            </div>
+
+            <div
+              onClick={() => navigate('/lembretes')}
+              className="cursor-pointer rounded-md border border-rose-200 bg-rose-50/40 p-2.5 hover:bg-rose-50 transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-rose-900 uppercase">4. Reengajar</span>
+                <History className="size-3 text-rose-600" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-rose-950">
+                {coffeeMetrics.journeyStageCounts.reengajamento || 0}
+              </p>
+              <p className="text-[9px] text-rose-800 leading-tight">60d+ resgate urgente</p>
+            </div>
+
+            <div
+              onClick={() => navigate('/jornada')}
+              className="cursor-pointer rounded-md border border-purple-200 bg-purple-50/40 p-2.5 hover:bg-purple-50 transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-purple-900 uppercase">5. Fãs VIP</span>
+                <Award className="size-3 text-purple-600" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-purple-950">
+                {coffeeMetrics.journeyStageCounts.fa_incentivador || 0}
+              </p>
+              <p className="text-[9px] text-purple-800 leading-tight">Nível 3+ (20+ compras)</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================================ */}
+        {/* 1.2 CARDS DE DESTAQUE: CAFÉS ESPECIAIS & FIDELIDADE           */}
         {/* ============================================================ */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Card: Total de Clientes */}

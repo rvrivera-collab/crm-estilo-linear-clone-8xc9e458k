@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
+import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import {
   datePt,
   getBirthdayInfo,
@@ -43,6 +44,13 @@ export default function Reminders() {
   const [activeTab, setActiveTab] = useState<'todos' | 'aniversarios' | 'recorrencia'>('todos')
   const [busyContactId, setBusyContactId] = useState<string | null>(null)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+
+  // Modal WhatsApp Disney
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
+  const [whatsAppContact, setWhatsAppContact] = useState<Contact | null>(null)
+  const [whatsAppMoment, setWhatsAppMoment] = useState<
+    'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
+  >('personalizado')
 
   // 1. Filtrar aniversariantes (hoje e próximos 7 dias)
   const birthdayReminders = useMemo(() => {
@@ -407,8 +415,8 @@ export default function Reminders() {
                           )}
                         </div>
 
-                        {/* Ações do Lembrete */}
-                        <div className="mt-4 pt-3 border-t border-[#f1f5f9] flex items-center justify-between gap-2">
+                        {/* Ações do Lembrete com Envio de WhatsApp Disney */}
+                        <div className="mt-4 pt-3 border-t border-[#f1f5f9] flex flex-wrap items-center justify-between gap-1.5">
                           <button
                             type="button"
                             onClick={() => navigate(`/contatos?contact=${contact.id}`)}
@@ -417,24 +425,42 @@ export default function Reminders() {
                             Ver cliente
                           </button>
 
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleGenerateCoupon(contact)}
-                            className={cn(
-                              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-bold text-white shadow-2xs transition disabled:opacity-60',
-                              hasCoupon
-                                ? 'bg-amber-600 hover:bg-amber-700'
-                                : 'bg-rose-600 hover:bg-rose-700',
-                            )}
-                          >
-                            {isBusy ? (
-                              <LoaderCircle className="size-3 animate-spin" />
-                            ) : (
-                              <Sparkles className="size-3" />
-                            )}
-                            {hasCoupon ? 'Regerar Cupom' : 'Presentear com Cupom'}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => handleGenerateCoupon(contact)}
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold border transition disabled:opacity-60',
+                                hasCoupon
+                                  ? 'border-[#cbd5e1] bg-white text-[#475569] hover:bg-[#f8fafc]'
+                                  : 'border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100',
+                              )}
+                              title={
+                                hasCoupon ? 'Regerar novo código de cupom' : 'Gerar código de cupom'
+                              }
+                            >
+                              {isBusy ? (
+                                <LoaderCircle className="size-3 animate-spin" />
+                              ) : (
+                                <Sparkles className="size-3 text-rose-500" />
+                              )}
+                              {hasCoupon ? 'Regerar' : 'Gerar Cupom'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWhatsAppContact(contact)
+                                setWhatsAppMoment('aniversario')
+                                setWhatsAppModalOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition"
+                            >
+                              <MessageCircle className="size-3" />
+                              Enviar WhatsApp
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )
@@ -545,8 +571,8 @@ export default function Reminders() {
                           )}
                         </div>
 
-                        {/* Ações do Lembrete */}
-                        <div className="mt-4 pt-3 border-t border-[#f1f5f9] flex items-center justify-between gap-2">
+                        {/* Ações do Lembrete com Envio de WhatsApp Disney */}
+                        <div className="mt-4 pt-3 border-t border-[#f1f5f9] flex flex-wrap items-center justify-between gap-1.5">
                           <button
                             type="button"
                             onClick={() => navigate(`/contatos?contact=${contact.id}`)}
@@ -555,24 +581,40 @@ export default function Reminders() {
                             Ver histórico
                           </button>
 
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleMarkReengaged(contact)}
-                            className={cn(
-                              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-bold text-white shadow-2xs transition disabled:opacity-60',
-                              isTreatedRecently
-                                ? 'bg-emerald-600 hover:bg-emerald-700'
-                                : 'bg-orange-600 hover:bg-orange-700',
-                            )}
-                          >
-                            {isBusy ? (
-                              <LoaderCircle className="size-3 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="size-3" />
-                            )}
-                            {isTreatedRecently ? 'Marcar Novamente' : 'Marcar como Tratado'}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => handleMarkReengaged(contact)}
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold border transition disabled:opacity-60',
+                                isTreatedRecently
+                                  ? 'border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50'
+                                  : 'border-orange-300 bg-white text-orange-800 hover:bg-orange-50',
+                              )}
+                              title="Marcar lembrete como tratado manualmente"
+                            >
+                              {isBusy ? (
+                                <LoaderCircle className="size-3 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="size-3" />
+                              )}
+                              {isTreatedRecently ? 'Tratado ✓' : 'Marcar'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWhatsAppContact(contact)
+                                setWhatsAppMoment('recorrencia')
+                                setWhatsAppModalOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition"
+                            >
+                              <MessageCircle className="size-3" />
+                              Enviar WhatsApp
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )
@@ -582,6 +624,21 @@ export default function Reminders() {
           </section>
         )}
       </div>
+
+      {/* Modal de Envio caloroso Disney via WhatsApp */}
+      <SendWhatsAppModal
+        open={whatsAppModalOpen}
+        onClose={() => {
+          setWhatsAppModalOpen(false)
+          setWhatsAppContact(null)
+        }}
+        contact={whatsAppContact}
+        initialMoment={whatsAppMoment}
+        couponCode={whatsAppContact?.last_coupon_code}
+        onSent={async () => {
+          await refresh()
+        }}
+      />
     </div>
   )
 }

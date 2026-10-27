@@ -3,19 +3,27 @@ import {
   Award,
   Cake,
   Calendar,
+  CheckCircle2,
+  Clock,
   Coffee,
   ExternalLink,
+  Flame,
+  HeartHandshake,
   History,
+  Info,
   LoaderCircle,
   Mail,
+  MessageCircle,
   MessageSquareText,
   Phone,
   Plus,
   Send,
+  ShieldAlert,
   ShoppingBag,
   Sparkles,
   Ticket,
   Trash2,
+  User,
   X,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -23,22 +31,28 @@ import { useCrm } from '@/contexts/CrmContext'
 import {
   datePt,
   getBirthdayInfo,
+  getCustomerJourneyStage,
   getDaysSinceLastPurchase,
   getLoyaltyLevel,
   money,
   relativeTime,
   type Contact,
+  type JourneyEvent,
   type Purchase,
 } from '@/types/crm'
 import {
   applyBirthdayCouponToContact,
+  createJourneyEvent,
   deletePurchase,
+  listJourneyEvents,
   listPurchases,
   markReengagementTreated,
   registerPurchase,
 } from '@/services/crm'
 import { EmailComposerModal } from '@/components/forms/EmailComposerModal'
+import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 export function ContactDrawer({
   contact,
@@ -54,6 +68,16 @@ export function ContactDrawer({
   const navigate = useNavigate()
   const [emailModalOpen, setEmailModalOpen] = useState(false)
 
+  // Modal WhatsApp
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
+  const [whatsAppMoment, setWhatsAppMoment] = useState<
+    'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
+  >('personalizado')
+
+  // Linha do tempo de jornada oficial
+  const [journeyEvents, setJourneyEvents] = useState<JourneyEvent[]>([])
+  const [loadingJourney, setLoadingJourney] = useState(false)
+
   // Compras do cliente
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [loadingPurchases, setLoadingPurchases] = useState(false)
@@ -65,24 +89,34 @@ export function ContactDrawer({
   const [savingPurchase, setSavingPurchase] = useState(false)
   const [actionBusy, setActionBusy] = useState(false)
 
-  // Carregar compras do contato
+  // Carregar compras e linha do tempo de jornada do contato
   useEffect(() => {
     if (!contact?.id) {
       setPurchases([])
+      setJourneyEvents([])
       return
     }
     let active = true
     setLoadingPurchases(true)
-    listPurchases(contact.id)
-      .then((data) => {
-        if (active) setPurchases(data)
-      })
-      .catch(() => {
-        if (active) setPurchases([])
+    setLoadingJourney(true)
+
+    Promise.all([
+      listPurchases(contact.id).catch(() => []),
+      listJourneyEvents(contact.id).catch(() => []),
+    ])
+      .then(([purchasesData, journeyData]) => {
+        if (active) {
+          setPurchases(purchasesData)
+          setJourneyEvents(journeyData)
+        }
       })
       .finally(() => {
-        if (active) setLoadingPurchases(false)
+        if (active) {
+          setLoadingPurchases(false)
+          setLoadingJourney(false)
+        }
       })
+
     return () => {
       active = false
     }
@@ -91,6 +125,10 @@ export function ContactDrawer({
   const loyalty = useMemo(() => {
     return getLoyaltyLevel(contact?.purchase_count || 0)
   }, [contact?.purchase_count])
+
+  const stageInfo = useMemo(() => {
+    return contact ? getCustomerJourneyStage(contact) : null
+  }, [contact])
 
   const bdayInfo = useMemo(() => {
     return getBirthdayInfo(contact?.birthday)
@@ -260,19 +298,33 @@ export function ContactDrawer({
                 <h2 className="mt-3 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">
                   {contact.name}
                 </h2>
+                {contact.nickname && (
+                  <p className="text-xs font-semibold text-amber-700">
+                    Prefere ser chamado de: <span className="underline">"{contact.nickname}"</span>
+                  </p>
+                )}
                 <p className="mt-0.5 text-xs text-[#64748b]">
                   {contact.position || 'Cliente'} {contact.company ? `· ${contact.company}` : ''}
                 </p>
               </div>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-2xs ${loyalty.badgeColor}`}
-                title={loyalty.description}
-              >
-                <Award className="size-3.5" />
-                <span>
-                  Nível {loyalty.level}: {loyalty.name}
+              <div className="flex flex-col items-end gap-1.5">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-2xs ${loyalty.badgeColor}`}
+                  title={loyalty.description}
+                >
+                  <Award className="size-3.5" />
+                  <span>
+                    Nível {loyalty.level}: {loyalty.name}
+                  </span>
                 </span>
-              </span>
+                {stageInfo && (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${stageInfo.badgeBg} ${stageInfo.badgeText}`}
+                  >
+                    <Sparkles className="size-2.5" /> {stageInfo.label}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Informações de contato */}
@@ -280,17 +332,23 @@ export function ContactDrawer({
               <p className="flex items-center gap-2">
                 <Mail className="size-3.5 text-[#94a3b8]" /> {contact.email || 'Sem e-mail'}
               </p>
-              <p className="flex items-center gap-2">
-                <Phone className="size-3.5 text-[#94a3b8]" /> {contact.phone || 'Sem telefone'}
-              </p>
-              {contact.favorite_coffee && (
-                <p className="flex items-center gap-2 text-amber-900 font-medium">
-                  <Coffee className="size-3.5 text-amber-700 shrink-0" />
-                  <span>
-                    Café Favorito: <strong>{contact.favorite_coffee}</strong>
-                  </span>
+              <div className="flex items-center justify-between">
+                <p className="flex items-center gap-2">
+                  <Phone className="size-3.5 text-[#94a3b8]" /> {contact.phone || 'Sem telefone'}
                 </p>
-              )}
+                {contact.phone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWhatsAppMoment('personalizado')
+                      setWhatsAppModalOpen(true)
+                    }}
+                    className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition"
+                  >
+                    <MessageCircle className="size-3 text-emerald-600" /> WhatsApp Disney
+                  </button>
+                )}
+              </div>
               {contact.birthday && (
                 <p className="flex items-center gap-2">
                   <Cake className="size-3.5 text-rose-500 shrink-0" />
@@ -308,6 +366,97 @@ export function ContactDrawer({
                     )}
                   </span>
                 </p>
+              )}
+            </div>
+
+            {/* BOX DISNEY: O QUE FAZ ESSE CLIENTE SE SENTIR ÚNICO */}
+            <div className="mt-4 rounded-lg border border-amber-300 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 p-3.5 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
+                  <Sparkles className="size-3.5 text-amber-600" />
+                  <span>Experiência Disney · Atenção aos Detalhes</span>
+                </div>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-amber-700 font-bold bg-amber-100 px-1.5 py-0.2 rounded">
+                  Fazer Sentir Único
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-amber-200/60">
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
+                    Café Favorito
+                  </span>
+                  <p className="font-semibold text-amber-950 truncate">
+                    {contact.favorite_coffee || (
+                      <span className="text-[#94a3b8] font-normal">Não informado</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
+                    Torra Preferida
+                  </span>
+                  <p className="font-semibold text-amber-950 truncate">
+                    {contact.roast_preference || (
+                      <span className="text-[#94a3b8] font-normal">Não informada</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
+                    Método Preferido
+                  </span>
+                  <p className="font-semibold text-amber-950 truncate">
+                    {contact.brew_method_preference || (
+                      <span className="text-[#94a3b8] font-normal">Não informado</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
+                    Intensidade / Paladar
+                  </span>
+                  <p className="font-semibold text-amber-950 truncate">
+                    {contact.intensity_preference || (
+                      <span className="text-[#94a3b8] font-normal">Não informada</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {contact.dietary_restrictions && (
+                <div className="rounded bg-rose-50/80 border border-rose-200 p-1.5 text-[10px] text-rose-900 flex items-center gap-1.5">
+                  <ShieldAlert className="size-3 text-rose-600 shrink-0" />
+                  <span>
+                    Alergias / Restrições: <strong>{contact.dietary_restrictions}</strong>
+                  </span>
+                </div>
+              )}
+
+              {contact.special_date && (
+                <div className="rounded bg-amber-100/60 border border-amber-200 p-1.5 text-[10px] text-amber-900 flex items-center gap-1.5">
+                  <Calendar className="size-3 text-amber-700 shrink-0" />
+                  <span>
+                    {contact.special_date_description || 'Data Especial'}:{' '}
+                    <strong>{datePt(contact.special_date)}</strong>
+                  </span>
+                </div>
+              )}
+
+              {contact.acquisition_channel && (
+                <p className="text-[10px] text-[#64748b]">
+                  Como conheceu a loja:{' '}
+                  <span className="text-[#1c1c1e] font-medium">{contact.acquisition_channel}</span>
+                </p>
+              )}
+
+              {contact.service_notes && (
+                <div className="rounded bg-white/90 border border-amber-200 p-2 text-[10px] text-[#475569] leading-relaxed">
+                  <span className="font-bold text-amber-950 block mb-0.5">
+                    Observações para o Atendente:
+                  </span>
+                  {contact.service_notes}
+                </div>
               )}
             </div>
 
@@ -347,7 +496,7 @@ export function ContactDrawer({
               </div>
             </div>
 
-            {/* BOX DE LEMBRETES E AÇÕES RÁPIDAS (ANIVERSÁRIO E RETENÇÃO) */}
+            {/* BOX DE LEMBRETES E AÇÕES RÁPIDAS (ANIVERSÁRIO E RETENÇÃO COM WHATSAPP DISNEY) */}
             <div className="mt-3 space-y-2">
               {/* Alerta de Aniversário */}
               {(bdayInfo.isToday || bdayInfo.isNext7Days) && (
@@ -359,15 +508,28 @@ export function ContactDrawer({
                         ? 'Aniversariante de Hoje!'
                         : `Aniversário em ${bdayInfo.daysUntil} dias`}
                     </span>
-                    <button
-                      type="button"
-                      disabled={actionBusy}
-                      onClick={handleGenerateBirthdayCoupon}
-                      className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-2xs hover:bg-rose-700 transition disabled:opacity-60"
-                    >
-                      <Sparkles className="size-3" />
-                      Gerar Cupom
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={actionBusy}
+                        onClick={handleGenerateBirthdayCoupon}
+                        className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-[10px] font-bold text-white shadow-2xs hover:bg-rose-700 transition disabled:opacity-60"
+                      >
+                        <Sparkles className="size-2.5" />
+                        {contact.last_coupon_code ? 'Regerar Cupom' : 'Gerar Cupom'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWhatsAppMoment('aniversario')
+                          setWhatsAppModalOpen(true)
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition"
+                      >
+                        <MessageCircle className="size-2.5" />
+                        Enviar WhatsApp
+                      </button>
+                    </div>
                   </div>
                   {contact.last_coupon_code && (
                     <div className="mt-2 flex items-center justify-between border-t border-rose-200/60 pt-2 text-[11px] text-rose-950 font-mono">
@@ -390,18 +552,31 @@ export function ContactDrawer({
                       <History className="size-3.5 text-orange-600" />
                       {daysSincePurchase} dias sem comprar (Retomada)
                     </span>
-                    <button
-                      type="button"
-                      disabled={actionBusy}
-                      onClick={handleMarkReengagement}
-                      className="inline-flex items-center gap-1 rounded-md bg-orange-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-2xs hover:bg-orange-700 transition disabled:opacity-60"
-                    >
-                      Marcar Tratado
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={actionBusy}
+                        onClick={handleMarkReengagement}
+                        className="inline-flex items-center gap-1 rounded-md border border-orange-300 bg-white px-2 py-1 text-[10px] font-bold text-orange-800 shadow-2xs hover:bg-orange-50 transition disabled:opacity-60"
+                      >
+                        Marcar Tratado
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWhatsAppMoment('recorrencia')
+                          setWhatsAppModalOpen(true)
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition"
+                      >
+                        <MessageCircle className="size-2.5" />
+                        WhatsApp Reengajar
+                      </button>
+                    </div>
                   </div>
                   <p className="mt-1 text-[10px] text-orange-800">
-                    Última compra há {daysSincePurchase} dias. Ofereça um café recém-torrado para
-                    reativar o cliente.
+                    Última compra há {daysSincePurchase} dias. Envie uma mensagem calorosa Disney
+                    para reativar o cliente.
                     {contact.last_reengagement_date && (
                       <span className="block mt-0.5">
                         Último contato registrado em: {datePt(contact.last_reengagement_date)}
@@ -592,8 +767,104 @@ export function ContactDrawer({
               </div>
             )}
           </section>
+          {/* SESSÃO: LINHA DO TEMPO DA JORNADA DISNEY (OFICIAL PERSISTIDA) */}
+          <section className="p-5 border-b border-[#e5e7eb] bg-[#fafafa]">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-extrabold text-[#1c1c1e] flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-amber-600" />
+                  Linha do Tempo da Jornada ({journeyEvents.length})
+                </h3>
+                <p className="text-[10px] text-[#64748b]">
+                  Todos os momentos de encantamento, marcos de fidelidade e WhatsApp
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setWhatsAppMoment('personalizado')
+                  setWhatsAppModalOpen(true)
+                }}
+                className="inline-flex items-center gap-1 rounded bg-white border border-[#cbd5e1] px-2 py-1 text-[9px] font-bold text-[#475569] hover:bg-[#f1f5f9]"
+              >
+                <MessageCircle className="size-3 text-emerald-600" /> Nova Mensagem
+              </button>
+            </div>
+
+            {loadingJourney ? (
+              <div className="py-4 text-center text-xs text-[#94a3b8]">Carregando jornada...</div>
+            ) : journeyEvents.length === 0 ? (
+              <div className="rounded-md border border-dashed border-[#cbd5e1] p-4 text-center text-xs text-[#94a3b8]">
+                Nenhum evento registrado na jornada deste cliente.
+              </div>
+            ) : (
+              <div className="relative pl-4 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#e2e8f0]">
+                {journeyEvents.map((evt) => {
+                  const isWhatsApp =
+                    evt.type === 'whatsapp_enviado' || evt.type === 'whatsapp_falha'
+                  const isLevel = evt.type === 'nivel_alcancado'
+                  const isCoupon = evt.type === 'cupom_aniversario'
+                  const isPurchase = evt.type === 'compra'
+
+                  return (
+                    <div key={evt.id} className="relative group flex gap-3 text-left">
+                      {/* Ponto / Ícone da linha do tempo */}
+                      <span
+                        className={cn(
+                          'absolute -left-4 mt-0.5 grid size-5 place-items-center rounded-full border bg-white shadow-2xs',
+                          isWhatsApp
+                            ? 'border-emerald-400 text-emerald-600'
+                            : isLevel
+                              ? 'border-purple-400 text-purple-600'
+                              : isCoupon
+                                ? 'border-rose-400 text-rose-600'
+                                : isPurchase
+                                  ? 'border-amber-400 text-amber-600'
+                                  : 'border-blue-400 text-blue-600',
+                        )}
+                      >
+                        {isWhatsApp ? (
+                          <MessageCircle className="size-2.5" />
+                        ) : isLevel ? (
+                          <Award className="size-2.5" />
+                        ) : isCoupon ? (
+                          <Ticket className="size-2.5" />
+                        ) : isPurchase ? (
+                          <ShoppingBag className="size-2.5" />
+                        ) : (
+                          <Sparkles className="size-2.5" />
+                        )}
+                      </span>
+
+                      <div className="min-w-0 flex-1 rounded-md border border-[#e2e8f0] bg-white p-2.5 shadow-2xs">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[11px] text-[#1c1c1e] truncate">
+                            {evt.title}
+                          </span>
+                          <span className="font-mono text-[9px] text-[#94a3b8] shrink-0">
+                            {relativeTime(evt.created)}
+                          </span>
+                        </div>
+                        {evt.description && (
+                          <p className="mt-1 whitespace-pre-line text-[10px] text-[#475569] leading-relaxed">
+                            {evt.description}
+                          </p>
+                        )}
+                        <div className="mt-1.5 flex items-center justify-between text-[9px] text-[#94a3b8] font-mono border-t border-[#f1f5f9] pt-1">
+                          <span>Canal: {evt.channel || 'crm'}</span>
+                          <span>{datePt(evt.created)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* SESSÃO: HISTÓRICO GERAL DE ATIVIDADES */}
           <section className="p-5">
-            <h3 className="mb-4 text-xs font-extrabold text-[#1c1c1e]">Histórico</h3>
+            <h3 className="mb-4 text-xs font-extrabold text-[#1c1c1e]">Histórico de Atividades</h3>
             <div className="space-y-4">
               {timeline.map((activity) => (
                 <div key={activity.id} className="flex gap-3">
@@ -601,7 +872,9 @@ export function ContactDrawer({
                     <MessageSquareText className="size-3 text-[#64748b]" />
                   </span>
                   <div>
-                    <p className="text-[11px] leading-5 text-[#334155]">{activity.content}</p>
+                    <p className="text-[11px] leading-5 text-[#334155] whitespace-pre-line">
+                      {activity.content}
+                    </p>
                     <p className="mt-1 text-[9px] text-[#94a3b8]">
                       {relativeTime(activity.created)}
                     </p>
@@ -618,6 +891,22 @@ export function ContactDrawer({
         contact={contact}
         deal={null}
         onSent={async () => {
+          await refresh()
+        }}
+      />
+
+      {/* Modal de Disparo de WhatsApp caloroso Disney */}
+      <SendWhatsAppModal
+        open={whatsAppModalOpen}
+        onClose={() => setWhatsAppModalOpen(false)}
+        contact={contact}
+        initialMoment={whatsAppMoment}
+        couponCode={contact.last_coupon_code}
+        onSent={async () => {
+          if (contact.id) {
+            const freshEvents = await listJourneyEvents(contact.id).catch(() => [])
+            setJourneyEvents(freshEvents)
+          }
           await refresh()
         }}
       />

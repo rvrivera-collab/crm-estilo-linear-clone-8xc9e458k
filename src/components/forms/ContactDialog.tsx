@@ -27,10 +27,19 @@ export function ContactDialog({
   const initial = useMemo(
     () => ({
       name: contact?.name || '',
+      nickname: contact?.nickname || '',
       email: contact?.email || '',
       phone: contact?.phone || '',
       birthday: contact?.birthday ? contact.birthday.split('T')[0] : '',
       favorite_coffee: contact?.favorite_coffee || '',
+      roast_preference: contact?.roast_preference || '',
+      brew_method_preference: contact?.brew_method_preference || '',
+      intensity_preference: contact?.intensity_preference || '',
+      dietary_restrictions: contact?.dietary_restrictions || '',
+      special_date_description: contact?.special_date_description || '',
+      special_date: contact?.special_date ? contact.special_date.split('T')[0] : '',
+      acquisition_channel: contact?.acquisition_channel || '',
+      service_notes: contact?.service_notes || '',
       company:
         contact?.company ||
         presetCompanyName ||
@@ -91,15 +100,28 @@ export function ContactDialog({
       const data: Record<string, unknown> = {
         ...form,
         name: form.name.trim(),
+        nickname: form.nickname.trim(),
         email: form.email.trim(),
         company: form.company.trim(),
         favorite_coffee: form.favorite_coffee.trim(),
+        roast_preference: form.roast_preference.trim(),
+        brew_method_preference: form.brew_method_preference.trim(),
+        intensity_preference: form.intensity_preference.trim(),
+        dietary_restrictions: form.dietary_restrictions.trim(),
+        special_date_description: form.special_date_description.trim(),
+        acquisition_channel: form.acquisition_channel.trim(),
+        service_notes: form.service_notes.trim(),
         owner: contact?.owner || user?.id,
       }
       if (form.birthday) {
         data.birthday = new Date(`${form.birthday}T00:00:00.000Z`).toISOString()
       } else {
         data.birthday = null
+      }
+      if (form.special_date) {
+        data.special_date = new Date(`${form.special_date}T00:00:00.000Z`).toISOString()
+      } else {
+        data.special_date = null
       }
       if (finalEmpresaId) {
         data.empresa = finalEmpresaId
@@ -143,12 +165,19 @@ export function ContactDialog({
             <X className="size-4" />
           </button>
         </div>
-        <div className="grid gap-4 p-4 sm:grid-cols-2">
-          <Field label="Nome" error={errors.name} className="sm:col-span-2">
+        <div className="grid gap-4 p-4 sm:grid-cols-2 max-h-[75vh] overflow-y-auto">
+          <Field label="Nome Completo" error={errors.name}>
             <input
               autoFocus
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </Field>
+          <Field label="Como prefere ser chamado (Apelido caloroso)">
+            <input
+              placeholder="Ex: Dani, Rafa, Doutor Paulo..."
+              value={form.nickname}
+              onChange={(e) => setForm({ ...form, nickname: e.target.value })}
             />
           </Field>
           <Field label="E-mail" error={errors.email}>
@@ -158,12 +187,102 @@ export function ContactDialog({
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
           </Field>
-          <Field label="Telefone" error={errors.phone}>
+          <Field label="Telefone / WhatsApp" error={errors.phone}>
             <input
+              placeholder="Ex: (11) 98765-4321"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
           </Field>
+
+          {/* SEÇÃO DISNEY: PREFERÊNCIAS SENSORIAIS & ATENÇÃO AOS DETALHES */}
+          <div className="sm:col-span-2 rounded-lg border border-amber-200 bg-amber-50/40 p-3 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+              <span>✨ Experiência Disney · Fazer o Cliente se Sentir Único</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Café Favorito / Variedade">
+                <input
+                  placeholder="Ex: Geisha do Cerrado, Bourbon Amarelo..."
+                  value={form.favorite_coffee}
+                  onChange={(e) => setForm({ ...form, favorite_coffee: e.target.value })}
+                />
+              </Field>
+              <Field label="Torra Preferida">
+                <input
+                  placeholder="Ex: Clara floral, Média achocolatada, Escura..."
+                  value={form.roast_preference}
+                  onChange={(e) => setForm({ ...form, roast_preference: e.target.value })}
+                />
+              </Field>
+              <Field label="Método de Preparo Preferido">
+                <input
+                  placeholder="Ex: Hario V60, Prensa Francesa, Espresso..."
+                  value={form.brew_method_preference}
+                  onChange={(e) => setForm({ ...form, brew_method_preference: e.target.value })}
+                />
+              </Field>
+              <Field label="Intensidade / Perfil de Paladar">
+                <input
+                  placeholder="Ex: Cítrico/Frutado, Encorpado, Suave/Doce..."
+                  value={form.intensity_preference}
+                  onChange={(e) => setForm({ ...form, intensity_preference: e.target.value })}
+                />
+              </Field>
+              <Field label="Alergias ou Restrições Alimentares" className="sm:col-span-2">
+                <input
+                  placeholder="Ex: Sem lactose, Sem glúten, Zero cafeína, Adoçante stevia..."
+                  value={form.dietary_restrictions}
+                  onChange={(e) => setForm({ ...form, dietary_restrictions: e.target.value })}
+                />
+              </Field>
+              <Field label="Como conheceu a cafeteria">
+                <input
+                  placeholder="Ex: Indicação de amigo, Instagram, Passou na frente..."
+                  value={form.acquisition_channel}
+                  onChange={(e) => setForm({ ...form, acquisition_channel: e.target.value })}
+                />
+              </Field>
+              <Field
+                label="Observações de Atendimento Minucioso (Disney)"
+                className="sm:col-span-2"
+              >
+                <textarea
+                  rows={2}
+                  placeholder="Ex: Sempre pede copo de água com gás antes do espresso, adora falar sobre cafés especiais..."
+                  value={form.service_notes}
+                  onChange={(e) => setForm({ ...form, service_notes: e.target.value })}
+                />
+              </Field>
+            </div>
+          </div>
+
+          <Field label="Data de Aniversário" error={errors.birthday}>
+            <input
+              type="date"
+              value={form.birthday}
+              onChange={(e) => setForm({ ...form, birthday: e.target.value })}
+            />
+          </Field>
+
+          {/* Outra data especial */}
+          <div className="space-y-1">
+            <Field label="Outra Data Especial (ex.: Cônjuge, Casamento)">
+              <div className="grid grid-cols-2 gap-1.5">
+                <input
+                  placeholder="Descrição (ex.: Esposa Ana)"
+                  value={form.special_date_description}
+                  onChange={(e) => setForm({ ...form, special_date_description: e.target.value })}
+                />
+                <input
+                  type="date"
+                  value={form.special_date}
+                  onChange={(e) => setForm({ ...form, special_date: e.target.value })}
+                />
+              </div>
+            </Field>
+          </div>
+
           <Field label="Empresa" error={errors.company}>
             <div className="space-y-1">
               {!isCreatingInlineEmpresa ? (
@@ -222,24 +341,6 @@ export function ContactDialog({
               )}
             </div>
           </Field>
-          <Field label="Data de Aniversário" error={errors.birthday}>
-            <input
-              type="date"
-              value={form.birthday}
-              onChange={(e) => setForm({ ...form, birthday: e.target.value })}
-            />
-          </Field>
-          <Field
-            label="Café Favorito / Perfil Preferido"
-            error={errors.favorite_coffee}
-            className="sm:col-span-2"
-          >
-            <input
-              placeholder="Ex: Catuaí Amarelo, Torra Média, Grãos para V60..."
-              value={form.favorite_coffee}
-              onChange={(e) => setForm({ ...form, favorite_coffee: e.target.value })}
-            />
-          </Field>
           <Field label="Cargo" error={errors.position}>
             <input
               value={form.position}
@@ -256,9 +357,9 @@ export function ContactDialog({
               <option value="inativo">Inativo</option>
             </select>
           </Field>
-          <Field label="Notas" error={errors.notes} className="sm:col-span-2">
+          <Field label="Notas Gerais" error={errors.notes} className="sm:col-span-2">
             <textarea
-              rows={3}
+              rows={2}
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />

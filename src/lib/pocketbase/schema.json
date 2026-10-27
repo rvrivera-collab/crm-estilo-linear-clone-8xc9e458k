@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T01:32:01.367Z",
+  "generatedAt": "2026-10-27T01:53:25.523Z",
   "collections": [
     {
       "name": "users",
@@ -241,6 +241,60 @@
         },
         {
           "name": "favorite_coffee",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nickname",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "roast_preference",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "brew_method_preference",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "intensity_preference",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dietary_restrictions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "special_date_description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "special_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "acquisition_channel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "service_notes",
           "type": "text",
           "required": false,
           "system": false
@@ -1017,6 +1071,93 @@
         "CREATE INDEX idx_purchases_contact ON purchases (contact)",
         "CREATE INDEX idx_purchases_date ON purchases (purchase_date)",
         "CREATE INDEX idx_purchases_owner ON purchases (owner)"
+      ]
+    },
+    {
+      "name": "journey_events",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)",
+        "delete": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "contact",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "cadastro",
+            "compra",
+            "nivel_alcancado",
+            "cupom_aniversario",
+            "whatsapp_enviado",
+            "whatsapp_falha",
+            "reengajamento",
+            "atendimento_especial"
+          ]
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "channel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_journey_events_contact ON journey_events (contact)",
+        "CREATE INDEX idx_journey_events_owner ON journey_events (owner)",
+        "CREATE INDEX idx_journey_events_created ON journey_events (created DESC)",
+        "CREATE INDEX idx_journey_events_type ON journey_events (type)"
       ]
     }
   ]

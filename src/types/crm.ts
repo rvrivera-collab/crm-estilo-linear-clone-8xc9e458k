@@ -98,6 +98,45 @@ export interface Purchase extends RecordModel {
   }
 }
 
+export interface JourneyEvent extends RecordModel {
+  contact: string
+  owner: string
+  type:
+    | 'cadastro'
+    | 'compra'
+    | 'nivel_alcancado'
+    | 'cupom_aniversario'
+    | 'whatsapp_enviado'
+    | 'whatsapp_falha'
+    | 'reengajamento'
+    | 'atendimento_especial'
+  title: string
+  description?: string
+  channel?: string
+  metadata?: Record<string, unknown>
+  expand?: {
+    contact?: Contact
+    owner?: UserRecord
+  }
+}
+
+export type CustomerJourneyStage =
+  | 'novo'
+  | 'ativo'
+  | 'em_risco'
+  | 'reengajamento'
+  | 'fa_incentivador'
+
+export interface CustomerJourneyStageInfo {
+  stage: CustomerJourneyStage
+  label: string
+  description: string
+  color: string
+  badgeBg: string
+  badgeText: string
+  iconName: string
+}
+
 export interface Contact extends RecordModel {
   name: string
   email: string
@@ -116,8 +155,153 @@ export interface Contact extends RecordModel {
   last_coupon_date?: string
   last_reengagement_date?: string
   favorite_coffee?: string
+  // Detalhes Disney / Encantamento & Sensorial
+  nickname?: string
+  roast_preference?: string
+  brew_method_preference?: string
+  intensity_preference?: string
+  dietary_restrictions?: string
+  special_date_description?: string
+  special_date?: string
+  acquisition_channel?: string
+  service_notes?: string
   custom_fields?: Record<string, string | number | boolean>
   expand?: { owner?: UserRecord; empresa?: Empresa }
+}
+
+/**
+ * Calcula o estágio atual na jornada Disney de atendimento:
+ * - novo: <= 1 compra ou cadastrado recentemente
+ * - fa_incentivador: Nível 3+ de fidelidade (20+ compras) ou fã leal ativo
+ * - ativo: comprou nos últimos 29 dias e tem 2+ compras
+ * - em_risco: 30 a 59 dias sem comprar (precisa de carinho e aroma novo)
+ * - reengajamento: 60+ dias sem comprar (resgate com encantamento e cupom)
+ */
+export function getCustomerJourneyStage(contact: Contact): CustomerJourneyStageInfo {
+  const purchases = contact.purchase_count || 0
+  const daysSince = getDaysSinceLastPurchase(contact.last_purchase_date)
+
+  if (purchases >= 20) {
+    return {
+      stage: 'fa_incentivador',
+      label: 'Fã & Embaixador VIP',
+      description: 'Cliente fiel apaixonado por cafés especiais (Nível 3+)',
+      color: '#9333ea',
+      badgeBg: 'bg-purple-50 border-purple-200',
+      badgeText: 'text-purple-700',
+      iconName: 'Crown',
+    }
+  }
+
+  if (daysSince !== null && daysSince >= 60) {
+    return {
+      stage: 'reengajamento',
+      label: 'Reengajamento Urgente',
+      description: 'Mais de 60 dias sem visita — momento de resgate acolhedor',
+      color: '#e11d48',
+      badgeBg: 'bg-rose-50 border-rose-200',
+      badgeText: 'text-rose-700',
+      iconName: 'Flame',
+    }
+  }
+
+  if (daysSince !== null && daysSince >= 30) {
+    return {
+      stage: 'em_risco',
+      label: 'Em Risco / Vencendo (30d+)',
+      description: 'Grãos provavelmente acabando em casa, convite ideal',
+      color: '#ea580c',
+      badgeBg: 'bg-orange-50 border-orange-200',
+      badgeText: 'text-orange-700',
+      iconName: 'Clock',
+    }
+  }
+
+  if (purchases <= 1 && (!daysSince || daysSince < 30)) {
+    return {
+      stage: 'novo',
+      label: 'Novo / Primeiros Passos',
+      description: 'Primeira impressão Disney — encantar e apresentar métodos',
+      color: '#2563eb',
+      badgeBg: 'bg-blue-50 border-blue-200',
+      badgeText: 'text-blue-700',
+      iconName: 'Sparkles',
+    }
+  }
+
+  return {
+    stage: 'ativo',
+    label: 'Ativo & Frequente',
+    description: 'Rotina de cafés frescos e relacionamento contínuo',
+    color: '#16a34a',
+    badgeBg: 'bg-emerald-50 border-emerald-200',
+    badgeText: 'text-emerald-700',
+    iconName: 'HeartHandshake',
+  }
+}
+
+/**
+ * Gerador de mensagem calorosa no estilo "Experiência Disney":
+ * Personaliza com nome ou apelido, café favorito, método preferido e cupom quando houver.
+ */
+export function buildDisneyWhatsAppMessage(params: {
+  contact: Contact
+  moment: 'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
+  couponCode?: string
+  customNote?: string
+}): string {
+  const { contact, moment, couponCode, customNote } = params
+  const displayName = contact.nickname?.trim() || contact.name.trim().split(' ')[0]
+  const coffeeDetail = contact.favorite_coffee?.trim()
+  const brewMethod = contact.brew_method_preference?.trim()
+  const loyalty = getLoyaltyLevel(contact.purchase_count || 0)
+  const code = couponCode || contact.last_coupon_code
+
+  if (moment === 'aniversario') {
+    let msg = `Olá, ${displayName}! 🎂✨\n\nHoje é um dia verdadeiramente especial e aqui na nossa cafeteria nós celebramos a sua vida com muito carinho e aroma de café fresco!`
+    if (coffeeDetail) {
+      msg += `\n\nSabemos do seu bom gosto pelo nosso café *${coffeeDetail}*${brewMethod ? ` preparado na ${brewMethod}` : ''}, e queremos que o seu dia seja repleto de momentos doces e inspiradores.`
+    }
+    if (code) {
+      msg += `\n\n🎁 Preparamos um presente exclusivo para você: *15% OFF* com o seu cupom pessoal *${code}* na sua próxima visita!`
+    }
+    msg += `\n\nQue o seu novo ciclo seja radiante! Te esperamos para um brinde com a xícara perfeita! ☕🎉`
+    return msg
+  }
+
+  if (moment === 'recorrencia') {
+    let msg = `Oi, ${displayName}! ☕💛 Sentimos sua falta por aqui!\n\nPassando para saber como você está e se os seus grãos especiais já estão no finzinho em casa.`
+    if (coffeeDetail) {
+      msg += ` Lembramos do quanto você aprecia nosso *${coffeeDetail}* e chegaram novos lotes fresquinhos com notas aromáticas incríveis!`
+    }
+    if (code) {
+      msg += `\n\nPara tornar o seu retorno ainda mais especial, separamos um mimo: use o código *${code}* para garantir seu desconto de boas-vindas!`
+    }
+    msg += `\n\nQuando puder, passa aqui para batermos um papo e prepararmos aquela extração perfeita para você. Um abraço caloroso da nossa equipe! ✨`
+    return msg
+  }
+
+  if (moment === 'nivel_fidelidade') {
+    let msg = `Parabéns, ${displayName}! ⭐☕ Você atingiu o *Nível ${loyalty.level} — ${loyalty.name}* no nosso Clube de Fidelidade!\n\n`
+    msg += `Cada visita sua enriquece a nossa história e nos enche de orgulho. Como ${loyalty.name}, você agora conta com *${loyalty.discountPct}% de benefício especial* em microlotes selecionados.`
+    if (coffeeDetail) {
+      msg += `\n\nO seu amor por *${coffeeDetail}* faz toda a diferença para o nosso time!`
+    }
+    msg += `\n\nObrigado por confiar no nosso trabalho artesanal. Esperamos você em breve para brindar essa conquista! ✨🏆`
+    return msg
+  }
+
+  // Personalizado Disney
+  let msg = `Olá, ${displayName}! ☕✨ Esperamos que o seu dia esteja maravilhoso!\n\n`
+  if (customNote) {
+    msg += `${customNote}\n\n`
+  } else {
+    msg += `Passando para desejar momentos inspiradores e cheios de aconchego com uma xícara quentinha de café especial.\n\n`
+  }
+  if (coffeeDetail) {
+    msg += `Qualquer novidade sobre safras do seu favorito (*${coffeeDetail}*), estamos sempre à sua disposição!`
+  }
+  return msg.trim()
 }
 
 export function getLoyaltyLevel(purchasesCount = 0): LoyaltyLevelInfo {
