@@ -21,7 +21,8 @@ import { useToast } from '@/hooks/use-toast'
 interface SendWhatsAppModalProps {
   open: boolean
   onClose: () => void
-  contact: Contact | null
+  contact?: Contact | null
+  allContacts?: Contact[]
   initialMoment?: 'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
   initialTemplateId?: string
   couponCode?: string
@@ -31,12 +32,26 @@ interface SendWhatsAppModalProps {
 export function SendWhatsAppModal({
   open,
   onClose,
-  contact,
+  contact: initialContact,
+  allContacts = [],
   initialMoment = 'personalizado',
   couponCode,
   onSent,
 }: SendWhatsAppModalProps) {
   const { toast } = useToast()
+  // Permite selecionar/trocar destinatário dentro do modal
+  const [activeContact, setActiveContact] = useState<Contact | null>(initialContact || null)
+  const [contactSearch, setContactSearch] = useState('')
+  const [isChangingContact, setIsChangingContact] = useState(!initialContact)
+
+  // Atualizar quando props mudam
+  useState(() => {
+    if (initialContact) {
+      setActiveContact(initialContact)
+      setIsChangingContact(false)
+    }
+  })
+
   const [moment, setMoment] = useState<
     'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
   >(initialMoment)
@@ -47,31 +62,47 @@ export function SendWhatsAppModal({
   const [lastWarning, setLastWarning] = useState<string | null>(null)
 
   // Gerar o rascunho caloroso no estilo Disney
-  const generatedMessage = contact
+  const currentContact = activeContact || initialContact || null
+  const generatedMessage = currentContact
     ? buildDisneyWhatsAppMessage({
-        contact,
+        contact: currentContact,
         moment,
-        couponCode: couponCode || contact.last_coupon_code,
+        couponCode: couponCode || currentContact.last_coupon_code,
         customNote: customText,
       })
     : ''
 
   const [message, setMessage] = useState(generatedMessage)
 
+  // Atualizar quando selecionar outro contato da lista
+  const handleSelectRecipient = (selected: Contact) => {
+    setActiveContact(selected)
+    setIsChangingContact(false)
+    const msg = buildDisneyWhatsAppMessage({
+      contact: selected,
+      moment,
+      couponCode: couponCode || selected.last_coupon_code,
+      customNote: customText,
+    })
+    setMessage(msg)
+  }
+
   // Atualizar quando mudar de momento ou quando abrir
   const handleMomentChange = (newMoment: typeof moment) => {
     setMoment(newMoment)
-    if (!contact) return
+    if (!currentContact) return
     if (newMoment === 'recorrencia') {
       setSelectedTemplateId('recompra_30d_aroma_saudade')
       const tmpl = DISNEY_MESSAGE_TEMPLATES[0]
-      setMessage(formatTemplateText(tmpl.text, contact, couponCode ? { couponCode } : undefined))
+      setMessage(
+        formatTemplateText(tmpl.text, currentContact, couponCode ? { couponCode } : undefined),
+      )
     } else {
       setSelectedTemplateId('')
       const msg = buildDisneyWhatsAppMessage({
-        contact,
+        contact: currentContact,
         moment: newMoment,
-        couponCode: couponCode || contact.last_coupon_code,
+        couponCode: couponCode || currentContact.last_coupon_code,
         customNote: customText,
       })
       setMessage(msg)
@@ -79,26 +110,33 @@ export function SendWhatsAppModal({
   }
 
   const handleSelectTemplate = (template: MessageTemplate) => {
-    if (!contact) return
+    if (!currentContact) return
     setSelectedTemplateId(template.id)
     const formatted = formatTemplateText(
       template.text,
-      contact,
+      currentContact,
       couponCode ? { couponCode } : undefined,
     )
     setMessage(formatted)
   }
 
   const handleSend = async () => {
-    if (!contact) return
+    if (!currentContact) {
+      toast({
+        variant: 'destructive',
+        title: 'Destinatário não selecionado',
+        description: 'Por favor, selecione um cliente da base para enviar.',
+      })
+      return
+    }
     setSending(true)
     setLastWarning(null)
     setWaFallbackUrl(null)
 
     try {
       const res = await sendDisneyWhatsApp({
-        contactId: contact.id,
-        phone: contact.phone,
+        contactId: currentContact.id,
+        phone: currentContact.phone,
         message,
         momentType: moment,
       })
@@ -106,7 +144,7 @@ export function SendWhatsAppModal({
       if (res.whatsappSent) {
         toast({
           title: '✨ Mensagem de Encantamento enviada!',
-          description: `Disparada com sucesso pela sua conta de WhatsApp para ${contact.name}.`,
+          description: `Disparada com sucesso pela sua conta de WhatsApp para ${currentContact.name}.`,
         })
         if (onSent) onSent()
         onClose()
@@ -138,9 +176,21 @@ export function SendWhatsAppModal({
     }
   }
 
-  if (!open || !contact) return null
+  if (!open) return null
 
-  const loyalty = getLoyaltyLevel(contact.purchase_count || 0)
+  // Contatos filtrados na busca do modal
+  const filteredContacts = allContacts.filter((c) => {
+    const q = contactSearch.toLowerCase().trim()
+    if (!q) return true
+    return (
+      c.name.toLowerCase().includes(q) ||
+      (c.phone && c.phone.includes(q)) ||
+      (c.nickname && c.nickname.toLowerCase().includes(q)) ||
+      (c.favorite_coffee && c.favorite_coffee.toLowerCase().includes(q))
+    )
+  })
+
+  const loyalty = currentContact ? getLoyaltyLevel(currentContact.purchase_count || 0) : null
 
   return (
     <div
@@ -161,8 +211,14 @@ export function SendWhatsAppModal({
                 Experiência Disney · Enviar WhatsApp
               </h2>
               <p className="text-[10px] text-[#64748b]">
-                Para: <strong>{contact.name}</strong>{' '}
-                {contact.phone ? `(${contact.phone})` : '(Sem telefone cadastrado)'}
+                {currentContact ? (
+                  <>
+                    Para: <strong>{currentContact.name}</strong>{' '}
+                    {currentContact.phone ? `(${currentContact.phone})` : '(Sem telefone)'}
+                  </>
+                ) : (
+                  'Selecione um cliente da base'
+                )}
               </p>
             </div>
           </div>
@@ -177,6 +233,87 @@ export function SendWhatsAppModal({
 
         {/* Corpo do modal */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+          {/* SELETOR / TROCA DE DESTINATÁRIO (BASE REAL DE CONTATOS) */}
+          <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-[#334155] flex items-center gap-1">
+                Destinatário da Base ({allContacts.length} clientes)
+              </label>
+              {currentContact && !isChangingContact && (
+                <button
+                  type="button"
+                  onClick={() => setIsChangingContact(true)}
+                  className="text-[10px] text-amber-700 hover:text-amber-800 font-semibold"
+                >
+                  Alterar destinatário
+                </button>
+              )}
+            </div>
+
+            {!currentContact || isChangingContact ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={contactSearch}
+                  onChange={(e) => setContactSearch(e.target.value)}
+                  placeholder="Buscar cliente por nome, telefone ou café favorito..."
+                  className="w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500"
+                />
+
+                <div className="max-h-36 overflow-y-auto rounded-md border border-[#e2e8f0] bg-white divide-y divide-[#f1f5f9]">
+                  {filteredContacts.length === 0 ? (
+                    <div className="p-3 text-center text-[11px] text-[#94a3b8]">
+                      Nenhum contato encontrado com este termo.
+                    </div>
+                  ) : (
+                    filteredContacts.slice(0, 50).map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handleSelectRecipient(c)}
+                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-amber-50/60 transition ${
+                          currentContact?.id === c.id
+                            ? 'bg-amber-50 font-bold text-amber-900'
+                            : 'text-[#1c1c1e]'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="font-semibold block truncate">{c.name}</span>
+                          <span className="text-[10px] text-[#64748b] font-mono">
+                            {c.phone || 'Sem telefone'}{' '}
+                            {c.favorite_coffee ? `· ☕ ${c.favorite_coffee}` : ''}
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-mono rounded bg-slate-100 text-[#475569] px-1.5 py-0.5 shrink-0 ml-2">
+                          {c.purchase_count || 0} compras
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-white rounded-md border border-[#e2e8f0] p-2.5">
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-[#1c1c1e] truncate">{currentContact.name}</p>
+                  <p className="text-[10px] text-[#64748b] font-mono">
+                    {currentContact.phone || 'Sem telefone cadastrado'} ·{' '}
+                    {currentContact.favorite_coffee
+                      ? `☕ ${currentContact.favorite_coffee}`
+                      : 'Café padrão'}
+                  </p>
+                </div>
+                {loyalty && (
+                  <span
+                    className={`text-[9px] font-bold px-2 py-0.5 rounded border shrink-0 ml-2 ${loyalty.badgeColor}`}
+                  >
+                    Nv.{loyalty.level} {loyalty.name}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Seletor de Momento de Encantamento */}
           <div>
             <label className="block text-[11px] font-bold text-[#475569] mb-1.5">
@@ -218,7 +355,7 @@ export function SendWhatsAppModal({
               >
                 <span className="text-xs">⭐ Novo Nível</span>
                 <span className="text-[9px] text-[#64748b]">
-                  Nv.{loyalty.level} {loyalty.name}
+                  {loyalty ? `Nv.${loyalty.level} ${loyalty.name}` : 'Fidelidade'}
                 </span>
               </button>
               <button
@@ -270,33 +407,35 @@ export function SendWhatsAppModal({
           </div>
 
           {/* Destaque das preferências sensoriais do cliente */}
-          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-1">
-            <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
-              Personalização Ativa do Cliente
-            </span>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-amber-950">
-              {contact.nickname && (
-                <span>
-                  Como prefere ser chamado: <strong>"{contact.nickname}"</strong>
-                </span>
-              )}
-              {contact.favorite_coffee && (
-                <span>
-                  Café favorito: <strong>{contact.favorite_coffee}</strong>
-                </span>
-              )}
-              {contact.brew_method_preference && (
-                <span>
-                  Método: <strong>{contact.brew_method_preference}</strong>
-                </span>
-              )}
-              {contact.dietary_restrictions && (
-                <span className="text-rose-800">
-                  Restrições: <strong>{contact.dietary_restrictions}</strong>
-                </span>
-              )}
+          {currentContact && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-1">
+              <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
+                Personalização Ativa do Cliente
+              </span>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-amber-950">
+                {currentContact.nickname && (
+                  <span>
+                    Como prefere ser chamado: <strong>"{currentContact.nickname}"</strong>
+                  </span>
+                )}
+                {currentContact.favorite_coffee && (
+                  <span>
+                    Café favorito: <strong>{currentContact.favorite_coffee}</strong>
+                  </span>
+                )}
+                {currentContact.brew_method_preference && (
+                  <span>
+                    Método: <strong>{currentContact.brew_method_preference}</strong>
+                  </span>
+                )}
+                {currentContact.dietary_restrictions && (
+                  <span className="text-rose-800">
+                    Restrições: <strong>{currentContact.dietary_restrictions}</strong>
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Área de edição da mensagem */}
           <div>
@@ -373,7 +512,7 @@ export function SendWhatsAppModal({
             )}
             <button
               type="button"
-              disabled={sending || !contact.phone}
+              disabled={sending || !currentContact || !currentContact.phone}
               onClick={handleSend}
               className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition disabled:opacity-60"
             >

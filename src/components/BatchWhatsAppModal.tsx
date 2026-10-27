@@ -103,15 +103,7 @@ export function BatchWhatsAppModal({
       const contact = contacts[i]
       setCurrentIndex(i + 1)
 
-      // Atualiza para 'sending'
-      setResults((prev) => ({
-        ...prev,
-        [contact.id]: {
-          ...prev[contact.id],
-          status: 'sending',
-        },
-      }))
-
+      // Se o cliente não tem telefone cadastrado
       if (!contact.phone) {
         setResults((prev) => ({
           ...prev,
@@ -124,6 +116,15 @@ export function BatchWhatsAppModal({
         failCount++
         continue
       }
+
+      // Atualiza para 'sending'
+      setResults((prev) => ({
+        ...prev,
+        [contact.id]: {
+          ...prev[contact.id],
+          status: 'sending',
+        },
+      }))
 
       // Gerar a mensagem personalizada única deste cliente com as variáveis
       const personalizedMsg = formatTemplateText(templateText, contact, {

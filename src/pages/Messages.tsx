@@ -8,6 +8,8 @@ import {
   ExternalLink,
   Filter,
   Flame,
+  Info,
+  Layers,
   MessageCircle,
   Phone,
   Plus,
@@ -18,12 +20,14 @@ import {
   Star,
   Ticket,
   User,
+  Users,
   XCircle,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
 import { ConnectorButton } from '@/components/skip/ConnectorButton'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
+import { BatchWhatsAppModal } from '@/components/BatchWhatsAppModal'
 import { listJourneyEvents } from '@/services/crm'
 import { listConnectors, type ConnectorStatus } from '@/lib/skipConnectors'
 import {
@@ -40,7 +44,7 @@ interface ClientConversation {
   contactId: string
   contact: Contact | null
   events: JourneyEvent[]
-  lastEvent: JourneyEvent
+  lastEvent: JourneyEvent | null
   totalMessages: number
   failedCount: number
 }
@@ -59,15 +63,23 @@ export default function Messages() {
   const [categoryFilter, setCategoryFilter] = useState<FilterCategory>('todos')
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'warning'>('all')
 
+  // Aba da lista lateral: 'conversas' (clientes com mensagens) ou 'base' (todos os clientes)
+  const [inboxTab, setInboxTab] = useState<'conversas' | 'base'>('conversas')
+
   // Conector WhatsApp
   const [connectorStatus, setConnectorStatus] = useState<ConnectorStatus | null>(null)
+  const [showSyncInfo, setShowSyncInfo] = useState(false)
 
-  // Modal para envio de nova mensagem
+  // Modal para envio de nova mensagem individual
   const [sendModalOpen, setSendModalOpen] = useState(false)
   const [targetContact, setTargetContact] = useState<Contact | null>(null)
   const [initialMoment, setInitialMoment] = useState<
     'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
   >('personalizado')
+
+  // Modal de envio em lote / campanha
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
+  const [selectedBatchContactIds, setSelectedBatchContactIds] = useState<string[]>([])
 
   // Carregar status do conector
   const loadConnector = () => {
@@ -158,20 +170,24 @@ export default function Messages() {
     })
 
     // Ordenar a lista de conversas pela mensagem mais recente de cada cliente
-    return list.sort(
-      (a, b) => new Date(b.lastEvent.created).getTime() - new Date(a.lastEvent.created).getTime(),
-    )
+    return list.sort((a, b) => {
+      const timeA = a.lastEvent ? new Date(a.lastEvent.created).getTime() : 0
+      const timeB = b.lastEvent ? new Date(b.lastEvent.created).getTime() : 0
+      return timeB - timeA
+    })
   }, [messageEvents, contactsMap])
 
-  // Inicializar contato ativo via searchParams ou primeiro da lista
+  // Inicializar contato ativo via searchParams ou primeiro da lista de conversas
   useEffect(() => {
     const paramContact = searchParams.get('contact')
     if (paramContact) {
       setActiveContactId(paramContact)
     } else if (!activeContactId && conversations.length > 0) {
       setActiveContactId(conversations[0].contactId)
+    } else if (!activeContactId && contacts.length > 0 && inboxTab === 'base') {
+      setActiveContactId(contacts[0].id)
     }
-  }, [conversations, searchParams, activeContactId])
+  }, [conversations, contacts, searchParams, activeContactId, inboxTab])
 
   // Classificar evento em categoria
   const getEventCategory = (ev: JourneyEvent): FilterCategory => {
@@ -207,11 +223,11 @@ export default function Messages() {
   // Conversas filtradas por busca e filtros
   const filteredConversations = useMemo(() => {
     return conversations.filter((c) => {
-      const name = c.contact?.name || c.lastEvent.expand?.contact?.name || 'Cliente'
+      const name = c.contact?.name || c.lastEvent?.expand?.contact?.name || 'Cliente'
       const phone = c.contact?.phone || ''
       const nickname = c.contact?.nickname || ''
-      const lastTitle = c.lastEvent.title || ''
-      const lastDesc = c.lastEvent.description || ''
+      const lastTitle = c.lastEvent?.title || ''
+      const lastDesc = c.lastEvent?.description || ''
 
       const q = search.toLowerCase()
       const matchSearch =
@@ -239,6 +255,20 @@ export default function Messages() {
     })
   }, [conversations, search, categoryFilter, statusFilter])
 
+  // Contatos da base inteira filtrados por busca
+  const filteredBaseContacts = useMemo(() => {
+    return contacts.filter((c) => {
+      const q = search.toLowerCase()
+      if (!q) return true
+      return (
+        c.name.toLowerCase().includes(q) ||
+        (c.phone && c.phone.includes(q)) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.favorite_coffee && c.favorite_coffee.toLowerCase().includes(q))
+      )
+    })
+  }, [contacts, search])
+
   // Conversa ativa selecionada
   const activeConversation = useMemo(() => {
     if (!activeContactId) return null
@@ -264,11 +294,10 @@ export default function Messages() {
   }
 
   const handleOpenComposer = (
-    contact: Contact | null,
+    contact?: Contact | null,
     moment: 'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado' = 'personalizado',
   ) => {
-    if (!contact) return
-    setTargetContact(contact)
+    setTargetContact(contact || null)
     setInitialMoment(moment)
     setSendModalOpen(true)
   }
@@ -289,18 +318,18 @@ export default function Messages() {
                 WhatsApp & Comunicação Disney
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800">
-                <MessageCircle className="size-3" /> {conversations.length} conversas
+                <MessageCircle className="size-3" /> {conversations.length} conversas com histórico
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-mono font-medium text-[#475569]">
-                {messageEvents.length} mensagens enviadas
+              <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-900">
+                <Users className="size-3" /> {contacts.length} clientes na base
               </span>
             </div>
             <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
               Mensagens (WhatsApp)
             </h1>
             <p className="mt-0.5 text-xs text-[#64748b]">
-              Histórico unificado de conversas, aniversários, recompra em 30 dias e avaliações do
-              Google por cliente.
+              Envie mensagens para qualquer cliente da base ({contacts.length} contatos) e acompanhe
+              o histórico de disparos Disney.
             </p>
           </div>
 
@@ -325,6 +354,17 @@ export default function Messages() {
               </span>
             </div>
 
+            {/* Informações da sincronização WhatsApp (Transparência Honestidade) */}
+            <button
+              type="button"
+              onClick={() => setShowSyncInfo(!showSyncInfo)}
+              className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50/80 px-2.5 py-1.5 text-xs font-semibold text-blue-900 hover:bg-blue-100 transition shadow-2xs"
+              title="Informações sobre sincronização com celular e WhatsApp Web"
+            >
+              <Info className="size-3.5 text-blue-700" />
+              <span>Sincronização</span>
+            </button>
+
             {/* Botão de Conectar/Desconectar do Conector */}
             <ConnectorButton
               toolkit="whatsapp"
@@ -339,24 +379,77 @@ export default function Messages() {
                 refreshCrm()
                 loadConnector()
               }}
-              title="Recarregar mensagens"
+              title="Recarregar mensagens e clientes"
               className="inline-flex items-center gap-1 rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#475569] shadow-2xs hover:bg-[#f8fafc] transition"
             >
               <RefreshCw className="size-3.5" />
             </button>
 
-            {/* Botão Nova Mensagem (abre seletor rápido caso não haja cliente ativo) */}
-            {activeContact && (
-              <button
-                type="button"
-                onClick={() => handleOpenComposer(activeContact)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition"
-              >
-                <Plus className="size-3.5" /> Nova Mensagem
-              </button>
-            )}
+            {/* Botão Campanha em Lote */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBatchContactIds(contacts.map((c) => c.id))
+                setBatchModalOpen(true)
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-2xs hover:bg-emerald-100 transition"
+              title="Disparar mensagem em lote para clientes da base"
+            >
+              <Layers className="size-3.5" /> Campanha em Lote
+            </button>
+
+            {/* Botão Nova Mensagem Individual (sempre visível, abre com seletor de cliente) */}
+            <button
+              type="button"
+              onClick={() => handleOpenComposer(activeContact || contacts[0] || null)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition"
+            >
+              <Plus className="size-3.5" /> Nova Mensagem
+            </button>
           </div>
         </div>
+
+        {/* Card informativo de Sincronização WhatsApp (Honestidade & Disney) */}
+        {showSyncInfo && (
+          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50/60 p-3.5 text-xs text-blue-950 space-y-2">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2 font-bold text-sm text-blue-950">
+                <Info className="size-4 text-blue-600 shrink-0" />
+                Como funciona a sincronização de WhatsApp no CRM:
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSyncInfo(false)}
+                className="text-blue-800 hover:text-blue-950 font-bold text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 text-[11px] leading-relaxed">
+              <div className="bg-white/80 p-2.5 rounded-md border border-blue-200">
+                <p className="font-bold text-emerald-800 flex items-center gap-1 mb-1">
+                  <CheckCircle2 className="size-3.5" /> Mensagens Enviadas pelo CRM
+                </p>
+                <p className="text-slate-700">
+                  Todas as mensagens disparadas pelo CRM (aniversários, recompra em 30 dias,
+                  boas-vindas ou personalizadas) ficam salvas aqui no histórico com canal, data e
+                  conteúdo do atendimento Disney.
+                </p>
+              </div>
+              <div className="bg-white/80 p-2.5 rounded-md border border-blue-200">
+                <p className="font-bold text-amber-900 flex items-center gap-1 mb-1">
+                  <AlertCircle className="size-3.5" /> Respostas do Celular / WhatsApp Web
+                </p>
+                <p className="text-slate-700">
+                  O conector oficial de WhatsApp Cloud API da Meta opera para disparos de saída
+                  (outbound). Respostas digitadas no celular pessoal ou WhatsApp Web não sincronizam
+                  automaticamente para dentro da caixa do CRM. Para continuar a conversa diretamente
+                  com o cliente, use o botão <strong>"Abrir Web"</strong> em cada contato.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Layout Inbox Linear de 2 Colunas (Mobile: Lista -> Detalhe com botão voltar) */}
@@ -364,10 +457,40 @@ export default function Messages() {
         {/* Painel Esquerdo: Lista de Conversas por Cliente */}
         <aside
           className={cn(
-            'w-full md:w-[320px] lg:w-[360px] shrink-0 border-r border-[#e5e7eb] bg-white flex flex-col min-h-0',
+            'w-full md:w-[330px] lg:w-[380px] shrink-0 border-r border-[#e5e7eb] bg-white flex flex-col min-h-0',
             activeContactId ? 'max-md:hidden' : 'flex',
           )}
         >
+          {/* Abas Superiores da Lista: Conversas vs Base Completa */}
+          <div className="flex border-b border-[#e5e7eb] bg-[#f8fafc] text-xs font-semibold shrink-0">
+            <button
+              type="button"
+              onClick={() => setInboxTab('conversas')}
+              className={cn(
+                'flex-1 py-2.5 px-3 border-b-2 text-center transition flex items-center justify-center gap-1.5',
+                inboxTab === 'conversas'
+                  ? 'border-amber-500 text-amber-900 bg-white font-bold'
+                  : 'border-transparent text-[#64748b] hover:text-[#1c1c1e]',
+              )}
+            >
+              <MessageCircle className="size-3.5 text-emerald-600" />
+              <span>Conversas ({conversations.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInboxTab('base')}
+              className={cn(
+                'flex-1 py-2.5 px-3 border-b-2 text-center transition flex items-center justify-center gap-1.5',
+                inboxTab === 'base'
+                  ? 'border-amber-500 text-amber-900 bg-white font-bold'
+                  : 'border-transparent text-[#64748b] hover:text-[#1c1c1e]',
+              )}
+            >
+              <Users className="size-3.5 text-amber-600" />
+              <span>Base de Clientes ({contacts.length})</span>
+            </button>
+          </div>
+
           {/* Barra de busca e filtros rápidos */}
           <div className="p-3 border-b border-[#e5e7eb] space-y-2 shrink-0 bg-[#fafafa]">
             <label className="flex h-8 w-full items-center rounded-md border border-[#e2e8f0] bg-white px-2.5 shadow-2xs">
@@ -375,54 +498,142 @@ export default function Messages() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar cliente, café ou texto..."
+                placeholder={
+                  inboxTab === 'base'
+                    ? 'Buscar entre os 220+ clientes da base...'
+                    : 'Buscar conversas por cliente, café ou texto...'
+                }
                 className="min-w-0 flex-1 bg-transparent text-[11px] text-[#1c1c1e] outline-none placeholder:text-[#94a3b8]"
               />
             </label>
 
-            {/* Filtros em pílulas */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[10px] no-scrollbar">
-              {(
-                [
-                  { id: 'todos', label: 'Todos' },
-                  { id: 'recompra', label: '☕ Recompra 30d' },
-                  { id: 'aniversario', label: '🎂 Aniversário' },
-                  { id: 'avaliacao', label: '⭐ Google' },
-                  { id: 'nivel', label: '🎖️ Nível' },
-                ] as const
-              ).map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategoryFilter(cat.id)}
-                  className={cn(
-                    'shrink-0 rounded-full px-2 py-0.5 font-medium transition',
-                    categoryFilter === cat.id
-                      ? 'bg-amber-500 text-white font-bold'
-                      : 'bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0]',
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
+            {/* Filtros em pílulas (visíveis na aba de conversas) */}
+            {inboxTab === 'conversas' && (
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 text-[10px] no-scrollbar">
+                {(
+                  [
+                    { id: 'todos', label: 'Todos' },
+                    { id: 'recompra', label: '☕ Recompra 30d' },
+                    { id: 'aniversario', label: '🎂 Aniversário' },
+                    { id: 'avaliacao', label: '⭐ Google' },
+                    { id: 'nivel', label: '🎖️ Nível' },
+                  ] as const
+                ).map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat.id)}
+                    className={cn(
+                      'shrink-0 rounded-full px-2 py-0.5 font-medium transition',
+                      categoryFilter === cat.id
+                        ? 'bg-amber-500 text-white font-bold'
+                        : 'bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0]',
+                    )}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Lista scrollável de conversas */}
+          {/* Lista scrollável: Conversas OU Base de Clientes */}
           <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-[#f1f5f9]">
             {loadingEvents || crmLoading ? (
               <div className="p-8 text-center text-xs text-[#94a3b8]">
                 <RefreshCw className="size-4 animate-spin mx-auto mb-2 text-amber-500" />
-                Carregando conversas...
+                Carregando...
               </div>
-            ) : filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-xs text-[#64748b] space-y-2">
+            ) : inboxTab === 'base' ? (
+              /* ABA: TODOS OS CLIENTES DA BASE */
+              filteredBaseContacts.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#64748b] space-y-2">
+                  <Users className="size-8 mx-auto text-[#cbd5e1]" />
+                  <p className="font-bold text-[#1c1c1e]">Nenhum cliente encontrado</p>
+                  <p className="text-[11px] text-[#94a3b8]">
+                    Verifique os termos da busca digitados acima.
+                  </p>
+                </div>
+              ) : (
+                filteredBaseContacts.map((contact) => {
+                  const isSelected = activeContactId === contact.id
+                  const loyalty = getLoyaltyLevel(contact.purchase_count || 0)
+                  const conv = conversations.find((c) => c.contactId === contact.id)
+
+                  return (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => handleSelectConversation(contact.id)}
+                      className={cn(
+                        'w-full text-left p-3 transition flex items-start gap-2.5 hover:bg-[#f8fafc]',
+                        isSelected
+                          ? 'bg-amber-50/70 border-l-3 border-amber-500 pl-2'
+                          : 'border-l-3 border-transparent',
+                      )}
+                    >
+                      {/* Avatar */}
+                      <div className="relative shrink-0 mt-0.5">
+                        <div className="size-8 rounded-full bg-amber-100 border border-amber-200 text-amber-900 grid place-items-center font-bold text-xs">
+                          {(contact.name || 'C').slice(0, 2).toUpperCase()}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-xs text-[#1c1c1e] truncate">
+                            {contact.name}
+                          </span>
+                          {loyalty && (
+                            <span
+                              className={cn(
+                                'text-[8px] font-bold px-1.5 py-0.2 rounded border shrink-0',
+                                loyalty.badgeColor,
+                              )}
+                            >
+                              Nv.{loyalty.level}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[10px] text-[#64748b] font-mono mt-0.5">
+                          <span>{contact.phone || 'Sem telefone'}</span>
+                          {contact.favorite_coffee && (
+                            <span className="truncate">· ☕ {contact.favorite_coffee}</span>
+                          )}
+                        </div>
+
+                        <div className="mt-1 flex items-center justify-between text-[9px] text-[#94a3b8]">
+                          <span>{contact.purchase_count || 0} compras</span>
+                          {conv ? (
+                            <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                              <MessageCircle className="size-2.5" /> {conv.totalMessages} msg
+                            </span>
+                          ) : (
+                            <span className="text-[#cbd5e1]">Sem mensagens</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })
+              )
+            ) : /* ABA: CONVERSAS COM MENSAGENS */
+            filteredConversations.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#64748b] space-y-3">
                 <MessageCircle className="size-8 mx-auto text-[#cbd5e1]" />
                 <p className="font-bold text-[#1c1c1e]">Nenhuma conversa encontrada</p>
                 <p className="text-[11px] text-[#94a3b8] leading-relaxed">
-                  As mensagens enviadas pelo CRM (aniversários, recompra de 30 dias e avaliações)
-                  aparecem agrupadas aqui por cliente.
+                  Você pode selecionar qualquer cliente na aba <strong>"Base de Clientes"</strong>{' '}
+                  acima para disparar a primeira mensagem.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setInboxTab('base')}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-amber-600 transition"
+                >
+                  <Users className="size-3.5" /> Ver todos os {contacts.length} clientes
+                </button>
               </div>
             ) : (
               filteredConversations.map((conv) => {
@@ -430,7 +641,6 @@ export default function Messages() {
                 const last = conv.lastEvent
                 const isSelected = activeContactId === conv.contactId
                 const loyalty = contact ? getLoyaltyLevel(contact.purchase_count || 0) : null
-                const category = getEventCategory(last)
 
                 return (
                   <button
@@ -457,11 +667,13 @@ export default function Messages() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <span className="font-bold text-xs text-[#1c1c1e] truncate">
-                          {contact?.name || last.expand?.contact?.name || 'Cliente'}
+                          {contact?.name || last?.expand?.contact?.name || 'Cliente'}
                         </span>
-                        <span className="font-mono text-[9px] text-[#94a3b8] shrink-0">
-                          {relativeTime(last.created)}
-                        </span>
+                        {last && (
+                          <span className="font-mono text-[9px] text-[#94a3b8] shrink-0">
+                            {relativeTime(last.created)}
+                          </span>
+                        )}
                       </div>
 
                       {contact?.nickname && (
@@ -470,10 +682,12 @@ export default function Messages() {
                         </p>
                       )}
 
-                      <p className="mt-1 text-[11px] text-[#475569] line-clamp-2 leading-relaxed">
-                        {last.title}
-                        {last.description ? ` · ${last.description}` : ''}
-                      </p>
+                      {last && (
+                        <p className="mt-1 text-[11px] text-[#475569] line-clamp-2 leading-relaxed">
+                          {last.title}
+                          {last.description ? ` · ${last.description}` : ''}
+                        </p>
+                      )}
 
                       <div className="mt-2 flex items-center justify-between text-[9px] font-mono text-[#94a3b8]">
                         <span className="flex items-center gap-1 text-emerald-700 font-medium">
@@ -812,9 +1026,18 @@ export default function Messages() {
           setTargetContact(null)
         }}
         contact={targetContact}
+        allContacts={contacts}
         initialMoment={initialMoment}
         couponCode={targetContact?.last_coupon_code}
         onSent={handleComposerSent}
+      />
+
+      {/* Modal de Campanha em Lote */}
+      <BatchWhatsAppModal
+        open={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        contacts={contacts.filter((c) => selectedBatchContactIds.includes(c.id))}
+        onCompleted={handleComposerSent}
       />
     </div>
   )

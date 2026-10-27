@@ -53,13 +53,36 @@ routerAdd(
           if (typeof $connectors !== 'undefined') {
             let sendResult = null
 
+            // Obter ou resolver phone_number_id se necessário via WHATSAPP_GET_PHONE_NUMBERS
+            let phoneId = 'default'
+            try {
+              if (typeof $connectors.executeAsOwner === 'function') {
+                const numbersRes = $connectors.executeAsOwner('WHATSAPP_GET_PHONE_NUMBERS', {})
+                if (numbersRes && numbersRes.successful && numbersRes.data) {
+                  const list = Array.isArray(numbersRes.data)
+                    ? numbersRes.data
+                    : Array.isArray(numbersRes.data.data)
+                      ? numbersRes.data.data
+                      : []
+                  if (list.length > 0 && list[0].id) {
+                    phoneId = String(list[0].id)
+                  }
+                }
+              }
+            } catch (numErr) {
+              console.log(
+                'Não foi possível obter phone_number_id dinâmico, usando default:',
+                numErr.message,
+              )
+            }
+
             // 1. Tentar como o usuário logado (cada usuário conecta seu próprio WhatsApp)
             if (typeof $connectors.execute === 'function' && e.auth) {
               try {
                 sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
                   to_number: cleanedPhone,
                   text: messageText,
-                  phone_number_id: 'default',
+                  phone_number_id: phoneId,
                 })
               } catch (userConnErr) {
                 console.log('Tentativa com conta do usuário falhou:', userConnErr.message)
@@ -75,13 +98,12 @@ routerAdd(
                 sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
                   to_number: cleanedPhone,
                   text: messageText,
-                  phone_number_id: 'default',
+                  phone_number_id: phoneId,
                 })
               } catch (ownerConnErr) {
                 console.log('Tentativa com conta do dono falhou:', ownerConnErr.message)
               }
             }
-
             if (sendResult && sendResult.successful) {
               whatsappSent = true
             } else {

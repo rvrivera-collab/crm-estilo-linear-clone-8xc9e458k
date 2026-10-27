@@ -22,7 +22,7 @@ export function ConnectorButton({
   name: string
   className?: string
   buttonClassName?: string
-  onStatusChange?: (status: ConnectorStatus | null) => void
+  onStatusChange?: (status: ConnectorStatus) => void
 }) {
   const [status, setStatus] = useState<ConnectorStatus | null>(null)
   const [busy, setBusy] = useState(false)
@@ -39,9 +39,9 @@ export function ConnectorButton({
     listConnectors()
       .then((all) => {
         if (!cancelled) {
-          const nextStatus = all.find((c) => c.toolkit === toolkit)?.status ?? 'not_connected'
-          setStatus(nextStatus)
-          onStatusChange?.(nextStatus)
+          const s = all.find((c) => c.toolkit === toolkit)?.status ?? 'not_connected'
+          setStatus(s)
+          onStatusChange?.(s)
         }
       })
       .catch((e: unknown) => {
@@ -60,9 +60,9 @@ export function ConnectorButton({
       listConnectors()
         .then((all) => {
           if (!cancelled) {
-            const nextStatus = all.find((c) => c.toolkit === toolkit)?.status ?? 'not_connected'
-            setStatus(nextStatus)
-            onStatusChange?.(nextStatus)
+            const s = all.find((c) => c.toolkit === toolkit)?.status ?? 'not_connected'
+            setStatus(s)
+            onStatusChange?.(s)
           }
         })
         .catch(() => {
@@ -83,8 +83,9 @@ export function ConnectorButton({
     try {
       if (status === 'connected') {
         await disconnect(toolkit)
-        setStatus('not_connected')
-        onStatusChange?.('not_connected')
+        const nextStatus = 'not_connected' as const
+        setStatus(nextStatus)
+        onStatusChange?.(nextStatus)
       } else {
         await connect(toolkit)
       }
