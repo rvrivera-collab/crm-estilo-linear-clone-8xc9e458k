@@ -24,6 +24,7 @@ import { useCrm } from '@/contexts/CrmContext'
 import { ContactDrawer } from '@/components/ContactDrawer'
 import { ContactDialog } from '@/components/forms/ContactDialog'
 import { AgendaEventDialog } from '@/components/forms/AgendaEventDialog'
+import { AgendaAnnualView } from '@/components/AgendaAnnualView'
 import { AGENDA_TYPE_COLORS, AGENDA_TYPE_LABELS, updateAgendaEvent } from '@/services/crm'
 import {
   datePt,
@@ -67,6 +68,9 @@ export default function Agenda() {
   const [currentYear, setCurrentYear] = useState(() => today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(() => today.getMonth()) // 0-indexed
 
+  // Modo de visualização: Mensal ou Anual (estilo Linear)
+  const [viewMode, setViewMode] = useState<'mensal' | 'anual'>('mensal')
+
   // Dia selecionado (para ver a lista do dia ao lado)
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr)
 
@@ -78,6 +82,7 @@ export default function Agenda() {
   const [eventModalOpen, setEventModalOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<AgendaEvent | null>(null)
   const [presetModalDate, setPresetModalDate] = useState<string>(todayStr)
+  const [presetModalType, setPresetModalType] = useState<AgendaEventType | undefined>(undefined)
 
   // Drawer de visualização de contato
   const [drawerContact, setDrawerContact] = useState<Contact | null>(null)
@@ -331,9 +336,18 @@ export default function Agenda() {
   }
 
   // Abrir modal de criação com data pré-selecionada
-  const handleOpenCreateEvent = (dateStr?: string) => {
+  const handleOpenCreateEvent = (dateStr?: string, defaultType?: AgendaEventType) => {
     setEditingEvent(null)
     setPresetModalDate(dateStr || selectedDateStr)
+    setPresetModalType(defaultType)
+    setEventModalOpen(true)
+  }
+
+  // Ação rápida: Adicionar lembrete pessoal
+  const handleAddReminder = (dateStr?: string) => {
+    setEditingEvent(null)
+    setPresetModalDate(dateStr || selectedDateStr || todayStr)
+    setPresetModalType('lembrete_pessoal')
     setEventModalOpen(true)
   }
 
@@ -411,6 +425,17 @@ export default function Agenda() {
               Hoje
             </button>
 
+            {/* Botão rápido: Adicionar Lembrete Pessoal */}
+            <button
+              type="button"
+              onClick={() => handleAddReminder()}
+              title="Adicionar um lembrete pessoal com data de hoje"
+              className="inline-flex items-center gap-1.5 rounded-md border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-700 shadow-2xs hover:bg-purple-100 hover:border-purple-300 transition"
+            >
+              <Sparkles className="size-3.5 text-purple-600" />
+              Adicionar lembrete
+            </button>
+
             <button
               type="button"
               onClick={() => handleOpenCreateEvent()}
@@ -422,40 +447,75 @@ export default function Agenda() {
           </div>
         </div>
 
-        {/* NAVEGAÇÃO DO MÊS E FILTROS */}
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-[#f1f5f9]">
-          {/* Navegador de Mês */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center rounded-md border border-[#cbd5e1] bg-white shadow-2xs">
+        {/* CONTROLES: VIEW SWITCHER (MENSAL / ANUAL) + NAVEGAÇÃO E FILTROS */}
+        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pt-2 border-t border-[#f1f5f9]">
+          {/* Switcher de visualização estilo Linear + Navegador */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Segmented Control / Tabs: Mensal | Anual */}
+            <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] bg-[#f1f5f9] p-0.5 shadow-2xs">
               <button
                 type="button"
-                onClick={handlePrevMonth}
-                title="Mês anterior"
-                className="p-1.5 text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#1c1c1e] transition rounded-l-md"
+                onClick={() => setViewMode('mensal')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-bold transition',
+                  viewMode === 'mensal'
+                    ? 'bg-white text-[#1c1c1e] shadow-2xs'
+                    : 'text-[#64748b] hover:text-[#1c1c1e]',
+                )}
               >
-                <ChevronLeft className="size-4" />
+                Mensal
               </button>
-              <div className="px-3 text-xs font-bold text-[#1c1c1e] min-w-[130px] text-center select-none">
-                {MONTH_NAMES[currentMonth]} {currentYear}
-              </div>
               <button
                 type="button"
-                onClick={handleNextMonth}
-                title="Próximo mês"
-                className="p-1.5 text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#1c1c1e] transition rounded-r-md"
+                onClick={() => setViewMode('anual')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-bold transition',
+                  viewMode === 'anual'
+                    ? 'bg-white text-[#1c1c1e] shadow-2xs'
+                    : 'text-[#64748b] hover:text-[#1c1c1e]',
+                )}
               >
-                <ChevronRight className="size-4" />
+                Anual
               </button>
             </div>
+
+            {/* Navegador de Mês (apenas se visão Mensal) */}
+            {viewMode === 'mensal' && (
+              <div className="flex items-center rounded-md border border-[#cbd5e1] bg-white shadow-2xs">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  title="Mês anterior"
+                  className="p-1.5 text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#1c1c1e] transition rounded-l-md"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <div className="px-3 text-xs font-bold text-[#1c1c1e] min-w-[130px] text-center select-none font-mono">
+                  {MONTH_NAMES[currentMonth]} {currentYear}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  title="Próximo mês"
+                  className="p-1.5 text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#1c1c1e] transition rounded-r-md"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+            )}
 
             {/* Destaque rápido se o dia selecionado for diferente de hoje */}
             {selectedDateStr !== todayStr && (
               <button
                 type="button"
-                onClick={() => setSelectedDateStr(todayStr)}
+                onClick={() => {
+                  setSelectedDateStr(todayStr)
+                  setCurrentYear(today.getFullYear())
+                  setCurrentMonth(today.getMonth())
+                }}
                 className="text-[11px] font-semibold text-amber-700 hover:underline"
               >
-                Ir para o dia selecionado de hoje
+                Ir para o dia de hoje
               </button>
             )}
           </div>
@@ -498,166 +558,199 @@ export default function Agenda() {
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL: DIVIDIDA EM CALENDÁRIO MENSAL + PAINEL LATERAL (LISTA DO DIA & PRÓXIMOS 7 DIAS) */}
+      {/* ÁREA PRINCIPAL: DIVIDIDA EM CALENDÁRIO (MENSAL OU ANUAL) + PAINEL LATERAL (LISTA DO DIA & PRÓXIMOS 7 DIAS) */}
       <div className="min-h-0 flex-1 overflow-hidden flex flex-col lg:flex-row">
-        {/* LADO ESQUERDO: GRADE MENSAL ESTILO LINEAR */}
+        {/* LADO ESQUERDO: GRADE MENSAL OU ANUAL ESTILO LINEAR */}
         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col border-b lg:border-b-0 lg:border-r border-[#e5e7eb]">
-          {/* Cabeçalho dos dias da semana */}
-          <div className="grid grid-cols-7 border-b border-[#e5e7eb] pb-2 text-center">
-            {WEEKDAY_NAMES.map((w, idx) => (
-              <div
-                key={w}
-                className={cn(
-                  'text-[11px] font-bold uppercase tracking-wider',
-                  idx === 0 || idx === 6 ? 'text-amber-800' : 'text-[#64748b]',
-                )}
-              >
-                {w}
+          {viewMode === 'anual' ? (
+            /* VISÃO ANUAL (12 MESES COMPACTOS COM DOTS E NAVEGAÇÃO DE ANO) */
+            <AgendaAnnualView
+              year={currentYear}
+              onYearChange={setCurrentYear}
+              selectedDateStr={selectedDateStr}
+              onSelectDate={(dateStr) => {
+                setSelectedDateStr(dateStr)
+                // Se o usuário selecionou uma data em outro mês/ano, atualiza também para manter sincronizado se mudar para mensal
+                const [y, m] = dateStr.split('-').map(Number)
+                if (y && m) {
+                  setCurrentYear(y)
+                  setCurrentMonth(m - 1)
+                }
+              }}
+              onDoubleClickDate={(dateStr) => {
+                handleOpenCreateEvent(dateStr)
+              }}
+              eventsByDate={eventsByDate}
+              birthdaysMap={birthdaysMap}
+              typeFilter={typeFilter}
+              searchQuery={search}
+              todayStr={todayStr}
+            />
+          ) : (
+            /* VISÃO MENSAL ESTILO LINEAR */
+            <>
+              {/* Cabeçalho dos dias da semana */}
+              <div className="grid grid-cols-7 border-b border-[#e5e7eb] pb-2 text-center">
+                {WEEKDAY_NAMES.map((w, idx) => (
+                  <div
+                    key={w}
+                    className={cn(
+                      'text-[11px] font-bold uppercase tracking-wider',
+                      idx === 0 || idx === 6 ? 'text-amber-800' : 'text-[#64748b]',
+                    )}
+                  >
+                    {w}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Grade dos dias do mês */}
-          <div className="grid grid-cols-7 gap-px bg-[#e5e7eb] mt-1 rounded-lg overflow-hidden border border-[#e5e7eb] flex-1 min-h-[500px]">
-            {calendarDays.map((cell) => {
-              const isSelected = cell.dateStr === selectedDateStr
-              // Filtragem dos eventos do dia
-              const filteredEvents = cell.events.filter((ev) => {
-                if (typeFilter !== 'todos' && typeFilter !== 'aniversarios') {
-                  if (ev.type !== typeFilter) return false
-                }
-                if (typeFilter === 'aniversarios') return false
-                if (search.trim()) {
-                  const s = search.toLowerCase()
-                  const customer = contacts.find((c) => c.id === ev.customer)
-                  const matchTitle = ev.title.toLowerCase().includes(s)
-                  const matchNotes = (ev.notes || '').toLowerCase().includes(s)
-                  const matchCustomer = customer ? customer.name.toLowerCase().includes(s) : false
-                  return matchTitle || matchNotes || matchCustomer
-                }
-                return true
-              })
-
-              const showBirthdays = typeFilter === 'todos' || typeFilter === 'aniversarios'
-              const filteredBirthdays = showBirthdays
-                ? cell.birthdays.filter((c) => {
+              {/* Grade dos dias do mês */}
+              <div className="grid grid-cols-7 gap-px bg-[#e5e7eb] mt-1 rounded-lg overflow-hidden border border-[#e5e7eb] flex-1 min-h-[500px]">
+                {calendarDays.map((cell) => {
+                  const isSelected = cell.dateStr === selectedDateStr
+                  // Filtragem dos eventos do dia
+                  const filteredEvents = cell.events.filter((ev) => {
+                    if (typeFilter !== 'todos' && typeFilter !== 'aniversarios') {
+                      if (ev.type !== typeFilter) return false
+                    }
+                    if (typeFilter === 'aniversarios') return false
                     if (search.trim()) {
-                      return c.name.toLowerCase().includes(search.toLowerCase())
+                      const s = search.toLowerCase()
+                      const customer = contacts.find((c) => c.id === ev.customer)
+                      const matchTitle = ev.title.toLowerCase().includes(s)
+                      const matchNotes = (ev.notes || '').toLowerCase().includes(s)
+                      const matchCustomer = customer
+                        ? customer.name.toLowerCase().includes(s)
+                        : false
+                      return matchTitle || matchNotes || matchCustomer
                     }
                     return true
                   })
-                : []
 
-              return (
-                <div
-                  key={cell.dateStr}
-                  onClick={() => setSelectedDateStr(cell.dateStr)}
-                  className={cn(
-                    'group relative flex flex-col bg-white p-1.5 sm:p-2 transition cursor-pointer min-h-[90px] sm:min-h-[110px]',
-                    !cell.isCurrentMonth && 'bg-[#f8fafc] text-[#94a3b8]',
-                    cell.isToday && 'bg-amber-50/40 ring-1 ring-inset ring-amber-400',
-                    isSelected && 'ring-2 ring-inset ring-amber-500 z-10 bg-amber-50/20',
-                    'hover:bg-[#f1f5f9]/70',
-                  )}
-                >
-                  {/* Topo do dia: número do dia + botão de adicionar rápido */}
-                  <div className="flex items-center justify-between mb-1">
-                    <span
+                  const showBirthdays = typeFilter === 'todos' || typeFilter === 'aniversarios'
+                  const filteredBirthdays = showBirthdays
+                    ? cell.birthdays.filter((c) => {
+                        if (search.trim()) {
+                          return c.name.toLowerCase().includes(search.toLowerCase())
+                        }
+                        return true
+                      })
+                    : []
+
+                  return (
+                    <div
+                      key={cell.dateStr}
+                      onClick={() => setSelectedDateStr(cell.dateStr)}
                       className={cn(
-                        'flex size-6 items-center justify-center rounded-full text-xs font-bold transition',
-                        cell.isToday
-                          ? 'bg-amber-500 text-white shadow-2xs font-extrabold'
-                          : isSelected
-                            ? 'bg-[#1c1c1e] text-white'
-                            : cell.isCurrentMonth
-                              ? 'text-[#1c1c1e]'
-                              : 'text-[#94a3b8]',
+                        'group relative flex flex-col bg-white p-1.5 sm:p-2 transition cursor-pointer min-h-[90px] sm:min-h-[110px]',
+                        !cell.isCurrentMonth && 'bg-[#f8fafc] text-[#94a3b8]',
+                        cell.isToday && 'bg-amber-50/40 ring-1 ring-inset ring-amber-400',
+                        isSelected && 'ring-2 ring-inset ring-amber-500 z-10 bg-amber-50/20',
+                        'hover:bg-[#f1f5f9]/70',
                       )}
                     >
-                      {cell.dayNum}
-                    </span>
-
-                    {/* Botão de + rápido no hover */}
-                    <button
-                      type="button"
-                      title="Agendar neste dia"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleOpenCreateEvent(cell.dateStr)
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1c1c1e] transition"
-                    >
-                      <Plus className="size-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Chips compactos dos Eventos no calendário (estilo Linear) */}
-                  <div className="space-y-1 overflow-hidden flex-1">
-                    {/* Aniversariantes do dia */}
-                    {filteredBirthdays.map((c) => (
-                      <div
-                        key={`bday-${c.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setDrawerContact(c)
-                        }}
-                        title={`Aniversariante: ${c.name} (clique para ver cliente)`}
-                        className="truncate rounded border border-rose-300 bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 hover:bg-rose-100 transition flex items-center gap-1 shadow-2xs"
-                      >
-                        <span className="shrink-0">🎂</span>
-                        <span className="truncate">{c.name}</span>
-                      </div>
-                    ))}
-
-                    {/* Eventos normais da agenda */}
-                    {filteredEvents.slice(0, 3).map((ev) => {
-                      const colors = AGENDA_TYPE_COLORS[ev.type] || AGENDA_TYPE_COLORS.outro
-                      return (
-                        <div
-                          key={ev.id}
-                          onClick={(e) => handleOpenEditEvent(ev, e)}
-                          title={`${ev.time ? `${ev.time} - ` : ''}${ev.title} (${AGENDA_TYPE_LABELS[ev.type] || ev.type})`}
+                      {/* Topo do dia: número do dia + botão de adicionar rápido */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span
                           className={cn(
-                            'group/item truncate rounded border px-1.5 py-0.5 text-[10px] font-medium transition flex items-center justify-between gap-1 shadow-2xs',
-                            colors.bg,
-                            colors.border,
-                            colors.text,
-                            ev.done &&
-                              'line-through opacity-60 border-slate-200 bg-slate-50 text-slate-500',
+                            'flex size-6 items-center justify-center rounded-full text-xs font-bold transition',
+                            cell.isToday
+                              ? 'bg-amber-500 text-white shadow-2xs font-extrabold'
+                              : isSelected
+                                ? 'bg-[#1c1c1e] text-white'
+                                : cell.isCurrentMonth
+                                  ? 'text-[#1c1c1e]'
+                                  : 'text-[#94a3b8]',
                           )}
                         >
-                          <div className="flex items-center gap-1 truncate min-w-0">
-                            <span className={cn('size-1.5 rounded-full shrink-0', colors.dot)} />
-                            {ev.time && (
-                              <span className="font-mono text-[9px] shrink-0 font-bold">
-                                {ev.time}
-                              </span>
-                            )}
-                            <span className="truncate">{ev.title}</span>
-                          </div>
-                          <button
-                            type="button"
-                            title={ev.done ? 'Reabrir' : 'Marcar concluído'}
-                            onClick={(e) => handleToggleDone(ev, e)}
-                            className="opacity-0 group-hover/item:opacity-100 shrink-0 text-slate-500 hover:text-emerald-600 transition"
-                          >
-                            <Check className="size-2.5" />
-                          </button>
-                        </div>
-                      )
-                    })}
+                          {cell.dayNum}
+                        </span>
 
-                    {/* Indicador de mais eventos se passar de 3 */}
-                    {filteredEvents.length > 3 && (
-                      <div className="text-[9px] font-bold text-[#64748b] text-center">
-                        +{filteredEvents.length - 3} mais
+                        {/* Botão de + rápido no hover */}
+                        <button
+                          type="button"
+                          title="Agendar neste dia"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleOpenCreateEvent(cell.dateStr)
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1c1c1e] transition"
+                        >
+                          <Plus className="size-3.5" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+
+                      {/* Chips compactos dos Eventos no calendário (estilo Linear) */}
+                      <div className="space-y-1 overflow-hidden flex-1">
+                        {/* Aniversariantes do dia */}
+                        {filteredBirthdays.map((c) => (
+                          <div
+                            key={`bday-${c.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDrawerContact(c)
+                            }}
+                            title={`Aniversariante: ${c.name} (clique para ver cliente)`}
+                            className="truncate rounded border border-rose-300 bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 hover:bg-rose-100 transition flex items-center gap-1 shadow-2xs"
+                          >
+                            <span className="shrink-0">🎂</span>
+                            <span className="truncate">{c.name}</span>
+                          </div>
+                        ))}
+
+                        {/* Eventos normais da agenda */}
+                        {filteredEvents.slice(0, 3).map((ev) => {
+                          const colors = AGENDA_TYPE_COLORS[ev.type] || AGENDA_TYPE_COLORS.outro
+                          return (
+                            <div
+                              key={ev.id}
+                              onClick={(e) => handleOpenEditEvent(ev, e)}
+                              title={`${ev.time ? `${ev.time} - ` : ''}${ev.title} (${AGENDA_TYPE_LABELS[ev.type] || ev.type})`}
+                              className={cn(
+                                'group/item truncate rounded border px-1.5 py-0.5 text-[10px] font-medium transition flex items-center justify-between gap-1 shadow-2xs',
+                                colors.bg,
+                                colors.border,
+                                colors.text,
+                                ev.done &&
+                                  'line-through opacity-60 border-slate-200 bg-slate-50 text-slate-500',
+                              )}
+                            >
+                              <div className="flex items-center gap-1 truncate min-w-0">
+                                <span
+                                  className={cn('size-1.5 rounded-full shrink-0', colors.dot)}
+                                />
+                                {ev.time && (
+                                  <span className="font-mono text-[9px] shrink-0 font-bold">
+                                    {ev.time}
+                                  </span>
+                                )}
+                                <span className="truncate">{ev.title}</span>
+                              </div>
+                              <button
+                                type="button"
+                                title={ev.done ? 'Reabrir' : 'Marcar concluído'}
+                                onClick={(e) => handleToggleDone(ev, e)}
+                                className="opacity-0 group-hover/item:opacity-100 shrink-0 text-slate-500 hover:text-emerald-600 transition"
+                              >
+                                <Check className="size-2.5" />
+                              </button>
+                            </div>
+                          )
+                        })}
+
+                        {/* Indicador de mais eventos se passar de 3 */}
+                        {filteredEvents.length > 3 && (
+                          <div className="text-[9px] font-bold text-[#64748b] text-center">
+                            +{filteredEvents.length - 3} mais
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {/* LADO DIREITO: AGENDA DO DIA SELECIONADO & PAINEL PRÓXIMOS 7 DIAS */}
@@ -673,13 +766,24 @@ export default function Agenda() {
                   {selectedDateFormatted}
                 </h2>
               </div>
-              <button
-                type="button"
-                onClick={() => handleOpenCreateEvent(selectedDateStr)}
-                className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-600 transition shadow-2xs"
-              >
-                <Plus className="size-3.5" /> Adicionar
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleAddReminder(selectedDateStr)}
+                  title="Adicionar lembrete para este dia"
+                  className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-xs font-bold text-purple-700 hover:bg-purple-100 transition shadow-2xs"
+                >
+                  <Sparkles className="size-3 text-purple-600" />
+                  Lembrete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenCreateEvent(selectedDateStr)}
+                  className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-600 transition shadow-2xs"
+                >
+                  <Plus className="size-3.5" /> Novo
+                </button>
+              </div>
             </div>
 
             {/* Lista de eventos do dia selecionado */}
@@ -904,6 +1008,7 @@ export default function Agenda() {
         onOpenChange={setEventModalOpen}
         event={editingEvent}
         presetDate={presetModalDate}
+        presetType={presetModalType}
       />
 
       {/* DRAWER DE DETALHES DO CLIENTE (aberto ao clicar no chip de aniversário) */}

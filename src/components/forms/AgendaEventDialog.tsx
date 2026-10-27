@@ -25,6 +25,7 @@ interface AgendaEventDialogProps {
   event?: AgendaEvent | null
   presetDate?: string // YYYY-MM-DD
   presetCustomerId?: string
+  presetType?: AgendaEventType
   onSaved?: () => void
   onDeleted?: () => void
 }
@@ -35,6 +36,7 @@ export function AgendaEventDialog({
   event,
   presetDate,
   presetCustomerId,
+  presetType,
   onSaved,
   onDeleted,
 }: AgendaEventDialogProps) {
@@ -55,12 +57,12 @@ export function AgendaEventDialog({
       title: event?.title || '',
       date: defaultDate,
       time: event?.time || '',
-      type: (event?.type || 'follow_up') as AgendaEventType,
+      type: (event?.type || presetType || 'follow_up') as AgendaEventType,
       customer: event?.customer || presetCustomerId || '',
       notes: event?.notes || '',
       done: Boolean(event?.done),
     }),
-    [event, defaultDate, presetCustomerId],
+    [event, defaultDate, presetCustomerId, presetType],
   )
 
   const [form, setForm] = useState(initial)
