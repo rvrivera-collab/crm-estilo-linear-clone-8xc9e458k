@@ -7,6 +7,7 @@ import {
   listDeals,
   listEmpresas,
   listOrders,
+  listReferrals,
   listStages,
   listUsers,
 } from '@/services/crm'
@@ -17,6 +18,7 @@ import type {
   Deal,
   Empresa,
   Order,
+  Referral,
   Stage,
   UserRecord,
 } from '@/types/crm'
@@ -29,6 +31,7 @@ export function CrmProvider({ children }: PropsWithChildren) {
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [referrals, setReferrals] = useState<Referral[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,6 +43,7 @@ export function CrmProvider({ children }: PropsWithChildren) {
       nextEmpresas,
       nextDeals,
       nextOrders,
+      nextReferrals,
       nextActivities,
       nextUsers,
     ] = await Promise.all([
@@ -48,6 +52,7 @@ export function CrmProvider({ children }: PropsWithChildren) {
       listEmpresas(),
       listDeals(),
       listOrders(),
+      listReferrals(),
       listActivities(),
       listUsers(),
     ])
@@ -56,6 +61,7 @@ export function CrmProvider({ children }: PropsWithChildren) {
     setEmpresas(nextEmpresas)
     setDeals(nextDeals)
     setOrders(nextOrders)
+    setReferrals(nextReferrals)
     setActivities(nextActivities)
     setUsers(nextUsers)
     setLoading(false)
@@ -90,10 +96,26 @@ export function CrmProvider({ children }: PropsWithChildren) {
       .then(setOrders)
       .catch(() => {})
   })
+  useRealtime<Referral>('referrals', () => {
+    listReferrals()
+      .then(setReferrals)
+      .catch(() => {})
+  })
 
   const value = useMemo(
-    () => ({ stages, contacts, empresas, deals, orders, activities, users, loading, refresh }),
-    [stages, contacts, empresas, deals, orders, activities, users, loading, refresh],
+    () => ({
+      stages,
+      contacts,
+      empresas,
+      deals,
+      orders,
+      referrals,
+      activities,
+      users,
+      loading,
+      refresh,
+    }),
+    [stages, contacts, empresas, deals, orders, referrals, activities, users, loading, refresh],
   )
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>
 }

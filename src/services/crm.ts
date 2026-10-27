@@ -12,6 +12,8 @@ import type {
   Order,
   OrderStage,
   Purchase,
+  Referral,
+  ReferralStatus,
   Stage,
   UserRecord,
 } from '@/types/crm'
@@ -161,6 +163,196 @@ export async function updateContact(id: string, data: Record<string, unknown>) {
 
 export async function deleteContact(id: string) {
   return pb.collection('contacts').delete(id)
+}
+
+// ==========================================
+// PROGRAMA DE INDICAÇÃO (REFERRALS)
+// ==========================================
+
+export const REFERRAL_STATUS_LABELS: Record<ReferralStatus, string> = {
+  indicado: 'Indicado',
+  primeiro_contato: 'Primeiro contato',
+  primeira_compra: 'Primeira compra (Convertido)',
+  cancelado: 'Cancelado',
+}
+
+export function generateReferralCodeForContact(contact: { name: string }): string {
+  const cleanName = contact.name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z]/g, '')
+    .substring(0, 4)
+    .toUpperCase()
+  const prefix = (cleanName.length >= 2 ? cleanName : 'CAFE').padEnd(4, 'X')
+  const randomNum = Math.floor(1000 + Math.random() * 9000)
+  return `${prefix}-${randomNum}`
+}
+
+export function generateRewardCouponCode(prefix = 'INDICOU'): string {
+  const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${prefix}-${randomChars}`
+}
+
+/**
+ * Mensagem pré-pronta Disney para o cliente compartilhar com amigos via WhatsApp
+ */
+export function buildReferralShareWhatsAppMessage(contact: Contact): string {
+  const displayName = contact.nickname?.trim() || contact.name.trim().split(' ')[0]
+  const code = contact.referral_code || generateReferralCodeForContact(contact)
+  const favorite = contact.favorite_coffee ? ` (eu adoro o ${contact.favorite_coffee}!)` : ''
+
+  return `Olá! ☕✨ Aqui é o(a) ${displayName}!
+
+Queria te convidar para conhecer a cafeteria de cafés especiais que eu mais amo no mundo${favorite}. Cada lote tem um aroma e cuidado artesanal inesquecíveis, com um acolhimento no padrão Disney!
+
+🎁 Use o meu código de indicação *${code}* e ganhe *15% OFF* no seu primeiro pedido ou xícara especial:
+👉 Peça pelo nosso WhatsApp ou visite a gente informando o código!
+
+Espero que você se apaixone como eu me apaixonei! Um abraço carinhoso!`
+}
+
+/**
+ * Mensagem pré-pronta Disney para parabenizar o indicador quando a indicação realiza a primeira compra
+ */
+export function buildReferralRewardCongratulationWhatsAppMessage(params: {
+  referrer: Contact
+  referredName: string
+  couponCode: string
+  discountPct?: number
+}): string {
+  const { referrer, referredName, couponCode, discountPct = 20 } = params
+  const displayName = referrer.nickname?.trim() || referrer.name.trim().split(' ')[0]
+
+  return `Que alegria imensa, ${displayName}! 🌟☕✨
+
+Seu(sua) amigo(a) *${referredName}* acabou de entrar para o nosso mundo de cafés especiais e realizou a sua primeira compra com o seu código de indicação!
+
+Para nós, não há demonstração maior de carinho e confiança do que ver a nossa casa sendo recomendada por quem tanto admiramos. Cada xícara compartilhada espalha afeto e boas histórias!
+
+🎁 Como nossa forma de agradecimento e retribuição no estilo Disney, preparamos um presente exclusivo para você:
+🎟️ Seu cupom de recompensa: *${couponCode}* (*${discountPct}% de desconto especial* na sua próxima visita ou pedido de microlote).
+
+Muito obrigado por fazer parte da nossa família de café! Esperamos você muito em breve para um brinde com café fresquinho! 💛☕`
+}
+
+export async function ensureContactReferralCode(contact: Contact): Promise<Contact> {
+  if (contact.referral_code) return contact
+  const newCode = generateReferralCodeForContact(contact)
+  return pb.collection<Contact>('contacts').update(contact.id, { referral_code: newCode })
+}
+
+export async function listReferrals(referrerId?: string) {
+  const filter = referrerId ? `referrer = "${referrerId}"` : ''
+  return pb.collection<Referral>('referrals').getFullList({
+    filter,
+    sort: '-created',
+    expand: 'referrer,owner,contact_converted',
+  })
+}
+
+export async function createReferral(data: {
+  referrerId: string
+  referred_name: string
+  referred_phone?: string
+  referred_email?: string
+  status?: ReferralStatus
+  notes?: string
+}) {
+  const ownerId = pb.authStore.record?.id
+  const status = data.status || 'indicado'
+  const newRef = await pb.collection<Referral>('referrals').create(
+    {
+      referrer: data.referrerId,
+      owner: ownerId,
+      referred_name: data.referred_name.trim(),
+      referred_phone: data.referred_phone?.trim() || '',
+      referred_email: data.referred_email?.trim() || '',
+      status,
+      notes: data.notes?.trim() || '',
+    },
+    { expand: 'referrer,owner' },
+  )
+
+  // Registrar evento na linha do tempo Disney do indicador
+  try {
+    const referrer = await pb.collection<Contact>('contacts').getOne(data.referrerId)
+    await pb.collection('journey_events').create({
+      contact: data.referrerId,
+      owner: ownerId,
+      type: 'indicacao_feita',
+      title: `🤝 Indicação Realizada: ${data.referred_name}`,
+      description: `${referrer.name} indicou um amigo para a cafeteria (${data.referred_name}${data.referred_phone ? ` - ${data.referred_phone}` : ''}). Estágio inicial: ${REFERRAL_STATUS_LABELS[status]}.`,
+      channel: 'indicacoes',
+      metadata: { referralId: newRef.id, referredName: data.referred_name, status },
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return newRef
+}
+
+export async function updateReferral(
+  id: string,
+  data: Partial<Referral> & { triggerRewardIfConverted?: boolean },
+) {
+  const previous = await pb
+    .collection<Referral>('referrals')
+    .getOne(id)
+    .catch(() => null)
+  const updated = await pb.collection<Referral>('referrals').update(id, data, {
+    expand: 'referrer,owner,contact_converted',
+  })
+
+  // Se avançou para primeira_compra e antes não era
+  if (data.status === 'primeira_compra' && previous && previous.status !== 'primeira_compra') {
+    const ownerId = pb.authStore.record?.id
+    let coupon = updated.reward_coupon
+    if (!coupon) {
+      coupon = generateRewardCouponCode()
+      await pb.collection('referrals').update(id, {
+        reward_coupon: coupon,
+        converted_at: new Date().toISOString(),
+      })
+      updated.reward_coupon = coupon
+      updated.converted_at = new Date().toISOString()
+    }
+
+    // Atualizar último cupom do cliente indicador
+    try {
+      await pb.collection<Contact>('contacts').update(updated.referrer, {
+        last_coupon_code: coupon,
+        last_coupon_date: new Date().toISOString(),
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+
+    // Registrar evento de recompensa de indicação na linha do tempo Disney do cliente
+    try {
+      await pb.collection('journey_events').create({
+        contact: updated.referrer,
+        owner: ownerId,
+        type: 'recompensa_indicacao',
+        title: `🎁 Recompensa de Indicação Conquistada! Cupom: ${coupon}`,
+        description: `A indicação de ${updated.referred_name} foi convertida com sucesso (primeira compra)! Cupom de recompensa ${coupon} gerado para o cliente indicador.`,
+        channel: 'indicacoes',
+        metadata: {
+          referralId: updated.id,
+          referredName: updated.referred_name,
+          rewardCoupon: coupon,
+        },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return updated
+}
+
+export async function deleteReferral(id: string) {
+  return pb.collection('referrals').delete(id)
 }
 
 // ==========================================

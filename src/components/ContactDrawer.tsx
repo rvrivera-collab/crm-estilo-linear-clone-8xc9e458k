@@ -402,6 +402,12 @@ export function ContactDrawer({
                   <span className="font-mono">{contact.cpf_cnpj}</span>
                 </p>
               )}
+              {contact.referral_code && (
+                <p className="flex items-center gap-2 text-[11px] text-amber-900 bg-amber-50/70 border border-amber-200/80 rounded px-2 py-1">
+                  <span className="font-semibold shrink-0">🎁 Código de Indicação:</span>
+                  <span className="font-mono font-extrabold">{contact.referral_code}</span>
+                </p>
+              )}
             </div>
 
             {/* BOX DISNEY: O QUE FAZ ESSE CLIENTE SE SENTIR ÚNICO */}

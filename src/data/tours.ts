@@ -296,6 +296,19 @@ export const PAGE_TOURS: Record<string, PageTourDefinition> = {
       },
     ],
   },
+  '/indicacoes': {
+    pagePath: '/indicacoes',
+    pageName: 'Programa de Indicação',
+    steps: [
+      {
+        target: 'header',
+        title: 'Programa de Indicação Disney',
+        description:
+          'Acompanhe indicadores de amigos indicados, taxa de conversão e embaixadores da sua cafeteria.',
+        placement: 'bottom',
+      },
+    ],
+  },
 }
 
 export function getTourForPath(path: string): PageTourDefinition | undefined {

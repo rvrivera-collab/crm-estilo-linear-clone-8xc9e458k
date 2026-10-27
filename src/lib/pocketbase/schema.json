@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T14:44:08.134Z",
+  "generatedAt": "2026-10-27T15:20:20.939Z",
   "collections": [
     {
       "name": "users",
@@ -325,6 +325,12 @@
         },
         {
           "name": "coffee_preference",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "referral_code",
           "type": "text",
           "required": false,
           "system": false
@@ -1143,7 +1149,9 @@
             "whatsapp_enviado",
             "whatsapp_falha",
             "reengajamento",
-            "atendimento_especial"
+            "atendimento_especial",
+            "indicacao_feita",
+            "recompensa_indicacao"
           ]
         },
         {
@@ -1299,6 +1307,103 @@
         "CREATE INDEX idx_orders_stage ON orders (stage)",
         "CREATE INDEX idx_orders_created ON orders (created DESC)",
         "CREATE INDEX idx_orders_position ON orders (position)"
+      ]
+    },
+    {
+      "name": "referrals",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "referrer",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "referred_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "referred_phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "referred_email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["indicado", "primeiro_contato", "primeira_compra", "cancelado"]
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "reward_coupon",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "converted_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contact_converted",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_referrals_referrer ON referrals (referrer)",
+        "CREATE INDEX idx_referrals_status ON referrals (status)",
+        "CREATE INDEX idx_referrals_owner ON referrals (owner)",
+        "CREATE INDEX idx_referrals_created ON referrals (created DESC)"
       ]
     }
   ]

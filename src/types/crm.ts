@@ -165,6 +165,26 @@ export interface CustomerJourneyStageInfo {
   iconName: string
 }
 
+export type ReferralStatus = 'indicado' | 'primeiro_contato' | 'primeira_compra' | 'cancelado'
+
+export interface Referral extends RecordModel {
+  referrer: string
+  owner?: string
+  referred_name: string
+  referred_phone?: string
+  referred_email?: string
+  status: ReferralStatus
+  notes?: string
+  reward_coupon?: string
+  converted_at?: string
+  contact_converted?: string
+  expand?: {
+    referrer?: Contact
+    owner?: UserRecord
+    contact_converted?: Contact
+  }
+}
+
 export interface Contact extends RecordModel {
   name: string
   email: string
@@ -183,6 +203,7 @@ export interface Contact extends RecordModel {
   last_coupon_date?: string
   last_reengagement_date?: string
   favorite_coffee?: string
+  referral_code?: string
   // Detalhes Disney / Encantamento & Sensorial
   nickname?: string
   roast_preference?: string
@@ -557,6 +578,7 @@ export type CrmData = {
   empresas: Empresa[]
   deals: Deal[]
   orders: Order[]
+  referrals: Referral[]
   activities: Activity[]
   users: UserRecord[]
   loading: boolean
