@@ -95,6 +95,23 @@ export default function Messages() {
 
   useEffect(() => {
     loadConnector()
+    const handleFocus = () => loadConnector()
+    const handleCustomChange = (e: Event) => {
+      const custom = e as CustomEvent<{ toolkit?: string; status?: ConnectorStatus }>
+      if (!custom.detail?.toolkit || custom.detail.toolkit === 'whatsapp') {
+        if (custom.detail?.status) {
+          setConnectorStatus(custom.detail.status)
+        } else {
+          loadConnector()
+        }
+      }
+    }
+    window.addEventListener('focus', handleFocus)
+    window.addEventListener('skip_connector_change', handleCustomChange)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('skip_connector_change', handleCustomChange)
+    }
   }, [])
 
   // Carregar todos os eventos de jornada
@@ -333,27 +350,8 @@ export default function Messages() {
             </p>
           </div>
 
-          {/* Área de Conexão do WhatsApp & Ações */}
+          {/* Ações Rápidas do Topo */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Indicador de Estado da Conexão */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-1.5 text-xs">
-              <span
-                className={cn(
-                  'size-2 rounded-full',
-                  connectorStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400',
-                )}
-              />
-              <span className="font-medium text-[#334155] text-[11px]">
-                {connectorStatus === 'connected' ? (
-                  <span className="text-emerald-700 font-bold">WhatsApp Conectado</span>
-                ) : connectorStatus === 'expired' ? (
-                  <span className="text-amber-700">Sessão Expirada</span>
-                ) : (
-                  <span className="text-[#64748b]">WhatsApp Desconectado (Link wa.me ativo)</span>
-                )}
-              </span>
-            </div>
-
             {/* Informações da sincronização WhatsApp (Transparência Honestidade) */}
             <button
               type="button"
@@ -364,9 +362,6 @@ export default function Messages() {
               <Info className="size-3.5 text-blue-700" />
               <span>Sincronização</span>
             </button>
-
-            {/* Botão de Conectar/Desconectar do Conector */}
-            <ConnectorButton toolkit="whatsapp" name="WhatsApp" />
 
             <button
               onClick={() => {
@@ -401,6 +396,73 @@ export default function Messages() {
             >
               <Plus className="size-3.5" /> Nova Mensagem
             </button>
+          </div>
+        </div>
+
+        {/* PAINEL DESTACADO DE CONEXÃO DO WHATSAPP (Visível & Acionável dentro do CRM) */}
+        <div
+          className={cn(
+            'mt-3 rounded-lg border p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs transition',
+            connectorStatus === 'connected'
+              ? 'border-emerald-200 bg-emerald-50/50'
+              : 'border-amber-300 bg-amber-50/60',
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                'size-9 rounded-full grid place-items-center shrink-0 border mt-0.5',
+                connectorStatus === 'connected'
+                  ? 'border-emerald-300 bg-emerald-100 text-emerald-700'
+                  : 'border-amber-300 bg-amber-100 text-amber-700',
+              )}
+            >
+              <MessageCircle className="size-5" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-extrabold text-[#1c1c1e]">
+                  Conexão de WhatsApp do CRM
+                </span>
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border',
+                    connectorStatus === 'connected'
+                      ? 'border-emerald-300 bg-emerald-100 text-emerald-800'
+                      : connectorStatus === 'expired'
+                        ? 'border-amber-300 bg-amber-100 text-amber-900'
+                        : 'border-slate-300 bg-white text-slate-700',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'size-1.5 rounded-full',
+                      connectorStatus === 'connected'
+                        ? 'bg-emerald-600 animate-pulse'
+                        : 'bg-amber-500',
+                    )}
+                  />
+                  {connectorStatus === 'connected'
+                    ? 'Conectado (Cloud API ativa)'
+                    : connectorStatus === 'expired'
+                      ? 'Sessão Expirada'
+                      : 'Desconectado'}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#475569] leading-relaxed max-w-2xl">
+                {connectorStatus === 'connected'
+                  ? 'Sua conta de WhatsApp está vinculada diretamente neste CRM. As mensagens individuais e campanhas em lote são disparadas pela API oficial.'
+                  : 'Vincule seu WhatsApp diretamente aqui no CRM com um clique para disparar mensagens automáticas de aniversário, recompra e fidelidade. (Enquanto desconectado, o disparo direto com 1 clique via link wa.me permanece ativo).'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+            <ConnectorButton
+              toolkit="whatsapp"
+              name="WhatsApp"
+              className="[&>button]:shadow-2xs [&>button]:font-bold"
+            />
           </div>
         </div>
 
@@ -446,7 +508,6 @@ export default function Messages() {
           </div>
         )}
       </header>
-
       {/* Layout Inbox Linear de 2 Colunas (Mobile: Lista -> Detalhe com botão voltar) */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Painel Esquerdo: Lista de Conversas por Cliente */}

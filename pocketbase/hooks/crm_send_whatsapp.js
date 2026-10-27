@@ -105,26 +105,26 @@ routerAdd(
               return null
             }
 
-            // Prioridade: Modo OWNER ($connectors.executeAsOwner) conforme configurado pelo dono,
-            // com fallback para a conta do usuário logado ($connectors.execute(e.auth)) se aplicável.
+            // Prioridade: Modo USUÁRIO ($connectors.execute(e.auth)) conectado via ConnectorButton na UI,
+            // com fallback secundário para $connectors.executeAsOwner caso configurado.
             let resolvedPhoneId = null
             let authMode = null
 
-            // 1. Tentar como owner primeiro ($connectors.executeAsOwner)
-            if (typeof $connectors.executeAsOwner === 'function') {
-              const ownerExec = (tool, args) => $connectors.executeAsOwner(tool, args)
-              resolvedPhoneId = resolvePhoneForExecutor(ownerExec, 'owner')
-              if (resolvedPhoneId) {
-                authMode = 'owner'
-              }
-            }
-
-            // 2. Se não resolveu como owner, tentar com a conta do usuário logado ($connectors.execute(e.auth))
-            if (!resolvedPhoneId && typeof $connectors.execute === 'function' && e.auth) {
+            // 1. Tentar com a conta do usuário logado ($connectors.execute(e.auth))
+            if (typeof $connectors.execute === 'function' && e.auth) {
               const userExec = (tool, args) => $connectors.execute(e.auth, tool, args)
               resolvedPhoneId = resolvePhoneForExecutor(userExec, 'user')
               if (resolvedPhoneId) {
                 authMode = 'user'
+              }
+            }
+
+            // 2. Se não resolveu como user, tentar como owner ($connectors.executeAsOwner)
+            if (!resolvedPhoneId && typeof $connectors.executeAsOwner === 'function') {
+              const ownerExec = (tool, args) => $connectors.executeAsOwner(tool, args)
+              resolvedPhoneId = resolvePhoneForExecutor(ownerExec, 'owner')
+              if (resolvedPhoneId) {
+                authMode = 'owner'
               }
             }
 
@@ -138,8 +138,19 @@ routerAdd(
               usedPhoneNumberId = resolvedPhoneId
               let sendResult = null
 
-              // Disparo prioritário via executeAsOwner se authMode for owner
-              if (authMode === 'owner' && typeof $connectors.executeAsOwner === 'function') {
+              // Disparo prioritário: como o app usa conector no modo usuário logado (ConnectorButton na UI),
+              // priorizamos a execução com a conta do usuário logado (e.auth).
+              if (authMode === 'user' && typeof $connectors.execute === 'function' && e.auth) {
+                try {
+                  sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
+                    to_number: cleanedPhone,
+                    text: messageText,
+                    phone_number_id: resolvedPhoneId,
+                  })
+                } catch (uSendErr) {
+                  console.log('Exceção ao disparar WHATSAPP_SEND_MESSAGE (user):', uSendErr.message)
+                }
+              } else if (authMode === 'owner' && typeof $connectors.executeAsOwner === 'function') {
                 try {
                   sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
                     to_number: cleanedPhone,
@@ -152,39 +163,11 @@ routerAdd(
                     oSendErr.message,
                   )
                 }
-              } else if (
-                authMode === 'user' &&
-                typeof $connectors.execute === 'function' &&
-                e.auth
-              ) {
-                try {
-                  sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
-                    to_number: cleanedPhone,
-                    text: messageText,
-                    phone_number_id: resolvedPhoneId,
-                  })
-                } catch (uSendErr) {
-                  console.log('Exceção ao disparar WHATSAPP_SEND_MESSAGE (user):', uSendErr.message)
-                }
               }
 
               // Fallback cruzado se a tentativa primária falhou
               if (!sendResult || !sendResult.successful) {
-                if (authMode !== 'owner' && typeof $connectors.executeAsOwner === 'function') {
-                  try {
-                    sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
-                      to_number: cleanedPhone,
-                      text: messageText,
-                      phone_number_id: resolvedPhoneId,
-                    })
-                  } catch (oFallbackErr) {
-                    console.log('Fallback executeAsOwner falhou:', oFallbackErr.message)
-                  }
-                } else if (
-                  authMode !== 'user' &&
-                  typeof $connectors.execute === 'function' &&
-                  e.auth
-                ) {
+                if (authMode !== 'user' && typeof $connectors.execute === 'function' && e.auth) {
                   try {
                     sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
                       to_number: cleanedPhone,
@@ -194,9 +177,21 @@ routerAdd(
                   } catch (uFallbackErr) {
                     console.log('Fallback execute user falhou:', uFallbackErr.message)
                   }
+                } else if (
+                  authMode !== 'owner' &&
+                  typeof $connectors.executeAsOwner === 'function'
+                ) {
+                  try {
+                    sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
+                      to_number: cleanedPhone,
+                      text: messageText,
+                      phone_number_id: resolvedPhoneId,
+                    })
+                  } catch (oFallbackErr) {
+                    console.log('Fallback executeAsOwner falhou:', oFallbackErr.message)
+                  }
                 }
               }
-
               if (sendResult && sendResult.successful) {
                 whatsappSent = true
                 sendMethod = 'api'

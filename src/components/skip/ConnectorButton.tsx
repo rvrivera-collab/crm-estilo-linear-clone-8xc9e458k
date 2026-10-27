@@ -58,12 +58,13 @@ export function ConnectorButton({
         })
     }
     window.addEventListener('focus', refresh)
+    // Broadcast connector state change so other components or pages react
+    window.dispatchEvent(new CustomEvent('skip_connector_change', { detail: { toolkit, status } }))
     return () => {
       cancelled = true
       window.removeEventListener('focus', refresh)
     }
-  }, [toolkit])
-
+  }, [toolkit, status])
   const onClick = async () => {
     setBusy(true)
     setError(null)
@@ -72,6 +73,11 @@ export function ConnectorButton({
       if (status === 'connected') {
         await disconnect(toolkit)
         setStatus('not_connected')
+        window.dispatchEvent(
+          new CustomEvent('skip_connector_change', {
+            detail: { toolkit, status: 'not_connected' },
+          }),
+        )
       } else {
         await connect(toolkit)
       }
@@ -100,7 +106,13 @@ export function ConnectorButton({
         onClick={onClick}
         disabled={busy || status === null}
         aria-busy={busy}
-        className="inline-flex items-center rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-50"
+        className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer ${
+          status === 'connected'
+            ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300'
+            : status === 'expired'
+              ? 'border border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
+              : 'border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+        }`}
       >
         {label}
       </button>

@@ -318,31 +318,48 @@ export default function Settings() {
             <SettingsCard
               id="whatsapp"
               title="Conexão do WhatsApp"
-              description="Conecte seu WhatsApp para enviar mensagens calorosas e automações direto aos seus clientes."
+              description="Vincule sua conta de WhatsApp diretamente dentro do CRM para automações e disparos da jornada Disney."
             >
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-[#e2e8f0] bg-[#fafafa] p-4">
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <MessageCircle className="size-4 text-emerald-600" />
-                      <span className="text-xs font-bold text-[#1c1c1e]">
-                        Conta do WhatsApp (Cloud API)
-                      </span>
+                      <div className="size-8 rounded-full bg-emerald-100 border border-emerald-200 grid place-items-center text-emerald-700">
+                        <MessageCircle className="size-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#1c1c1e]">
+                          Vincular WhatsApp ao CRM
+                        </span>
+                        <p className="text-[10px] text-emerald-700 font-semibold">
+                          Conector Oficial Meta / Cloud API
+                        </p>
+                      </div>
                     </div>
                     <p className="text-[11px] text-[#64748b] max-w-xl leading-relaxed">
-                      Conecte sua conta pessoal ou empresarial do WhatsApp para disparar as
-                      mensagens dos aniversariantes, avisos de recompra em 30 dias e convites de
-                      avaliação do Google diretamente pelo CRM.
+                      Conecte seu WhatsApp com um clique. Ao conectar, o CRM dispara as mensagens de
+                      aniversário, avisos de recompra em 30 dias e mensagens da base automaticamente
+                      pela sua conta.
                     </p>
                   </div>
                   <div className="shrink-0">
                     <ConnectorButton toolkit="whatsapp" name="WhatsApp" />
                   </div>
                 </div>
-                <p className="text-[10px] text-[#64748b]">
-                  Dica: mesmo desconectado, o CRM permite abrir o chat rapidamente pelo WhatsApp
-                  Web/App com 1 clique (wa.me) mantendo todo o histórico salvo na jornada.
-                </p>
+
+                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-[11px] text-[#475569] space-y-1">
+                  <p className="font-bold text-[#1c1c1e]">Como funciona a conexão dentro do CRM:</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-[#64748b]">
+                    <li>
+                      <strong>Conectado:</strong> Disparos são enviados via WhatsApp Cloud API
+                      diretamente.
+                    </li>
+                    <li>
+                      <strong>Desconectado:</strong> O CRM não fica bloqueado; ele ativa o envio com
+                      1 clique pelo link seguro wa.me (WhatsApp Web/App).
+                    </li>
+                  </ul>
+                </div>
               </div>
             </SettingsCard>
 
