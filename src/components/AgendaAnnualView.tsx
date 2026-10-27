@@ -67,14 +67,15 @@ export function AgendaAnnualView({
       const days: MiniMonthDay[] = []
 
       // Dias do mês anterior para completar o alinhamento
+      const prevYear = monthIndex === 0 ? year - 1 : year
+      const prevMonthIdx = monthIndex === 0 ? 11 : monthIndex - 1
+      const prevMonthStr = String(prevMonthIdx + 1).padStart(2, '0')
+
       for (let i = startingDayOfWeek - 1; i >= 0; i--) {
         const dayNum = daysInPrevMonth - i
-        const prevDate = new Date(year, monthIndex - 1, dayNum)
-        const y = prevDate.getFullYear()
-        const m = String(prevDate.getMonth() + 1).padStart(2, '0')
         const d = String(dayNum).padStart(2, '0')
-        const dateStr = `${y}-${m}-${d}`
-        const mmdd = `${m}-${d}`
+        const dateStr = `${prevYear}-${prevMonthStr}-${d}`
+        const mmdd = `${prevMonthStr}-${d}`
 
         days.push({
           dateStr,
@@ -88,11 +89,11 @@ export function AgendaAnnualView({
       }
 
       // Dias do mês atual
+      const curMonthStr = String(monthIndex + 1).padStart(2, '0')
       for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
-        const m = String(monthIndex + 1).padStart(2, '0')
         const d = String(dayNum).padStart(2, '0')
-        const dateStr = `${year}-${m}-${d}`
-        const mmdd = `${m}-${d}`
+        const dateStr = `${year}-${curMonthStr}-${d}`
+        const mmdd = `${curMonthStr}-${d}`
 
         days.push({
           dateStr,
@@ -107,13 +108,14 @@ export function AgendaAnnualView({
 
       // Preenche os dias restantes da última semana (grid 7 colunas)
       const remainder = (7 - (days.length % 7)) % 7
+      const nextYear = monthIndex === 11 ? year + 1 : year
+      const nextMonthIdx = monthIndex === 11 ? 0 : monthIndex + 1
+      const nextMonthStr = String(nextMonthIdx + 1).padStart(2, '0')
+
       for (let i = 1; i <= remainder; i++) {
-        const nextDate = new Date(year, monthIndex + 1, i)
-        const y = nextDate.getFullYear()
-        const m = String(nextDate.getMonth() + 1).padStart(2, '0')
         const d = String(i).padStart(2, '0')
-        const dateStr = `${y}-${m}-${d}`
-        const mmdd = `${m}-${d}`
+        const dateStr = `${nextYear}-${nextMonthStr}-${d}`
+        const mmdd = `${nextMonthStr}-${d}`
 
         days.push({
           dateStr,
@@ -145,9 +147,8 @@ export function AgendaAnnualView({
       }
     })
   }, [year, todayStr, selectedDateStr, eventsByDate, birthdaysMap])
-
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 w-full min-w-0">
       {/* Barra de controle de Ano estilo Linear */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-[#e5e7eb] bg-white p-3 shadow-2xs">
         <div className="flex items-center gap-2">
@@ -212,8 +213,8 @@ export function AgendaAnnualView({
         </div>
       </div>
 
-      {/* Grade de 12 meses (3 colunas em lg, 2 em md, 1 em telas pequenas) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {/* Grade de 12 meses (1 col mobile, 2 cols em tablet/laptop md, 3 cols em tela larga 2xl) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5 sm:gap-4 w-full">
         {monthsData.map((m) => {
           const isCurrentMonthOfSystem =
             new Date().getFullYear() === year && new Date().getMonth() === m.monthIndex
@@ -222,7 +223,7 @@ export function AgendaAnnualView({
             <div
               key={m.monthIndex}
               className={cn(
-                'rounded-lg border bg-white p-3 shadow-2xs transition hover:border-[#cbd5e1] flex flex-col',
+                'rounded-lg border bg-white p-3 shadow-2xs transition hover:border-[#cbd5e1] flex flex-col min-w-0',
                 isCurrentMonthOfSystem
                   ? 'border-amber-300 ring-1 ring-amber-200'
                   : 'border-[#e5e7eb]',
@@ -261,7 +262,7 @@ export function AgendaAnnualView({
               </div>
 
               {/* Dias da semana em formato mini */}
-              <div className="grid grid-cols-7 text-center mb-1">
+              <div className="grid grid-cols-7 text-center mb-1 select-none">
                 {MINI_WEEKDAYS.map((w, idx) => (
                   <span
                     key={idx}
@@ -276,7 +277,7 @@ export function AgendaAnnualView({
               </div>
 
               {/* Grade dos dias do mini mês */}
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                 {m.days.map((cell) => {
                   // Filtra eventos conforme tipo e busca
                   const filteredEvents = cell.events.filter((ev) => {
@@ -297,7 +298,6 @@ export function AgendaAnnualView({
                     (typeFilter === 'todos' || typeFilter === 'aniversarios') &&
                     cell.birthdays.length > 0
 
-                  const hasItems = filteredEvents.length > 0 || showBirthdays
                   const isSelected = cell.dateStr === selectedDateStr
 
                   // Coleta cores dos dots de eventos (máximo 3 dots para não estourar a célula)
@@ -339,7 +339,7 @@ export function AgendaAnnualView({
                       onClick={() => onSelectDate(cell.dateStr)}
                       onDoubleClick={() => onDoubleClickDate?.(cell.dateStr)}
                       className={cn(
-                        'group relative flex flex-col items-center justify-between rounded py-1 px-0.5 text-center transition min-h-[34px]',
+                        'group relative flex flex-col items-center justify-between rounded py-0.5 sm:py-1 px-0.5 text-center transition min-h-[30px] sm:min-h-[34px] w-full min-w-0',
                         !cell.isCurrentMonth && 'opacity-25 hover:opacity-70',
                         cell.isToday &&
                           'bg-amber-100 font-extrabold text-amber-900 ring-1 ring-amber-400',
@@ -350,7 +350,7 @@ export function AgendaAnnualView({
                     >
                       <span
                         className={cn(
-                          'text-[10px] leading-none font-semibold',
+                          'text-[10px] leading-none font-semibold truncate',
                           cell.isToday && !isSelected && 'text-amber-900 font-bold',
                           isSelected && 'text-white font-bold',
                           !cell.isToday && !isSelected && 'text-[#334155]',

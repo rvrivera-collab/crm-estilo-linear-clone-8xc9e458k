@@ -60,9 +60,14 @@ export default function Agenda() {
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  // Data atual do sistema
+  // Data atual do sistema (usando ano, mês e dia locais para evitar desvio de fuso horário UTC)
   const today = useMemo(() => new Date(), [])
-  const todayStr = useMemo(() => today.toISOString().slice(0, 10), [today])
+  const todayStr = useMemo(() => {
+    const y = today.getFullYear()
+    const m = String(today.getMonth() + 1).padStart(2, '0')
+    const d = String(today.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }, [today])
 
   // Mês e ano navegados no calendário
   const [currentYear, setCurrentYear] = useState(() => today.getFullYear())
@@ -115,16 +120,25 @@ export default function Agenda() {
 
   // Mapa de aniversários por MM-DD
   // Ex: "04-25" -> Array de Contatos
+  // Normaliza tanto strings ISO ('1992-10-27 00:00:00.000Z' ou '1992-10-27')
   const birthdaysMap = useMemo(() => {
     const map = new Map<string, Contact[]>()
     for (const c of contacts) {
       if (!c.birthday) continue
       try {
-        const bdate = new Date(c.birthday)
-        if (isNaN(bdate.getTime())) continue
-        const mm = String(bdate.getUTCMonth() + 1).padStart(2, '0')
-        const dd = String(bdate.getUTCDate()).padStart(2, '0')
-        const key = `${mm}-${dd}`
+        // Se a string tem formato YYYY-MM-DD..., extrai os caracteres diretamente para evitar shift de fuso
+        const clean = c.birthday.trim()
+        let key = ''
+        if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+          key = clean.slice(5, 10) // MM-DD
+        } else {
+          const bdate = new Date(clean)
+          if (isNaN(bdate.getTime())) continue
+          const mm = String(bdate.getUTCMonth() + 1).padStart(2, '0')
+          const dd = String(bdate.getUTCDate()).padStart(2, '0')
+          key = `${mm}-${dd}`
+        }
+        if (!key) continue
         const existing = map.get(key) || []
         existing.push(c)
         map.set(key, existing)
@@ -135,12 +149,24 @@ export default function Agenda() {
     return map
   }, [contacts])
 
-  // Mapa de eventos da agenda por YYYY-MM-DD
+  // Mapa de eventos da agenda por YYYY-MM-DD (chave normalizada)
   const eventsByDate = useMemo(() => {
     const map = new Map<string, AgendaEvent[]>()
     for (const ev of agendaEvents) {
       if (!ev.date) continue
-      const dStr = ev.date.slice(0, 10)
+      const clean = ev.date.trim()
+      let dStr = ''
+      if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+        dStr = clean.slice(0, 10)
+      } else {
+        const d = new Date(clean)
+        if (isNaN(d.getTime())) continue
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        dStr = `${y}-${m}-${day}`
+      }
+      if (!dStr) continue
       const list = map.get(dStr) || []
       list.push(ev)
       map.set(dStr, list)
@@ -158,22 +184,31 @@ export default function Agenda() {
   }, [agendaEvents])
 
   // 1. Grade do calendário mensal (dias anteriores do mês anterior + dias do mês + dias posteriores)
+  // Sempre computa com Date(ano, mês, dia) sem risco de time overflow
   const calendarDays = useMemo(() => {
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1)
     const startingDayOfWeek = firstDayOfMonth.getDay() // 0 = Domingo, 1 = Segunda...
     const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
     const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate()
 
-    const days = []
+    const days: Array<{
+      dateStr: string
+      dayNum: number
+      isCurrentMonth: boolean
+      isToday: boolean
+      events: AgendaEvent[]
+      birthdays: Contact[]
+    }> = []
 
     // Dias do mês anterior
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i
-      const prevDate = new Date(currentYear, currentMonth - 1, dayNum)
-      const y = prevDate.getFullYear()
-      const m = String(prevDate.getMonth() + 1).padStart(2, '0')
+      // Mês anterior: se currentMonth == 0, o mês anterior é 11 do ano currentYear - 1
+      const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
+      const prevMonthIdx = currentMonth === 0 ? 11 : currentMonth - 1
+      const m = String(prevMonthIdx + 1).padStart(2, '0')
       const d = String(dayNum).padStart(2, '0')
-      const dateStr = `${y}-${m}-${d}`
+      const dateStr = `${prevYear}-${m}-${d}`
       const mmdd = `${m}-${d}`
       days.push({
         dateStr,
@@ -203,13 +238,14 @@ export default function Agenda() {
 
     // Dias do próximo mês para completar semanas cheias de 7 dias (até 35 ou 42 células)
     const remaining = (7 - (days.length % 7)) % 7
+    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
+    const nextMonthIdx = currentMonth === 11 ? 0 : currentMonth + 1
+    const nextMonthStr = String(nextMonthIdx + 1).padStart(2, '0')
+
     for (let i = 1; i <= remaining; i++) {
-      const nextDate = new Date(currentYear, currentMonth + 1, i)
-      const y = nextDate.getFullYear()
-      const m = String(nextDate.getMonth() + 1).padStart(2, '0')
       const d = String(i).padStart(2, '0')
-      const dateStr = `${y}-${m}-${d}`
-      const mmdd = `${m}-${d}`
+      const dateStr = `${nextYear}-${nextMonthStr}-${d}`
+      const mmdd = `${nextMonthStr}-${d}`
       days.push({
         dateStr,
         dayNum: i,
@@ -253,8 +289,24 @@ export default function Agenda() {
     // A) Eventos da agenda nos próximos 7 dias
     agendaEvents.forEach((ev) => {
       if (!ev.date) return
-      const d = new Date(ev.date)
-      const evMidnight = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+      const clean = ev.date.trim()
+      let evYear = nowDate.getFullYear()
+      let evMonth = nowDate.getMonth()
+      let evDay = nowDate.getDate()
+
+      if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+        evYear = Number(clean.slice(0, 4))
+        evMonth = Number(clean.slice(5, 7)) - 1
+        evDay = Number(clean.slice(8, 10))
+      } else {
+        const d = new Date(clean)
+        if (isNaN(d.getTime())) return
+        evYear = d.getFullYear()
+        evMonth = d.getMonth()
+        evDay = d.getDate()
+      }
+
+      const evMidnight = new Date(evYear, evMonth, evDay)
       const diffDays = Math.round(
         (evMidnight.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24),
       )
@@ -262,7 +314,7 @@ export default function Agenda() {
         const c = contacts.find((item) => item.id === ev.customer) || ev.expand?.customer
         list.push({
           id: `ev-${ev.id}`,
-          dateStr: ev.date.slice(0, 10),
+          dateStr: clean.slice(0, 10),
           title: ev.title,
           subtitle: `${ev.time ? `${ev.time} · ` : ''}${AGENDA_TYPE_LABELS[ev.type] || ev.type}${c ? ` · ${c.name}` : ''}`,
           kind: 'evento',
@@ -363,7 +415,8 @@ export default function Agenda() {
     if (!selectedDateStr) return ''
     try {
       const [y, m, d] = selectedDateStr.split('-').map(Number)
-      const date = new Date(y, m - 1, d)
+      if (!y || !m || !d) return selectedDateStr
+      const date = new Date(y, m - 1, d, 12, 0, 0)
       return new Intl.DateTimeFormat('pt-BR', {
         weekday: 'long',
         day: 'numeric',
@@ -384,11 +437,11 @@ export default function Agenda() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 w-full flex-col bg-white overflow-hidden">
       {/* HEADER ESTILO LINEAR */}
-      <div className="shrink-0 border-b border-[#e5e7eb] px-4 py-3.5 sm:px-6 bg-[#fafafa]">
+      <div className="shrink-0 border-b border-[#e5e7eb] px-4 py-3 sm:px-6 bg-[#fafafa]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-700 font-bold">
                 Rotina & Atendimento · Cafés Especiais
@@ -397,17 +450,17 @@ export default function Agenda() {
                 Linear View
               </span>
             </div>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
-              <CalendarIcon className="size-6 text-amber-600" />
-              Agenda & Calendário
+            <h1 className="mt-1 text-xl sm:text-2xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
+              <CalendarIcon className="size-5 sm:size-6 text-amber-600 shrink-0" />
+              <span>Agenda & Calendário</span>
             </h1>
-            <p className="mt-0.5 text-xs text-[#64748b]">
+            <p className="mt-0.5 text-xs text-[#64748b] truncate sm:whitespace-normal">
               Acompanhe follow-ups, degustações presenciais, entregas de grãos frescos e
               aniversários da base.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => refresh()}
@@ -433,7 +486,7 @@ export default function Agenda() {
               className="inline-flex items-center gap-1.5 rounded-md border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-700 shadow-2xs hover:bg-purple-100 hover:border-purple-300 transition"
             >
               <Sparkles className="size-3.5 text-purple-600" />
-              Adicionar lembrete
+              <span className="hidden sm:inline">Adicionar</span> lembrete
             </button>
 
             <button
@@ -448,9 +501,9 @@ export default function Agenda() {
         </div>
 
         {/* CONTROLES: VIEW SWITCHER (MENSAL / ANUAL) + NAVEGAÇÃO E FILTROS */}
-        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pt-2 border-t border-[#f1f5f9]">
+        <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between pt-2.5 border-t border-[#f1f5f9]">
           {/* Switcher de visualização estilo Linear + Navegador */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
             {/* Segmented Control / Tabs: Mensal | Anual */}
             <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] bg-[#f1f5f9] p-0.5 shadow-2xs">
               <button
@@ -515,7 +568,7 @@ export default function Agenda() {
                 }}
                 className="text-[11px] font-semibold text-amber-700 hover:underline"
               >
-                Ir para o dia de hoje
+                Ir para hoje
               </button>
             )}
           </div>
@@ -527,7 +580,7 @@ export default function Agenda() {
               onChange={(e) => setTypeFilter(e.target.value as any)}
               className="rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1 text-xs font-semibold text-[#475569] shadow-2xs outline-none"
             >
-              <option value="todos">Todos os tipos de evento</option>
+              <option value="todos">Todos os tipos</option>
               {(Object.keys(AGENDA_TYPE_LABELS) as AgendaEventType[]).map((t) => (
                 <option key={t} value={t}>
                   {AGENDA_TYPE_LABELS[t]}
@@ -536,8 +589,8 @@ export default function Agenda() {
               <option value="aniversarios">🎂 Aniversariantes apenas</option>
             </select>
 
-            <label className="flex h-7.5 items-center rounded-md border border-[#cbd5e1] bg-white px-2 shadow-2xs sm:w-56">
-              <Search className="mr-1.5 size-3.5 text-[#94a3b8]" />
+            <label className="flex h-7.5 items-center rounded-md border border-[#cbd5e1] bg-white px-2 shadow-2xs w-full sm:w-56">
+              <Search className="mr-1.5 size-3.5 text-[#94a3b8] shrink-0" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -559,9 +612,9 @@ export default function Agenda() {
       </div>
 
       {/* ÁREA PRINCIPAL: DIVIDIDA EM CALENDÁRIO (MENSAL OU ANUAL) + PAINEL LATERAL (LISTA DO DIA & PRÓXIMOS 7 DIAS) */}
-      <div className="min-h-0 flex-1 overflow-hidden flex flex-col lg:flex-row">
+      <div className="min-h-0 flex-1 overflow-hidden flex flex-col lg:flex-row w-full">
         {/* LADO ESQUERDO: GRADE MENSAL OU ANUAL ESTILO LINEAR */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col border-b lg:border-b-0 lg:border-r border-[#e5e7eb]">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-5 flex flex-col border-b lg:border-b-0 lg:border-r border-[#e5e7eb]">
           {viewMode === 'anual' ? (
             /* VISÃO ANUAL (12 MESES COMPACTOS COM DOTS E NAVEGAÇÃO DE ANO) */
             <AgendaAnnualView
@@ -587,10 +640,10 @@ export default function Agenda() {
               todayStr={todayStr}
             />
           ) : (
-            /* VISÃO MENSAL ESTILO LINEAR */
-            <>
+            /* VISÃO MENSAL ESTILO LINEAR (container com min-w para garantir legibilidade no mobile mas 100% responsivo em telas normais) */
+            <div className="min-w-[560px] sm:min-w-0 flex flex-col flex-1">
               {/* Cabeçalho dos dias da semana */}
-              <div className="grid grid-cols-7 border-b border-[#e5e7eb] pb-2 text-center">
+              <div className="grid grid-cols-7 border-b border-[#e5e7eb] pb-2 text-center select-none">
                 {WEEKDAY_NAMES.map((w, idx) => (
                   <div
                     key={w}
@@ -605,7 +658,7 @@ export default function Agenda() {
               </div>
 
               {/* Grade dos dias do mês */}
-              <div className="grid grid-cols-7 gap-px bg-[#e5e7eb] mt-1 rounded-lg overflow-hidden border border-[#e5e7eb] flex-1 min-h-[500px]">
+              <div className="grid grid-cols-7 gap-px bg-[#e5e7eb] mt-1 rounded-lg overflow-hidden border border-[#e5e7eb] flex-1 auto-rows-fr min-h-[480px]">
                 {calendarDays.map((cell) => {
                   const isSelected = cell.dateStr === selectedDateStr
                   // Filtragem dos eventos do dia
@@ -642,7 +695,7 @@ export default function Agenda() {
                       key={cell.dateStr}
                       onClick={() => setSelectedDateStr(cell.dateStr)}
                       className={cn(
-                        'group relative flex flex-col bg-white p-1.5 sm:p-2 transition cursor-pointer min-h-[90px] sm:min-h-[110px]',
+                        'group relative flex flex-col bg-white p-1 sm:p-2 transition cursor-pointer min-h-[85px] sm:min-h-[105px] overflow-hidden',
                         !cell.isCurrentMonth && 'bg-[#f8fafc] text-[#94a3b8]',
                         cell.isToday && 'bg-amber-50/40 ring-1 ring-inset ring-amber-400',
                         isSelected && 'ring-2 ring-inset ring-amber-500 z-10 bg-amber-50/20',
@@ -653,7 +706,7 @@ export default function Agenda() {
                       <div className="flex items-center justify-between mb-1">
                         <span
                           className={cn(
-                            'flex size-6 items-center justify-center rounded-full text-xs font-bold transition',
+                            'flex size-5.5 sm:size-6 items-center justify-center rounded-full text-[11px] sm:text-xs font-bold transition select-none',
                             cell.isToday
                               ? 'bg-amber-500 text-white shadow-2xs font-extrabold'
                               : isSelected
@@ -749,12 +802,12 @@ export default function Agenda() {
                   )
                 })}
               </div>
-            </>
+            </div>
           )}
         </div>
 
         {/* LADO DIREITO: AGENDA DO DIA SELECIONADO & PAINEL PRÓXIMOS 7 DIAS */}
-        <div className="w-full lg:w-88 shrink-0 flex flex-col bg-[#fafafa] overflow-y-auto">
+        <div className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col bg-[#fafafa] overflow-y-auto">
           {/* SEÇÃO 1: AGENDA DO DIA SELECIONADO */}
           <div className="p-4 border-b border-[#e5e7eb] bg-white">
             <div className="flex items-center justify-between">
