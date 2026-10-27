@@ -102,7 +102,7 @@ export function EmpresaDrawer({
         className="fixed inset-0 z-[60] bg-black/25 backdrop-blur-[1px]"
         onClick={onClose}
       />
-      <aside className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-[500px] animate-drawer-in flex-col border-l border-[#e5e7eb] bg-white shadow-[-12px_0_40px_rgba(0,0,0,.1)]">
+      <aside className="fixed inset-y-0 right-0 z-[70] flex w-full sm:max-w-[500px] animate-drawer-in flex-col border-l border-[#e5e7eb] bg-white shadow-[-12px_0_40px_rgba(0,0,0,.1)]">
         {/* Header */}
         <header className="flex h-12 items-center border-b border-[#e5e7eb] px-4 bg-[#f8fafc]">
           <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748b] flex items-center gap-1.5">

@@ -6,6 +6,7 @@ import {
   Cake,
   Calendar,
   CheckCircle2,
+  CheckSquare,
   Clock,
   Coffee,
   Copy,
@@ -17,12 +18,16 @@ import {
   Phone,
   RefreshCw,
   Search,
+  Send,
   Sparkles,
+  Square,
   Ticket,
+  Users,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
+import { BatchWhatsAppModal } from '@/components/BatchWhatsAppModal'
 import {
   datePt,
   getBirthdayInfo,
@@ -45,7 +50,11 @@ export default function Reminders() {
   const [busyContactId, setBusyContactId] = useState<string | null>(null)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
 
-  // Modal WhatsApp Disney
+  // Seleção múltipla para campanha / envio em lote
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
+
+  // Modal WhatsApp Disney individual
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
   const [whatsAppContact, setWhatsAppContact] = useState<Contact | null>(null)
   const [whatsAppMoment, setWhatsAppMoment] = useState<
@@ -170,19 +179,69 @@ export default function Reminders() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => refresh()}
               title="Recarregar lembretes"
-              className="inline-flex items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-xs font-semibold text-[#475569] shadow-2xs hover:bg-[#f8fafc] transition"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#475569] shadow-2xs hover:bg-[#f8fafc] transition"
             >
               <RefreshCw className="size-3.5" /> Atualizar
             </button>
+
+            {/* Ações de Seleção e Campanha em Lote */}
             <button
-              onClick={() => navigate('/contatos')}
-              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-amber-600 transition"
+              type="button"
+              onClick={() => {
+                const reengagementIds = reengagementReminders.map((r) => r.contact.id)
+                setSelectedContactIds((prev) => {
+                  const allSelected = reengagementIds.every((id) => prev.includes(id))
+                  if (allSelected) {
+                    return prev.filter((id) => !reengagementIds.includes(id))
+                  }
+                  return Array.from(new Set([...prev, ...reengagementIds]))
+                })
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-orange-300 bg-orange-50 px-2.5 py-1.5 text-xs font-bold text-orange-900 hover:bg-orange-100 transition shadow-2xs"
             >
-              <Coffee className="size-3.5" /> Ver Clientes
+              <History className="size-3 text-orange-600" />
+              Selecionar 30+ dias ({reengagementReminders.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const bdayIds = birthdayReminders.map((r) => r.contact.id)
+                setSelectedContactIds((prev) => {
+                  const allSelected = bdayIds.every((id) => prev.includes(id))
+                  if (allSelected) {
+                    return prev.filter((id) => !bdayIds.includes(id))
+                  }
+                  return Array.from(new Set([...prev, ...bdayIds]))
+                })
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-900 hover:bg-rose-100 transition shadow-2xs"
+            >
+              <Cake className="size-3 text-rose-600" />
+              Selecionar Aniversariantes ({birthdayReminders.length})
+            </button>
+
+            <button
+              onClick={() => {
+                if (selectedContactIds.length === 0) {
+                  toast({
+                    variant: 'destructive',
+                    title: 'Nenhum cliente selecionado',
+                    description:
+                      'Marque ao menos um cliente nos checkboxes ou use os botões de seleção rápida.',
+                  })
+                  return
+                }
+                setBatchModalOpen(true)
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition"
+            >
+              <Send className="size-3.5" />
+              Disparar Campanha ({selectedContactIds.length})
             </button>
           </div>
         </div>
@@ -333,17 +392,33 @@ export default function Reminders() {
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/contatos?contact=${contact.id}`)}
-                                className="text-left font-bold text-[#1c1c1e] hover:text-amber-600 transition truncate block text-sm"
-                              >
-                                {contact.name}
-                              </button>
-                              <p className="text-[11px] text-[#64748b]">
-                                {contact.phone || contact.email || 'Sem contato cadastrado'}
-                              </p>
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={selectedContactIds.includes(contact.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedContactIds((prev) => [...prev, contact.id])
+                                  } else {
+                                    setSelectedContactIds((prev) =>
+                                      prev.filter((id) => id !== contact.id),
+                                    )
+                                  }
+                                }}
+                                className="mt-1 size-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                              />
+                              <div className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/contatos?contact=${contact.id}`)}
+                                  className="text-left font-bold text-[#1c1c1e] hover:text-amber-600 transition truncate block text-sm"
+                                >
+                                  {contact.name}
+                                </button>
+                                <p className="text-[11px] text-[#64748b]">
+                                  {contact.phone || contact.email || 'Sem contato cadastrado'}
+                                </p>
+                              </div>
                             </div>
                             <span
                               className={cn(
@@ -517,17 +592,33 @@ export default function Reminders() {
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/contatos?contact=${contact.id}`)}
-                                className="text-left font-bold text-[#1c1c1e] hover:text-amber-600 transition truncate block text-sm"
-                              >
-                                {contact.name}
-                              </button>
-                              <p className="text-[11px] text-[#64748b]">
-                                {contact.phone || contact.email || 'Sem contato'}
-                              </p>
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={selectedContactIds.includes(contact.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedContactIds((prev) => [...prev, contact.id])
+                                  } else {
+                                    setSelectedContactIds((prev) =>
+                                      prev.filter((id) => id !== contact.id),
+                                    )
+                                  }
+                                }}
+                                className="mt-1 size-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                              />
+                              <div className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/contatos?contact=${contact.id}`)}
+                                  className="text-left font-bold text-[#1c1c1e] hover:text-amber-600 transition truncate block text-sm"
+                                >
+                                  {contact.name}
+                                </button>
+                                <p className="text-[11px] text-[#64748b]">
+                                  {contact.phone || contact.email || 'Sem contato'}
+                                </p>
+                              </div>
                             </div>
                             <span
                               className={cn(
@@ -625,7 +716,7 @@ export default function Reminders() {
         )}
       </div>
 
-      {/* Modal de Envio caloroso Disney via WhatsApp */}
+      {/* Modal de Envio caloroso Disney via WhatsApp Individual */}
       <SendWhatsAppModal
         open={whatsAppModalOpen}
         onClose={() => {
@@ -636,6 +727,18 @@ export default function Reminders() {
         initialMoment={whatsAppMoment}
         couponCode={whatsAppContact?.last_coupon_code}
         onSent={async () => {
+          await refresh()
+        }}
+      />
+
+      {/* Modal de Campanha / Envio em Lote Disney */}
+      <BatchWhatsAppModal
+        open={batchModalOpen}
+        onClose={() => {
+          setBatchModalOpen(false)
+        }}
+        contacts={contacts.filter((c) => selectedContactIds.includes(c.id))}
+        onCompleted={async () => {
           await refresh()
         }}
       />

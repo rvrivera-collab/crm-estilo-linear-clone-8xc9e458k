@@ -9,6 +9,8 @@ import type {
   EmailTemplate,
   Empresa,
   JourneyEvent,
+  Order,
+  OrderStage,
   Purchase,
   Stage,
   UserRecord,
@@ -157,6 +159,153 @@ export async function updateContact(id: string, data: Record<string, unknown>) {
 
 export async function deleteContact(id: string) {
   return pb.collection('contacts').delete(id)
+}
+
+// ==========================================
+// FUNIL DE PEDIDOS (ORDERS / NEGOCIAÇÃO)
+// ==========================================
+
+export async function listOrders(contactId?: string) {
+  const filter = contactId ? `contact = "${contactId}"` : ''
+  return pb.collection<Order>('orders').getFullList({
+    filter,
+    sort: 'position,created',
+    expand: 'contact,owner',
+  })
+}
+
+export async function createOrder(data: {
+  contactId: string
+  title: string
+  items_description?: string
+  value?: number
+  stage?: OrderStage
+  tracking_code?: string
+  notes?: string
+  registerPurchaseRecord?: boolean
+}) {
+  const ownerId = pb.authStore.record?.id
+  const stage = data.stage || 'pedido_feito'
+  const newOrder = await pb.collection<Order>('orders').create(
+    {
+      contact: data.contactId,
+      owner: ownerId,
+      title: data.title,
+      items_description: data.items_description || '',
+      value: data.value || 0,
+      stage,
+      tracking_code: data.tracking_code || '',
+      google_review_requested: false,
+      notes: data.notes || '',
+      position: 1,
+    },
+    { expand: 'contact,owner' },
+  )
+
+  // Registrar na Linha do Tempo da Jornada
+  try {
+    await pb.collection('journey_events').create({
+      contact: data.contactId,
+      owner: ownerId,
+      type: 'pedido_criado',
+      title: `🛍️ Pedido Feito: ${data.title}`,
+      description: `Novo pedido registrado no valor de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.value || 0)}.${data.items_description ? ` Itens: ${data.items_description}` : ''}`,
+      channel: 'pedidos',
+      metadata: { orderId: newOrder.id, value: data.value, stage },
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  // Se solicitado, registrar também como compra/fidelidade do cliente
+  if (data.registerPurchaseRecord && data.value && data.value > 0) {
+    try {
+      await registerPurchase({
+        contactId: data.contactId,
+        amount: data.value,
+        itemsDescription: data.items_description || data.title,
+        notes: `Gerado a partir do pedido: ${data.title}`,
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return newOrder
+}
+
+export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
+  pedido_feito: 'Pedido feito',
+  pedido_enviado: 'Pedido enviado',
+  pedido_recebido: 'Pedido recebido',
+  pedir_avaliacao_google: 'Pedir avaliação do Google',
+  concluido: 'Concluído',
+}
+
+export async function updateOrder(id: string, data: Partial<Order>) {
+  const previous = await pb
+    .collection<Order>('orders')
+    .getOne(id)
+    .catch(() => null)
+  const updated = await pb.collection<Order>('orders').update(id, data, { expand: 'contact,owner' })
+
+  // Se o estágio mudou, registrar evento na jornada
+  if (data.stage && previous && previous.stage !== data.stage) {
+    const ownerId = pb.authStore.record?.id
+    const prevLabel = ORDER_STAGE_LABELS[previous.stage] || previous.stage
+    const nextLabel = ORDER_STAGE_LABELS[data.stage] || data.stage
+
+    try {
+      await pb.collection('journey_events').create({
+        contact: updated.contact,
+        owner: ownerId,
+        type: 'pedido_movido',
+        title: `📦 Pedido Movido: ${nextLabel}`,
+        description: `O pedido "${updated.title}" avançou de "${prevLabel}" para "${nextLabel}".`,
+        channel: 'pedidos',
+        metadata: { orderId: updated.id, fromStage: previous.stage, toStage: data.stage },
+      })
+    } catch {
+      /* intentionally ignored */
+    }
+  }
+
+  return updated
+}
+
+export async function markGoogleReviewRequested(orderId: string, notes?: string) {
+  const todayIso = new Date().toISOString()
+  const ownerId = pb.authStore.record?.id
+  const updated = await pb.collection<Order>('orders').update(
+    orderId,
+    {
+      google_review_requested: true,
+      google_review_date: todayIso,
+    },
+    { expand: 'contact,owner' },
+  )
+
+  try {
+    await pb.collection('journey_events').create({
+      contact: updated.contact,
+      owner: ownerId,
+      type: 'avaliacao_google_solicitada',
+      title: '🌟 Solicitação de Avaliação no Google Enviada',
+      description:
+        notes ||
+        `Mensagem carinhosa com link de avaliação do Google enviada após recebimento do pedido "${updated.title}".`,
+      channel: 'whatsapp',
+      metadata: { orderId: updated.id },
+    })
+  } catch {
+    /* intentionally ignored */
+  }
+
+  return updated
+}
+
+export async function deleteOrder(id: string) {
+  return pb.collection('orders').delete(id)
 }
 
 // ==========================================

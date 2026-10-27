@@ -11,6 +11,11 @@ import {
 } from 'lucide-react'
 import { buildDisneyWhatsAppMessage, getLoyaltyLevel, type Contact } from '@/types/crm'
 import { sendDisneyWhatsApp } from '@/services/crm'
+import {
+  DISNEY_MESSAGE_TEMPLATES,
+  formatTemplateText,
+  type MessageTemplate,
+} from '@/data/messageTemplates'
 import { useToast } from '@/hooks/use-toast'
 
 interface SendWhatsAppModalProps {
@@ -18,6 +23,7 @@ interface SendWhatsAppModalProps {
   onClose: () => void
   contact: Contact | null
   initialMoment?: 'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
+  initialTemplateId?: string
   couponCode?: string
   onSent?: () => void
 }
@@ -35,6 +41,7 @@ export function SendWhatsAppModal({
     'aniversario' | 'recorrencia' | 'nivel_fidelidade' | 'personalizado'
   >(initialMoment)
   const [customText, setCustomText] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const [sending, setSending] = useState(false)
   const [waFallbackUrl, setWaFallbackUrl] = useState<string | null>(null)
   const [lastWarning, setLastWarning] = useState<string | null>(null)
@@ -54,7 +61,13 @@ export function SendWhatsAppModal({
   // Atualizar quando mudar de momento ou quando abrir
   const handleMomentChange = (newMoment: typeof moment) => {
     setMoment(newMoment)
-    if (contact) {
+    if (!contact) return
+    if (newMoment === 'recorrencia') {
+      setSelectedTemplateId('recompra_30d_aroma_saudade')
+      const tmpl = DISNEY_MESSAGE_TEMPLATES[0]
+      setMessage(formatTemplateText(tmpl.text, contact, couponCode ? { couponCode } : undefined))
+    } else {
+      setSelectedTemplateId('')
       const msg = buildDisneyWhatsAppMessage({
         contact,
         moment: newMoment,
@@ -63,6 +76,17 @@ export function SendWhatsAppModal({
       })
       setMessage(msg)
     }
+  }
+
+  const handleSelectTemplate = (template: MessageTemplate) => {
+    if (!contact) return
+    setSelectedTemplateId(template.id)
+    const formatted = formatTemplateText(
+      template.text,
+      contact,
+      couponCode ? { couponCode } : undefined,
+    )
+    setMessage(formatted)
   }
 
   const handleSend = async () => {
@@ -181,7 +205,7 @@ export function SendWhatsAppModal({
                 }`}
               >
                 <span className="text-xs">☕ Reengajamento</span>
-                <span className="text-[9px] text-[#64748b]">Saudade & aroma</span>
+                <span className="text-[9px] text-[#64748b]">30 dias sem compras</span>
               </button>
               <button
                 type="button"
@@ -206,9 +230,42 @@ export function SendWhatsAppModal({
                     : 'border-[#e2e8f0] bg-white hover:bg-[#f8fafc] text-[#475569]'
                 }`}
               >
-                <span className="text-xs">✨ Especial</span>
+                <span className="text-xs">✨ Especial / Google</span>
                 <span className="text-[9px] text-[#64748b]">Atenção total</span>
               </button>
+            </div>
+          </div>
+
+          {/* Biblioteca de Mensagens Pré-Prontas de Recompra (30 dias) e Outros Momentos */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5">
+                <Sparkles className="size-3.5 text-amber-600" />
+                Mensagens Pré-Prontas (Variantes Disney)
+              </span>
+              <span className="text-[10px] text-amber-800 font-mono">
+                {DISNEY_MESSAGE_TEMPLATES.length} modelos
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {DISNEY_MESSAGE_TEMPLATES.map((tmpl) => {
+                const isSelected = selectedTemplateId === tmpl.id
+                return (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => handleSelectTemplate(tmpl)}
+                    className={`rounded-md px-2 py-1 text-[10px] transition text-left border ${
+                      isSelected
+                        ? 'border-amber-500 bg-amber-500 text-white font-bold shadow-2xs'
+                        : 'border-[#cbd5e1] bg-white text-[#334155] hover:border-amber-400 hover:bg-amber-50'
+                    }`}
+                    title={tmpl.description}
+                  >
+                    {tmpl.title}
+                  </button>
+                )
+              })}
             </div>
           </div>
 

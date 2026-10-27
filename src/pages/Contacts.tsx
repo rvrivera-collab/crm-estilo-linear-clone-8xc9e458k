@@ -20,6 +20,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ContactDrawer } from '@/components/ContactDrawer'
 import { ContactDialog } from '@/components/forms/ContactDialog'
+import { BatchWhatsAppModal } from '@/components/BatchWhatsAppModal'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { UserAvatar } from '@/components/UserAvatar'
 import {
@@ -54,6 +55,8 @@ export default function Contacts() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
   const detail = contacts.find((contact) => contact.id === params.get('contact')) || null
   useEffect(() => {
     const handler = () => {
@@ -125,7 +128,28 @@ export default function Contacts() {
             </p>
           </div>
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Botão de Campanha em lote */}
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedIds.length === 0) {
+                  toast({
+                    variant: 'destructive',
+                    title: 'Nenhum cliente selecionado',
+                    description:
+                      'Marque as caixas de seleção na lista para enviar uma mensagem em lote.',
+                  })
+                  return
+                }
+                setBatchModalOpen(true)
+              }}
+              className="flex h-8 items-center gap-1.5 rounded-md bg-emerald-600 px-3 text-[11px] font-bold text-white shadow-xs transition hover:bg-emerald-700"
+            >
+              <FileSpreadsheet className="size-3.5" />
+              <span>Campanha WhatsApp ({selectedIds.length})</span>
+            </button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -270,8 +294,24 @@ export default function Contacts() {
       </div>
 
       <div data-tour-id="contacts-table-list" className="min-h-0 flex-1 overflow-auto">
-        <div className="hidden min-w-[1050px] sm:block">
-          <div className="grid h-8 grid-cols-[minmax(190px,1.2fr)_130px_110px_minmax(170px,1fr)_120px_130px_110px_90px_40px] items-center border-b border-[#e5e7eb] bg-[#fafafa] px-3 text-[9px] font-semibold text-[#64748b]">
+        <div className="hidden min-w-[1100px] sm:block">
+          <div className="grid h-8 grid-cols-[36px_minmax(190px,1.2fr)_130px_110px_minmax(170px,1fr)_120px_130px_110px_90px_40px] items-center border-b border-[#e5e7eb] bg-[#fafafa] px-3 text-[9px] font-semibold text-[#64748b]">
+            <span className="flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={filtered.length > 0 && filtered.every((c) => selectedIds.includes(c.id))}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    const allF = filtered.map((c) => c.id)
+                    setSelectedIds((prev) => Array.from(new Set([...prev, ...allF])))
+                  } else {
+                    const allF = filtered.map((c) => c.id)
+                    setSelectedIds((prev) => prev.filter((id) => !allF.includes(id)))
+                  }
+                }}
+                className="size-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+              />
+            </span>
             <span>Cliente</span>
             <span>Nível Fidelidade</span>
             <span>Compras</span>
@@ -287,14 +327,37 @@ export default function Contacts() {
             const bday = getBirthdayInfo(contact.birthday)
             const daysSince = getDaysSinceLastPurchase(contact.last_purchase_date)
 
+            const isSelected = selectedIds.includes(contact.id)
+
             return (
-              <button
+              <div
                 key={contact.id}
-                onClick={() => navigate(`/contatos?contact=${contact.id}`)}
-                className="group grid min-h-11 w-full animate-row-fade grid-cols-[minmax(190px,1.2fr)_130px_110px_minmax(170px,1fr)_120px_130px_110px_90px_40px] items-center border-b border-[#f1f5f9] px-3 text-left text-[10px] transition hover:bg-[#f8fafc]"
+                className={cn(
+                  'group grid min-h-11 w-full animate-row-fade grid-cols-[36px_minmax(190px,1.2fr)_130px_110px_minmax(170px,1fr)_120px_130px_110px_90px_40px] items-center border-b border-[#f1f5f9] px-3 text-left text-[10px] transition hover:bg-[#f8fafc]',
+                  isSelected && 'bg-amber-50/40',
+                )}
                 style={{ animationDelay: `${Math.min(index * 18, 150)}ms` }}
               >
-                <span className="flex min-w-0 items-center gap-2 pr-2">
+                <div className="flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds((prev) => [...prev, contact.id])
+                      } else {
+                        setSelectedIds((prev) => prev.filter((id) => id !== contact.id))
+                      }
+                    }}
+                    className="size-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/contatos?contact=${contact.id}`)}
+                  className="flex min-w-0 items-center gap-2 pr-2 text-left"
+                >
                   <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-50 border border-amber-200 text-[8px] font-bold text-amber-800">
                     {initials(contact.name)}
                   </span>
@@ -306,7 +369,7 @@ export default function Contacts() {
                       </span>
                     )}
                   </span>
-                </span>
+                </button>
 
                 <span>
                   <span
@@ -385,7 +448,7 @@ export default function Contacts() {
                 <span>
                   <Edit3 className="size-3 opacity-0 text-[#94a3b8] group-hover:opacity-100" />
                 </span>
-              </button>
+              </div>
             )
           })}
         </div>
@@ -460,6 +523,13 @@ export default function Contacts() {
         }}
       />
       <ContactDialog open={dialogOpen} onOpenChange={setDialogOpen} contact={editing} />
+
+      {/* Modal de Disparo de Campanha em Lote via WhatsApp */}
+      <BatchWhatsAppModal
+        open={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        contacts={contacts.filter((c) => selectedIds.includes(c.id))}
+      />
     </div>
   )
 }

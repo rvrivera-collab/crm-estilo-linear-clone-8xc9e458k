@@ -169,9 +169,9 @@ export function JourneyKanbanBoard({
         </div>
       </div>
 
-      {/* Colunas do Kanban da Jornada */}
-      <div className="flex-1 min-h-0 overflow-x-auto p-4">
-        <div className="flex gap-3 h-full min-w-[1280px]">
+      {/* Colunas do Kanban da Jornada (touch scroll horizontal fluído) */}
+      <div className="flex-1 min-h-0 overflow-x-auto p-3 sm:p-4 touch-pan-x">
+        <div className="flex gap-3 h-full min-w-[1100px] sm:min-w-[1280px]">
           {STAGE_ORDER.map((stage) => {
             const Icon = stage.icon
             const stageList = groupedContacts[stage.key] || []
@@ -180,7 +180,7 @@ export function JourneyKanbanBoard({
               <div
                 key={stage.key}
                 className={cn(
-                  'flex flex-col w-[260px] lg:w-[280px] shrink-0 rounded-lg border bg-white shadow-2xs transition-colors',
+                  'flex flex-col w-[245px] sm:w-[260px] lg:w-[280px] shrink-0 rounded-lg border bg-white shadow-2xs transition-colors',
                   stage.borderAccent,
                 )}
               >

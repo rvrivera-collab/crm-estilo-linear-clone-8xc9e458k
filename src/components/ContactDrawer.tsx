@@ -15,6 +15,7 @@ import {
   Mail,
   MessageCircle,
   MessageSquareText,
+  Package,
   Phone,
   Plus,
   Send,
@@ -36,8 +37,10 @@ import {
   getLoyaltyLevel,
   money,
   relativeTime,
+  type Activity,
   type Contact,
   type JourneyEvent,
+  type Order,
   type Purchase,
 } from '@/types/crm'
 import {
@@ -45,12 +48,15 @@ import {
   createJourneyEvent,
   deletePurchase,
   listJourneyEvents,
+  listOrders,
   listPurchases,
   markReengagementTreated,
   registerPurchase,
+  ORDER_STAGE_LABELS,
 } from '@/services/crm'
 import { EmailComposerModal } from '@/components/forms/EmailComposerModal'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
+import { OrderDialog } from '@/components/forms/OrderDialog'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -78,6 +84,11 @@ export function ContactDrawer({
   const [journeyEvents, setJourneyEvents] = useState<JourneyEvent[]>([])
   const [loadingJourney, setLoadingJourney] = useState(false)
 
+  // Pedidos e Compras do cliente
+  const [clientOrders, setClientOrders] = useState<Order[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(false)
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false)
+
   // Compras do cliente
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [loadingPurchases, setLoadingPurchases] = useState(false)
@@ -93,26 +104,31 @@ export function ContactDrawer({
   useEffect(() => {
     if (!contact?.id) {
       setPurchases([])
+      setClientOrders([])
       setJourneyEvents([])
       return
     }
     let active = true
     setLoadingPurchases(true)
+    setLoadingOrders(true)
     setLoadingJourney(true)
 
     Promise.all([
       listPurchases(contact.id).catch(() => []),
+      listOrders(contact.id).catch(() => []),
       listJourneyEvents(contact.id).catch(() => []),
     ])
-      .then(([purchasesData, journeyData]) => {
+      .then(([purchasesData, ordersData, journeyData]) => {
         if (active) {
           setPurchases(purchasesData)
+          setClientOrders(ordersData)
           setJourneyEvents(journeyData)
         }
       })
       .finally(() => {
         if (active) {
           setLoadingPurchases(false)
+          setLoadingOrders(false)
           setLoadingJourney(false)
         }
       })
@@ -268,7 +284,7 @@ export function ContactDrawer({
         className="fixed inset-0 z-[60] bg-black/25 backdrop-blur-[1px]"
         onClick={onClose}
       />
-      <aside className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-[440px] animate-drawer-in flex-col border-l border-[#e5e7eb] bg-white shadow-[-12px_0_40px_rgba(0,0,0,.1)]">
+      <aside className="fixed inset-y-0 right-0 z-[70] flex w-full sm:max-w-[440px] animate-drawer-in flex-col border-l border-[#e5e7eb] bg-white shadow-[-12px_0_40px_rgba(0,0,0,.1)]">
         <header className="flex h-12 items-center border-b border-[#e5e7eb] px-4">
           <span className="text-[10px] uppercase font-semibold tracking-wider text-[#64748b]">
             Contato
@@ -611,6 +627,85 @@ export function ContactDrawer({
             </div>
           </section>
 
+          {/* SESSÃO: PEDIDOS / NEGOCIAÇÕES NO FUNIL */}
+          <section className="border-b border-[#e5e7eb] p-5 bg-[#fafbfc]">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-extrabold text-[#1c1c1e] flex items-center gap-1.5">
+                  <Package className="size-3.5 text-amber-600" />
+                  Pedidos & Negociação ({clientOrders.length})
+                </h3>
+                <p className="text-[10px] text-[#64748b]">
+                  Funil do cliente: do pedido feito até avaliação no Google
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOrderDialogOpen(true)}
+                className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-800 hover:bg-amber-100 transition"
+              >
+                <Plus className="size-3" /> Novo Pedido
+              </button>
+            </div>
+
+            {loadingOrders ? (
+              <div className="py-4 text-center text-xs text-[#94a3b8]">Carregando pedidos...</div>
+            ) : clientOrders.length === 0 ? (
+              <div className="rounded-md border border-dashed border-[#cbd5e1] p-3 text-center text-[11px] text-[#94a3b8]">
+                Nenhum pedido no funil para este cliente.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {clientOrders.map((ord) => (
+                  <div
+                    key={ord.id}
+                    className="rounded-md border border-[#e2e8f0] bg-white p-2.5 shadow-2xs hover:border-[#cbd5e1] transition"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-[11px] text-[#1c1c1e] block truncate">
+                          {ord.title}
+                        </span>
+                        {ord.items_description && (
+                          <span className="text-[10px] text-[#64748b] block truncate mt-0.5">
+                            {ord.items_description}
+                          </span>
+                        )}
+                      </div>
+                      <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] font-bold text-slate-800 border border-slate-200">
+                        {ORDER_STAGE_LABELS[ord.stage] || ord.stage}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between text-[10px] font-mono border-t border-[#f1f5f9] pt-1.5">
+                      <span className="font-bold text-[#1c1c1e]">
+                        {money.format(ord.value || 0)}
+                      </span>
+                      {ord.google_review_requested ? (
+                        <span className="text-purple-700 font-semibold text-[9px]">
+                          ⭐ Avaliação solicitada
+                        </span>
+                      ) : ord.stage === 'pedir_avaliacao_google' ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWhatsAppMoment('personalizado')
+                            setWhatsAppModalOpen(true)
+                          }}
+                          className="text-purple-600 font-bold hover:underline"
+                        >
+                          Pedir avaliação agora →
+                        </button>
+                      ) : (
+                        <span className="text-[#94a3b8]">{relativeTime(ord.created)}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* SESSÃO: HISTÓRICO DE COMPRAS E REGISTRO */}
           <section className="border-b border-[#e5e7eb] p-5">
             <div className="mb-3 flex items-center justify-between">
@@ -908,6 +1003,16 @@ export function ContactDrawer({
             setJourneyEvents(freshEvents)
           }
           await refresh()
+        }}
+      />
+
+      {/* Dialog de Novo Pedido / Negociação */}
+      <OrderDialog
+        open={orderDialogOpen}
+        onOpenChange={setOrderDialogOpen}
+        presetContactId={contact.id}
+        onCreated={async (created) => {
+          setClientOrders((prev) => [created, ...prev])
         }}
       />
     </>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T02:04:58.597Z",
+  "generatedAt": "2026-10-27T02:13:48.368Z",
   "collections": [
     {
       "name": "users",
@@ -1158,6 +1158,115 @@
         "CREATE INDEX idx_journey_events_owner ON journey_events (owner)",
         "CREATE INDEX idx_journey_events_created ON journey_events (created DESC)",
         "CREATE INDEX idx_journey_events_type ON journey_events (type)"
+      ]
+    },
+    {
+      "name": "orders",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)",
+        "delete": "@request.auth.id != '' && (owner = @request.auth.id || contact.owner = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "contact",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "items_description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "value",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "stage",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "pedido_feito",
+            "pedido_enviado",
+            "pedido_recebido",
+            "pedir_avaliacao_google",
+            "concluido"
+          ]
+        },
+        {
+          "name": "tracking_code",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "google_review_requested",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "google_review_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "position",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_orders_contact ON orders (contact)",
+        "CREATE INDEX idx_orders_owner ON orders (owner)",
+        "CREATE INDEX idx_orders_stage ON orders (stage)",
+        "CREATE INDEX idx_orders_created ON orders (created DESC)",
+        "CREATE INDEX idx_orders_position ON orders (position)"
       ]
     }
   ]

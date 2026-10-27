@@ -98,6 +98,31 @@ export interface Purchase extends RecordModel {
   }
 }
 
+export type OrderStage =
+  | 'pedido_feito'
+  | 'pedido_enviado'
+  | 'pedido_recebido'
+  | 'pedir_avaliacao_google'
+  | 'concluido'
+
+export interface Order extends RecordModel {
+  contact: string
+  owner: string
+  title: string
+  items_description?: string
+  value?: number
+  stage: OrderStage
+  tracking_code?: string
+  google_review_requested?: boolean
+  google_review_date?: string
+  notes?: string
+  position?: number
+  expand?: {
+    contact?: Contact
+    owner?: UserRecord
+  }
+}
+
 export interface JourneyEvent extends RecordModel {
   contact: string
   owner: string
@@ -110,6 +135,9 @@ export interface JourneyEvent extends RecordModel {
     | 'whatsapp_falha'
     | 'reengajamento'
     | 'atendimento_especial'
+    | 'pedido_criado'
+    | 'pedido_movido'
+    | 'avaliacao_google_solicitada'
   title: string
   description?: string
   channel?: string
@@ -513,6 +541,7 @@ export type CrmData = {
   contacts: Contact[]
   empresas: Empresa[]
   deals: Deal[]
+  orders: Order[]
   activities: Activity[]
   users: UserRecord[]
   loading: boolean

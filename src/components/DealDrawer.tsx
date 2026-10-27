@@ -174,7 +174,7 @@ export function DealDrawer({
         className="fixed inset-0 z-[60] bg-black/25 backdrop-blur-[1px]"
         onClick={onClose}
       />
-      <aside className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-[480px] animate-drawer-in flex-col border-l border-[#e5e7eb] bg-white shadow-[-12px_0_40px_rgba(0,0,0,.1)]">
+      <aside className="fixed inset-y-0 right-0 z-[70] flex w-full sm:max-w-[480px] animate-drawer-in flex-col border-l border-[#e5e7eb] bg-white shadow-[-12px_0_40px_rgba(0,0,0,.1)]">
         <header className="flex h-12 items-center border-b border-[#e5e7eb] px-4 bg-[#f8fafc]">
           <span className="font-mono text-[11px] font-semibold text-[#64748b]">{deal.code}</span>
           <div className="flex-1" />

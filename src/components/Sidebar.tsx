@@ -20,6 +20,7 @@ import {
   PanelLeft,
   RefreshCw,
   Settings,
+  ShoppingBag,
   Sparkles,
   Trash2,
   Users,
@@ -51,13 +52,14 @@ const primary = [{ to: '/ask', label: 'Agent', icon: Sparkles, badge: 'IA' }]
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
+  { to: '/pedidos', label: 'Pedidos (Funil / Cards)', icon: ShoppingBag, badge: 'Novo' },
   { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
   { to: '/contatos', label: 'Clientes & Fidelidade', icon: Coffee },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },
   { to: '/recuperacao', label: 'Recuperação', icon: RefreshCw },
+  { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/negocios', label: 'Negócios', icon: BriefcaseBusiness },
   { to: '/empresas', label: 'Empresas / B2B', icon: Building2 },
-  { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/formularios', label: 'Formulário de Captação', icon: LayoutTemplate },
 ]
 

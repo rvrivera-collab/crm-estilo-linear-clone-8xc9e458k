@@ -6,10 +6,20 @@ import {
   listContacts,
   listDeals,
   listEmpresas,
+  listOrders,
   listStages,
   listUsers,
 } from '@/services/crm'
-import type { Activity, Contact, CrmData, Deal, Empresa, Stage, UserRecord } from '@/types/crm'
+import type {
+  Activity,
+  Contact,
+  CrmData,
+  Deal,
+  Empresa,
+  Order,
+  Stage,
+  UserRecord,
+} from '@/types/crm'
 
 const CrmContext = createContext<CrmData | null>(null)
 
@@ -18,24 +28,34 @@ export function CrmProvider({ children }: PropsWithChildren) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    const [nextStages, nextContacts, nextEmpresas, nextDeals, nextActivities, nextUsers] =
-      await Promise.all([
-        listStages(),
-        listContacts(),
-        listEmpresas(),
-        listDeals(),
-        listActivities(),
-        listUsers(),
-      ])
+    const [
+      nextStages,
+      nextContacts,
+      nextEmpresas,
+      nextDeals,
+      nextOrders,
+      nextActivities,
+      nextUsers,
+    ] = await Promise.all([
+      listStages(),
+      listContacts(),
+      listEmpresas(),
+      listDeals(),
+      listOrders(),
+      listActivities(),
+      listUsers(),
+    ])
     setStages(nextStages)
     setContacts(nextContacts)
     setEmpresas(nextEmpresas)
     setDeals(nextDeals)
+    setOrders(nextOrders)
     setActivities(nextActivities)
     setUsers(nextUsers)
     setLoading(false)
@@ -65,10 +85,15 @@ export function CrmProvider({ children }: PropsWithChildren) {
       .then(setEmpresas)
       .catch(() => {})
   })
+  useRealtime<Order>('orders', () => {
+    listOrders()
+      .then(setOrders)
+      .catch(() => {})
+  })
 
   const value = useMemo(
-    () => ({ stages, contacts, empresas, deals, activities, users, loading, refresh }),
-    [stages, contacts, empresas, deals, activities, users, loading, refresh],
+    () => ({ stages, contacts, empresas, deals, orders, activities, users, loading, refresh }),
+    [stages, contacts, empresas, deals, orders, activities, users, loading, refresh],
   )
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>
 }
