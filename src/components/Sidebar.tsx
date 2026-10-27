@@ -16,6 +16,7 @@ import {
   LoaderCircle,
   LogOut,
   Megaphone,
+  MessageCircle,
   MessageSquarePlus,
   PanelLeft,
   RefreshCw,
@@ -47,7 +48,10 @@ import { deleteConversation } from '@/services/ask'
 import type { AskConversation } from '@/types/crm'
 import { cn } from '@/lib/utils'
 
-const primary = [{ to: '/ask', label: 'Agent', icon: Sparkles, badge: 'IA' }]
+const primary = [
+  { to: '/ask', label: 'Agent', icon: Sparkles, badge: 'IA' },
+  { to: '/mensagens', label: 'Mensagens (WhatsApp)', icon: MessageCircle, badge: 'Zap' },
+]
 
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },

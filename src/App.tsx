@@ -19,6 +19,7 @@ import ForgotPassword from '@/pages/ForgotPassword'
 import Index from '@/pages/Index'
 import LeadCapture from '@/pages/LeadCapture'
 import Login from '@/pages/Login'
+import Messages from '@/pages/Messages'
 import NotFound from '@/pages/NotFound'
 import Pipeline from '@/pages/Pipeline'
 import Recovery from '@/pages/Recovery'
@@ -59,6 +60,7 @@ export default function App() {
                 <Route path="campanhas" element={<Campaigns />} />
                 <Route path="formularios" element={<CaptureForms />} />
                 <Route path="embed" element={<Navigate to="/formularios" replace />} />
+                <Route path="mensagens" element={<Messages />} />
                 <Route path="configuracoes" element={<Settings />} />
               </Route>
             </Route>

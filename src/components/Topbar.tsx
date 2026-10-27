@@ -13,6 +13,7 @@ const sections: Record<string, [string, string]> = {
   '/empresas': ['Vendas', 'Empresas'],
   '/campanhas': ['Marketing & Captação', 'Campanhas'],
   '/formularios': ['Marketing & Captação', 'Formulários'],
+  '/mensagens': ['Comunicação', 'Mensagens (WhatsApp)'],
   '/configuracoes': ['Workspace', 'Configurações'],
 }
 
@@ -34,7 +35,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         <span className="font-semibold text-[#1c1c1e]">{current[1]}</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="hidden items-center gap-1.5 text-[9px] text-[#94a3b8] md:flex">
+        <div className="hidden items-center gap-1.5 text-[9px] text-[#94a3b8] lg:flex">
           <kbd className="rounded border border-[#e2e8f0] bg-[#f8fafc] px-1.5 py-0.5 font-mono text-[#64748b]">
             G
           </kbd>

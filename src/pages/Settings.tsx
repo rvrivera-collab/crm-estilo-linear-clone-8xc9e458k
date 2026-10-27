@@ -10,8 +10,10 @@ import {
   ShieldCheck,
   Sliders,
   Sparkles,
+  MessageCircle,
   UserRound,
 } from 'lucide-react'
+import { ConnectorButton } from '@/components/skip/ConnectorButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/contexts/AuthContext'
@@ -172,6 +174,12 @@ export default function Settings() {
             >
               <Compass className="size-3.5" /> Tour guiado
             </a>
+            <a
+              href="#whatsapp"
+              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+            >
+              <MessageCircle className="size-3.5" /> WhatsApp
+            </a>
             <Link
               to="/formularios"
               className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
@@ -304,6 +312,42 @@ export default function Settings() {
                   </Submit>
                 </div>
               </form>
+            </SettingsCard>
+
+            {/* SEÇÃO CONEXÃO WHATSAPP */}
+            <SettingsCard
+              id="whatsapp"
+              title="Conexão do WhatsApp"
+              description="Conecte seu WhatsApp para enviar mensagens calorosas e automações direto aos seus clientes."
+            >
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-[#e2e8f0] bg-[#fafafa] p-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="size-4 text-emerald-600" />
+                      <span className="text-xs font-bold text-[#1c1c1e]">
+                        Conta do WhatsApp (Cloud API)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#64748b] max-w-xl leading-relaxed">
+                      Conecte sua conta pessoal ou empresarial do WhatsApp para disparar as
+                      mensagens dos aniversariantes, avisos de recompra em 30 dias e convites de
+                      avaliação do Google diretamente pelo CRM.
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <ConnectorButton
+                      toolkit="whatsapp"
+                      name="WhatsApp"
+                      buttonClassName="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-[#64748b]">
+                  Dica: mesmo desconectado, o CRM permite abrir o chat rapidamente pelo WhatsApp
+                  Web/App com 1 clique (wa.me) mantendo todo o histórico salvo na jornada.
+                </p>
+              </div>
             </SettingsCard>
 
             {/* SEÇÃO TOUR GUIADO */}

@@ -47,33 +47,54 @@ routerAdd(
         phoneMissing = true
         connectorWarning = 'O cliente não possui telefone cadastrado para disparo automático.'
       } else {
-        // Tentar enviar via conta do WhatsApp do dono usando $connectors.executeAsOwner
+        // Tentar enviar via conta do WhatsApp do usuário logado ($connectors.execute(e.auth))
+        // ou via conector do proprietário ($connectors.executeAsOwner) como fallback
         try {
-          if (
-            typeof $connectors !== 'undefined' &&
-            typeof $connectors.executeAsOwner === 'function'
-          ) {
-            const sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
-              to_number: cleanedPhone,
-              text: messageText,
-              phone_number_id: 'default',
-            })
+          if (typeof $connectors !== 'undefined') {
+            let sendResult = null
+
+            // 1. Tentar como o usuário logado (cada usuário conecta seu próprio WhatsApp)
+            if (typeof $connectors.execute === 'function' && e.auth) {
+              try {
+                sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', {
+                  to_number: cleanedPhone,
+                  text: messageText,
+                  phone_number_id: 'default',
+                })
+              } catch (userConnErr) {
+                console.log('Tentativa com conta do usuário falhou:', userConnErr.message)
+              }
+            }
+
+            // 2. Se não deu certo e houver executeAsOwner, tentar com a conta do dono
+            if (
+              (!sendResult || !sendResult.successful) &&
+              typeof $connectors.executeAsOwner === 'function'
+            ) {
+              try {
+                sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', {
+                  to_number: cleanedPhone,
+                  text: messageText,
+                  phone_number_id: 'default',
+                })
+              } catch (ownerConnErr) {
+                console.log('Tentativa com conta do dono falhou:', ownerConnErr.message)
+              }
+            }
 
             if (sendResult && sendResult.successful) {
               whatsappSent = true
             } else {
               connectorWarning =
-                'WhatsApp do dono não conectado nos Conectores ou número aguardando início de conversa.'
-              console.log(
-                'executeAsOwner WHATSAPP_SEND_MESSAGE result:',
-                JSON.stringify(sendResult),
-              )
+                sendResult?.error ||
+                'WhatsApp não conectado ou número aguardando início de conversa. Use o link do WhatsApp para envio imediato.'
+              console.log('execute WHATSAPP_SEND_MESSAGE result:', JSON.stringify(sendResult))
             }
           } else {
-            connectorWarning = 'Conector de WhatsApp do proprietário não habilitado no servidor.'
+            connectorWarning = 'Conector de WhatsApp não disponível no servidor.'
           }
         } catch (connErr) {
-          connectorWarning = 'A conta do WhatsApp precisa ser conectada na aba Conectores.'
+          connectorWarning = 'A conta do WhatsApp pode ser conectada no botão Conectar WhatsApp.'
           console.log('Erro ao executar WhatsApp via conector:', connErr.message)
         }
       }
