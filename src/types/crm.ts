@@ -193,8 +193,22 @@ export interface Contact extends RecordModel {
   special_date?: string
   acquisition_channel?: string
   service_notes?: string
+  city?: string
+  state?: string
+  address?: string
+  cpf_cnpj?: string
+  coffee_preference?: string
   custom_fields?: Record<string, string | number | boolean>
   expand?: { owner?: UserRecord; empresa?: Empresa }
+}
+
+export interface SpreadsheetImportSummary {
+  clientsCreated: number
+  clientsUpdated: number
+  clientsUnchanged: number
+  purchasesImported: number
+  warnings: string[]
+  contactsTouchedCount: number
 }
 
 /**

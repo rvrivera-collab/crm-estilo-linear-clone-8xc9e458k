@@ -21,6 +21,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ContactDrawer } from '@/components/ContactDrawer'
 import { ContactDialog } from '@/components/forms/ContactDialog'
 import { BatchWhatsAppModal } from '@/components/BatchWhatsAppModal'
+import { ImportSpreadsheetModal } from '@/components/ImportSpreadsheetModal'
 import { PageSkeleton } from '@/components/PageSkeleton'
 import { UserAvatar } from '@/components/UserAvatar'
 import {
@@ -55,6 +56,7 @@ export default function Contacts() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [batchModalOpen, setBatchModalOpen] = useState(false)
   const detail = contacts.find((contact) => contact.id === params.get('contact')) || null
@@ -148,6 +150,17 @@ export default function Contacts() {
             >
               <FileSpreadsheet className="size-3.5" />
               <span>Campanha WhatsApp ({selectedIds.length})</span>
+            </button>
+
+            {/* Botão discreto de Importar Planilha (Linear style) */}
+            <button
+              type="button"
+              onClick={() => setImportModalOpen(true)}
+              className="flex h-8 items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-2.5 text-[11px] font-medium text-[#475569] shadow-2xs transition hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              title="Importar base de clientes a partir de planilha (.xlsx/.csv)"
+            >
+              <FileSpreadsheet className="size-3.5 text-amber-600" />
+              <span>Importar planilha</span>
             </button>
 
             <DropdownMenu>
@@ -523,6 +536,15 @@ export default function Contacts() {
         }}
       />
       <ContactDialog open={dialogOpen} onOpenChange={setDialogOpen} contact={editing} />
+
+      {/* Modal de Importação de Planilha XLSX */}
+      <ImportSpreadsheetModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={() => {
+          // Os dados já foram gravados no PocketBase, CrmContext cuidará do realtime ou recarregará
+        }}
+      />
 
       {/* Modal de Disparo de Campanha em Lote via WhatsApp */}
       <BatchWhatsAppModal

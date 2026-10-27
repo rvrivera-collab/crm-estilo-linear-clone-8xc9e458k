@@ -40,6 +40,11 @@ export function ContactDialog({
       special_date: contact?.special_date ? contact.special_date.split('T')[0] : '',
       acquisition_channel: contact?.acquisition_channel || '',
       service_notes: contact?.service_notes || '',
+      city: contact?.city || '',
+      state: contact?.state || '',
+      address: contact?.address || '',
+      cpf_cnpj: contact?.cpf_cnpj || '',
+      coffee_preference: contact?.coffee_preference || '',
       company:
         contact?.company ||
         presetCompanyName ||
@@ -111,6 +116,11 @@ export function ContactDialog({
         special_date_description: form.special_date_description.trim(),
         acquisition_channel: form.acquisition_channel.trim(),
         service_notes: form.service_notes.trim(),
+        city: form.city.trim(),
+        state: form.state.trim().toUpperCase(),
+        address: form.address.trim(),
+        cpf_cnpj: form.cpf_cnpj.trim(),
+        coffee_preference: form.coffee_preference.trim(),
         owner: contact?.owner || user?.id,
       }
       if (form.birthday) {
@@ -192,6 +202,39 @@ export function ContactDialog({
               placeholder="Ex: (11) 98765-4321"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </Field>
+
+          {/* Localização & Documento */}
+          <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+            <Field label="Cidade" className="col-span-2">
+              <input
+                placeholder="Ex: Três Pontas, São Paulo..."
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+              />
+            </Field>
+            <Field label="UF">
+              <input
+                maxLength={2}
+                placeholder="Ex: MG"
+                value={form.state}
+                onChange={(e) => setForm({ ...form, state: e.target.value.toUpperCase() })}
+              />
+            </Field>
+          </div>
+          <Field label="Endereço Completo (Correios / Envio)" className="sm:col-span-2">
+            <input
+              placeholder="Rua, número, complemento, bairro (CEP...)"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </Field>
+          <Field label="CPF / CNPJ" className="sm:col-span-2">
+            <input
+              placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
+              value={form.cpf_cnpj}
+              onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })}
             />
           </Field>
 

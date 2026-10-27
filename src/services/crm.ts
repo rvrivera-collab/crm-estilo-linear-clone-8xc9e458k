@@ -432,6 +432,40 @@ export async function deletePurchase(purchaseId: string, contactId: string) {
   })
 }
 
+/**
+ * Recalcula purchase_count, total_spent e last_purchase_date de um contato
+ * com base nos registros reais da collection purchases (e fallback de last_purchase_date se fornecido)
+ */
+export async function recalculateContactPurchases(
+  contactId: string,
+  fallbackLastPurchaseDate?: string | null,
+) {
+  const allContactPurchases = await pb.collection<Purchase>('purchases').getFullList({
+    filter: `contact = "${contactId}"`,
+    sort: '-purchase_date',
+  })
+
+  const count = allContactPurchases.length
+  const total = allContactPurchases.reduce((acc, p) => acc + (Number(p.amount) || 0), 0)
+
+  let latestDate: string | null =
+    allContactPurchases.length > 0 ? allContactPurchases[0].purchase_date : null
+  if (fallbackLastPurchaseDate) {
+    if (
+      !latestDate ||
+      new Date(fallbackLastPurchaseDate).getTime() > new Date(latestDate).getTime()
+    ) {
+      latestDate = fallbackLastPurchaseDate
+    }
+  }
+
+  return pb.collection<Contact>('contacts').update(contactId, {
+    purchase_count: count,
+    total_spent: total,
+    last_purchase_date: latestDate,
+  })
+}
+
 // ==========================================
 // GERAÇÃO DE CUPOM DE ANIVERSÁRIO
 // ==========================================

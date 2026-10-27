@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T02:13:48.368Z",
+  "generatedAt": "2026-10-27T02:29:02.556Z",
   "collections": [
     {
       "name": "users",
@@ -298,6 +298,36 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "state",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cpf_cnpj",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "coffee_preference",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -305,7 +335,9 @@
         "CREATE INDEX idx_contacts_owner ON contacts (owner)",
         "CREATE INDEX idx_contacts_created ON contacts (created)",
         "CREATE INDEX `idx_contacts_birthday` ON `contacts` (birthday)",
-        "CREATE INDEX `idx_contacts_last_purchase` ON `contacts` (last_purchase_date)"
+        "CREATE INDEX `idx_contacts_last_purchase` ON `contacts` (last_purchase_date)",
+        "CREATE INDEX `idx_contacts_city` ON `contacts` (city)",
+        "CREATE INDEX `idx_contacts_state` ON `contacts` (state)"
       ]
     },
     {

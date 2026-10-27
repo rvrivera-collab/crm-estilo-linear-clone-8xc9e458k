@@ -13,6 +13,7 @@ import {
   Info,
   LoaderCircle,
   Mail,
+  MapPin,
   MessageCircle,
   MessageSquareText,
   Package,
@@ -383,6 +384,24 @@ export function ContactDrawer({
                   </span>
                 </p>
               )}
+              {(contact.city || contact.state) && (
+                <p className="flex items-center gap-2">
+                  <MapPin className="size-3.5 text-[#94a3b8] shrink-0" />
+                  <span>{[contact.city, contact.state].filter(Boolean).join(' - ')}</span>
+                </p>
+              )}
+              {contact.address && (
+                <p className="flex items-start gap-2 text-[10px] text-[#64748b]">
+                  <span className="font-semibold text-[#475569] shrink-0">Envio:</span>
+                  <span className="break-words">{contact.address}</span>
+                </p>
+              )}
+              {contact.cpf_cnpj && (
+                <p className="flex items-center gap-2 text-[10px] text-[#64748b]">
+                  <span className="font-semibold text-[#475569] shrink-0">Doc:</span>
+                  <span className="font-mono">{contact.cpf_cnpj}</span>
+                </p>
+              )}
             </div>
 
             {/* BOX DISNEY: O QUE FAZ ESSE CLIENTE SE SENTIR ÚNICO */}
@@ -407,6 +426,15 @@ export function ContactDrawer({
                       <span className="text-[#94a3b8] font-normal">Não informado</span>
                     )}
                   </p>
+                  {contact.coffee_preference &&
+                    contact.coffee_preference !== contact.favorite_coffee && (
+                      <p
+                        className="text-[10px] text-amber-800/80 truncate mt-0.5"
+                        title={contact.coffee_preference}
+                      >
+                        📋 {contact.coffee_preference}
+                      </p>
+                    )}
                 </div>
                 <div>
                   <span className="block text-[9px] uppercase font-bold text-[#64748b]">
