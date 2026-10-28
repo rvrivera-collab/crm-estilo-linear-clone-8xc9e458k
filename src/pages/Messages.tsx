@@ -325,28 +325,28 @@ export default function Messages() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#fafbfc]">
+    <div className="flex h-full min-h-0 flex-col bg-[#faf7f2]">
       {/* Topo / Header Linear */}
-      <header className="shrink-0 border-b border-[#e5e7eb] bg-white px-4 py-3 sm:px-6">
+      <header className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 py-3 sm:px-6 shadow-2xs">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-emerald-600 font-bold">
+              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
                 WhatsApp & Comunicação Disney
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800">
+              <span className="inline-flex items-center gap-1 rounded border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-900">
                 <MessageCircle className="size-3" /> {conversations.length} conversas com histórico
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-900">
+              <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-[#693910]">
                 <Users className="size-3" /> {contacts.length} clientes na base
               </span>
             </div>
-            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
+            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13] flex items-center gap-2">
               Mensagens (WhatsApp)
             </h1>
-            <p className="mt-0.5 text-xs text-[#64748b]">
-              Envie mensagens para qualquer cliente da base ({contacts.length} contatos) e acompanhe
-              o histórico de disparos Disney.
+            <p className="mt-0.5 text-xs text-[#705e4d]">
+              Envie mensagens para qualquer cliente da base em layout de 2 colunas com demarcação
+              nítida.
             </p>
           </div>
 
@@ -510,15 +510,15 @@ export default function Messages() {
       </header>
       {/* Layout Inbox Linear de 2 Colunas (Mobile: Lista -> Detalhe com botão voltar) */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* Painel Esquerdo: Lista de Conversas por Cliente */}
+        {/* Painel Esquerdo: Lista de Conversas por Cliente (Tons quentes de café) */}
         <aside
           className={cn(
-            'w-full md:w-[330px] lg:w-[380px] shrink-0 border-r border-[#e5e7eb] bg-white flex flex-col min-h-0',
+            'w-full md:w-[330px] lg:w-[380px] shrink-0 border-r border-[#ded2c3] bg-[#f7efe5] flex flex-col min-h-0 shadow-xs',
             activeContactId ? 'max-md:hidden' : 'flex',
           )}
         >
           {/* Abas Superiores da Lista: Conversas vs Base Completa */}
-          <div className="flex border-b border-[#e5e7eb] bg-[#f8fafc] text-xs font-semibold shrink-0">
+          <div className="flex border-b border-[#ded2c3] bg-[#ede1d3] text-xs font-semibold shrink-0">
             <button
               type="button"
               onClick={() => setInboxTab('conversas')}
@@ -548,7 +548,7 @@ export default function Messages() {
           </div>
 
           {/* Barra de busca e filtros rápidos */}
-          <div className="p-3 border-b border-[#e5e7eb] space-y-2 shrink-0 bg-[#fafafa]">
+          <div className="p-3 border-b border-[#ded2c3] space-y-2 shrink-0 bg-[#fbf8f3]">
             <label className="flex h-8 w-full items-center rounded-md border border-[#e2e8f0] bg-white px-2.5 shadow-2xs">
               <Search className="mr-2 size-3.5 text-[#94a3b8]" />
               <input
@@ -771,14 +771,14 @@ export default function Messages() {
         {/* Painel Direito: Linha do Tempo e Detalhes da Conversa do Cliente */}
         <main
           className={cn(
-            'flex-1 min-h-0 flex-col bg-[#fafbfc]',
+            'flex-1 min-h-0 flex-col bg-[#fdfcf9]',
             activeContactId ? 'flex' : 'max-md:hidden flex',
           )}
         >
           {activeContact ? (
             <>
               {/* Header do Cliente na Conversa */}
-              <div className="shrink-0 border-b border-[#e5e7eb] bg-white px-4 py-3 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="shrink-0 border-b border-[#ded2c3] bg-[#faf6ef] px-4 py-3 flex items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <button
                     type="button"
@@ -864,7 +864,7 @@ export default function Messages() {
               </div>
 
               {/* Informações sensoriais / Disney do Cliente (Acolhimento) */}
-              <div className="border-b border-[#e5e7eb] bg-amber-50/40 px-4 py-2 text-xs flex flex-wrap items-center gap-x-4 gap-y-1 text-amber-950 font-medium">
+              <div className="border-b border-[#ecdcc6] bg-[#fbf5eb] px-4 py-2 text-xs flex flex-wrap items-center gap-x-4 gap-y-1 text-amber-950 font-medium">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-amber-800 flex items-center gap-1">
                   <Sparkles className="size-3 text-amber-600" /> Preferências Disney:
                 </span>
@@ -1031,7 +1031,7 @@ export default function Messages() {
               </div>
 
               {/* Barra de ação rápida inferior para responder/compor */}
-              <div className="shrink-0 border-t border-[#e5e7eb] bg-white p-3 sm:px-6 flex items-center justify-between gap-3">
+              <div className="shrink-0 border-t border-[#ded2c3] bg-[#faf6ef] p-3 sm:px-6 flex items-center justify-between gap-3">
                 <span className="text-[11px] text-[#64748b] hidden sm:inline">
                   Deseja encantar este cliente agora?
                 </span>

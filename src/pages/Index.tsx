@@ -536,23 +536,23 @@ export default function Index() {
   ]
 
   return (
-    <div className="h-full w-full overflow-y-auto">
+    <div className="h-full w-full overflow-y-auto bg-[#faf7f2]">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-6 sm:py-6 space-y-4">
         {/* ============================================================ */}
-        {/* 1. HEADER: Exatamente o estilo e layout Linear */}
+        {/* 1. HEADER: Estilo Linear em tons quentes de cafeteria */}
         {/* ============================================================ */}
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#ded2c3] pb-4 bg-[#fbf9f5] p-4 rounded-lg shadow-2xs">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] font-semibold text-amber-700 uppercase tracking-wider">
+              <span className="font-mono text-[11px] font-bold text-[#8c531b] uppercase tracking-wider">
                 CRM Cafés Especiais
               </span>
-              <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-emerald-700">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1 rounded border border-emerald-400/50 bg-emerald-50 px-2 py-0.5 font-mono text-[9px] font-semibold text-emerald-800">
+                <span className="size-1.5 rounded-full bg-emerald-600 animate-pulse" />
                 Sincronizado
               </span>
             </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#2b1c13] sm:text-3xl">
               Painel de Clientes & Vendas
             </h1>
           </div>
@@ -576,19 +576,17 @@ export default function Index() {
               type="button"
               onClick={handleManualRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[#d6c7b6] bg-white px-3.5 py-2 text-xs font-semibold text-[#5c4735] shadow-2xs hover:bg-[#f3ece0] transition disabled:opacity-60"
               title="Atualizar dados do CRM"
             >
-              <RefreshCw
-                className={cn('size-3.5 text-muted-foreground', refreshing && 'animate-spin')}
-              />
+              <RefreshCw className={cn('size-3.5 text-[#786655]', refreshing && 'animate-spin')} />
               <span>{refreshing ? 'Carregando…' : 'Atualizar'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => navigate('/contatos')}
-              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-600 transition shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#724113] transition shadow-xs"
             >
               <Coffee className="size-3.5" />
               <span>Ver Clientes</span>
@@ -599,7 +597,7 @@ export default function Index() {
         {/* ============================================================ */}
         {/* 1.1 RESUMO DA SAÚDE DA JORNADA DO CLIENTE (EXPERIÊNCIA DISNEY) */}
         {/* ============================================================ */}
-        <section className="rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50/50 via-white to-orange-50/30 p-4 shadow-2xs">
+        <section className="rounded-lg border border-[#ebdcc6] bg-[#fdfaf5] p-4 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
             <div>
               <div className="flex items-center gap-2">

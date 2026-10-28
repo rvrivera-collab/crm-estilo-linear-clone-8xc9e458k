@@ -437,13 +437,13 @@ export default function Agenda() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-white overflow-hidden">
+    <div className="flex h-full min-h-0 w-full flex-col bg-[#faf7f2] overflow-hidden">
       {/* HEADER ESTILO LINEAR */}
-      <div className="shrink-0 border-b border-[#e5e7eb] px-4 py-3 sm:px-6 bg-[#fafafa]">
+      <div className="shrink-0 border-b border-[#ded2c3] px-4 py-3 sm:px-6 bg-[#fbf9f5] shadow-2xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-700 font-bold">
+              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
                 Rotina & Atendimento · Cafés Especiais
               </span>
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
@@ -806,10 +806,10 @@ export default function Agenda() {
           )}
         </div>
 
-        {/* LADO DIREITO: AGENDA DO DIA SELECIONADO & PAINEL PRÓXIMOS 7 DIAS */}
-        <div className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col bg-[#fafafa] overflow-y-auto">
+        {/* LADO DIREITO: AGENDA DO DIA SELECIONADO & PAINEL PRÓXIMOS 7 DIAS (Demarcado com tom quente de café) */}
+        <div className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col bg-[#f6eee3] border-l border-[#ded2c3] overflow-y-auto shadow-[-2px_0_12px_rgba(40,25,15,0.03)]">
           {/* SEÇÃO 1: AGENDA DO DIA SELECIONADO */}
-          <div className="p-4 border-b border-[#e5e7eb] bg-white">
+          <div className="p-4 border-b border-[#ded2c3] bg-[#fcfbf7]">
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-mono text-[10px] uppercase font-bold text-amber-700 tracking-wider">

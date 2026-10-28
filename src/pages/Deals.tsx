@@ -103,14 +103,14 @@ export default function Deals() {
     navigate(`/negocios?deal=${deal.id}`)
   }
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="shrink-0 border-b border-[#e5e7eb] px-4 pb-3 pt-4 sm:px-5">
-        <p className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600">
-          Base comercial
+    <div className="flex h-full min-h-0 flex-col bg-[#faf7f2]">
+      <div className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 pb-3 pt-4 sm:px-5 shadow-2xs">
+        <p className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
+          Base comercial · Cafés Especiais
         </p>
-        <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">Negócios</h1>
+        <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13]">Negócios</h1>
         <div data-tour-id="deals-search-filters" className="mt-4 flex flex-wrap gap-2">
-          <label className="flex h-8 min-w-[210px] flex-1 items-center rounded-md border border-[#e2e8f0] bg-white px-2.5 shadow-2xs sm:max-w-sm">
+          <label className="flex h-8 min-w-[210px] flex-1 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs sm:max-w-sm">
             <Search className="mr-2 size-3.5 text-[#94a3b8]" />
             <input
               value={query}
@@ -168,18 +168,18 @@ export default function Deals() {
             <section key={label}>
               <div
                 data-tour-id="deals-table-header"
-                className="flex h-8 items-center border-b border-[#e5e7eb] bg-[#f8fafc] px-3 text-[9px] font-bold uppercase tracking-wider text-[#64748b]"
+                className="flex h-8 items-center border-b border-[#ded2c3] bg-[#f5ede2] px-3 text-[9px] font-bold uppercase tracking-wider text-[#5c4735]"
               >
-                <ChevronDown className="mr-1.5 size-3" />
+                <ChevronDown className="mr-1.5 size-3 text-[#8c531b]" />
                 {label}
-                <span className="ml-1.5 rounded bg-[#e2e8f0] px-1.5 font-mono text-[8px] text-[#475569]">
+                <span className="ml-1.5 rounded bg-white/80 border border-[#d6c7b6] px-1.5 font-mono text-[8px] text-[#2b1c13] font-bold">
                   {items.length}
                 </span>
-                <span className="ml-auto font-mono font-normal text-[#64748b]">
+                <span className="ml-auto font-mono font-bold text-[#5c4735]">
                   {money.format(items.reduce((sum, item) => sum + item.value, 0))}
                 </span>
               </div>
-              <div className="grid h-8 grid-cols-[32px_82px_minmax(160px,1.2fr)_120px_110px_80px_80px_85px_95px_80px_75px_76px] items-center border-b border-[#e5e7eb] bg-[#fafafa] px-2 text-[9px] font-semibold text-[#64748b]">
+              <div className="grid h-8 grid-cols-[32px_82px_minmax(160px,1.2fr)_120px_110px_80px_80px_85px_95px_80px_75px_76px] items-center border-b border-[#ded2c3] bg-[#f3ece0] px-2 text-[9px] font-semibold text-[#5c4735]">
                 <span />
                 <span>Código</span>
                 <span>Título</span>

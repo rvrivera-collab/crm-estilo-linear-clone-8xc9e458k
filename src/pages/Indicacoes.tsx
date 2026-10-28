@@ -58,6 +58,7 @@ interface ReferralStageCol {
   borderClass: string
   bgHeaderClass: string
   headerTextColor: string
+  columnBg: string
 }
 
 const STAGE_COLUMNS: ReferralStageCol[] = [
@@ -66,30 +67,33 @@ const STAGE_COLUMNS: ReferralStageCol[] = [
     label: 'Indicado',
     subtitle: 'Novo lead indicado por cliente, aguardando primeiro toque caloroso',
     icon: UserPlus,
-    badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
-    borderClass: 'border-amber-200',
-    bgHeaderClass: 'bg-amber-50/70',
-    headerTextColor: 'text-amber-950',
+    badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
+    borderClass: 'border-[#ebdcc6]',
+    bgHeaderClass: 'bg-[#fbf5eb]',
+    headerTextColor: 'text-[#693910]',
+    columnBg: 'bg-[#faf2ea]',
   },
   {
     key: 'primeiro_contato',
     label: 'Primeiro contato',
     subtitle: 'Conversa iniciada via WhatsApp com boas-vindas Disney e menu sensorial',
     icon: MessageCircle,
-    badgeClass: 'bg-blue-100 text-blue-900 border-blue-200',
-    borderClass: 'border-blue-200',
-    bgHeaderClass: 'bg-blue-50/70',
-    headerTextColor: 'text-blue-950',
+    badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
+    borderClass: 'border-[#ccdef2]',
+    bgHeaderClass: 'bg-[#edf4fd]',
+    headerTextColor: 'text-[#1d4f8f]',
+    columnBg: 'bg-[#f4f8fd]',
   },
   {
     key: 'primeira_compra',
     label: 'Primeira compra (Convertido)',
     subtitle: 'Amigo comprou seu primeiro café! Recompensa concedida ao indicador',
     icon: CheckCircle2,
-    badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-200',
-    borderClass: 'border-emerald-300 ring-1 ring-emerald-200',
-    bgHeaderClass: 'bg-emerald-50/70',
-    headerTextColor: 'text-emerald-950',
+    badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    borderClass: 'border-[#c7e9dc]',
+    bgHeaderClass: 'bg-[#ecf7f1]',
+    headerTextColor: 'text-[#126343]',
+    columnBg: 'bg-[#f2f9f5]',
   },
 ]
 
@@ -297,26 +301,26 @@ export default function Indicacoes() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#fafbfc]">
+    <div className="flex flex-col h-full bg-[#f4ede3]">
       {/* HEADER DA PÁGINA */}
-      <header className="shrink-0 border-b border-[#e5e7eb] bg-white px-4 py-3.5 sm:px-6">
+      <header className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 py-3.5 sm:px-6 shadow-2xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-700 font-bold flex items-center gap-1">
+              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold flex items-center gap-1">
                 <Gift className="size-3 text-amber-600" /> Programa de Indicação & Encantamento
                 Disney
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
+              <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-[#693910]">
                 {kpis.total} indicações
               </span>
             </div>
-            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
+            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13] flex items-center gap-2">
               Indicações de Clientes
             </h1>
-            <p className="mt-0.5 text-xs text-[#64748b]">
-              Incentive seus clientes fiéis a trazerem amigos, acompanhe as conversões e recompense
-              com afeto e cupons exclusivos.
+            <p className="mt-0.5 text-xs text-[#705e4d]">
+              Incentive seus clientes fiéis a trazerem amigos, acompanhe conversões com demarcação
+              visual de colunas.
             </p>
           </div>
 
@@ -324,24 +328,24 @@ export default function Indicacoes() {
             <button
               onClick={() => refresh()}
               title="Recarregar"
-              className="inline-flex items-center gap-1 rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#475569] shadow-2xs hover:bg-[#f8fafc] transition"
+              className="inline-flex items-center gap-1 rounded-md border border-[#d6c7b6] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#5c4735] shadow-2xs hover:bg-[#f3ece0] transition"
             >
               <RefreshCw className="size-3.5" />
             </button>
 
             {/* Alternar abas/visões */}
-            <div className="inline-flex rounded-md border border-[#e2e8f0] bg-[#f8fafc] p-0.5 text-xs">
+            <div className="inline-flex rounded-md border border-[#d6c7b6] bg-[#f0e7dc] p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('kanban')}
                 className={cn(
                   'inline-flex items-center gap-1 rounded px-2.5 py-1 font-medium transition',
                   viewMode === 'kanban'
-                    ? 'bg-white font-bold text-[#1c1c1e] shadow-2xs'
-                    : 'text-[#64748b] hover:text-[#1c1c1e]',
+                    ? 'bg-white font-bold text-[#2b1c13] shadow-2xs'
+                    : 'text-[#6f5e4f] hover:text-[#2b1c13]',
                 )}
               >
-                <LayoutGrid className="size-3.5" />
+                <LayoutGrid className="size-3.5 text-amber-700" />
                 <span>Quadro</span>
               </button>
               <button
@@ -350,8 +354,8 @@ export default function Indicacoes() {
                 className={cn(
                   'inline-flex items-center gap-1 rounded px-2.5 py-1 font-medium transition',
                   viewMode === 'list'
-                    ? 'bg-white font-bold text-[#1c1c1e] shadow-2xs'
-                    : 'text-[#64748b] hover:text-[#1c1c1e]',
+                    ? 'bg-white font-bold text-[#2b1c13] shadow-2xs'
+                    : 'text-[#6f5e4f] hover:text-[#2b1c13]',
                 )}
               >
                 <List className="size-3.5" />
@@ -363,8 +367,8 @@ export default function Indicacoes() {
                 className={cn(
                   'inline-flex items-center gap-1 rounded px-2.5 py-1 font-medium transition',
                   viewMode === 'clients'
-                    ? 'bg-white font-bold text-[#1c1c1e] shadow-2xs'
-                    : 'text-[#64748b] hover:text-[#1c1c1e]',
+                    ? 'bg-white font-bold text-[#2b1c13] shadow-2xs'
+                    : 'text-[#6f5e4f] hover:text-[#2b1c13]',
                 )}
               >
                 <Users className="size-3.5" />
@@ -379,68 +383,68 @@ export default function Indicacoes() {
                 setPresetStatus('indicado')
                 setDialogOpen(true)
               }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#724113] transition"
             >
               <Plus className="size-3.5" /> Nova Indicação
             </button>
           </div>
         </div>
 
-        {/* PAINEL RESUMO / KPIS NO TOPO (Item 4 da Task) */}
+        {/* PAINEL RESUMO / KPIS NO TOPO */}
         <section
           aria-label="Resumo do programa de indicação"
           className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5"
         >
-          <div className="rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider block">
+          <div className="rounded-lg border border-[#e2d5c4] bg-white p-3 shadow-2xs">
+            <span className="text-[10px] font-bold text-[#786655] uppercase tracking-wider block">
               Total de Indicações
             </span>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl font-extrabold text-[#1c1c1e]">{kpis.total}</span>
-              <span className="text-[10px] font-mono text-[#94a3b8]">amigos registrados</span>
+              <span className="text-xl font-extrabold text-[#2b1c13]">{kpis.total}</span>
+              <span className="text-[10px] font-mono text-[#8c7865]">amigos registrados</span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 shadow-2xs">
+          <div className="rounded-lg border border-emerald-300 bg-emerald-50/70 p-3 shadow-2xs">
             <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
               Convertidas (1ª Compra)
             </span>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl font-extrabold text-emerald-700">{kpis.converted}</span>
-              <span className="text-[10px] font-mono text-emerald-800 font-bold">
+              <span className="text-xl font-extrabold text-emerald-800">{kpis.converted}</span>
+              <span className="text-[10px] font-mono text-emerald-900 font-bold">
                 novos clientes
               </span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+          <div className="rounded-lg border border-amber-300 bg-amber-50/80 p-3 shadow-2xs">
+            <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
               Taxa de Conversão
             </span>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl font-extrabold text-amber-800">{kpis.conversionRate}%</span>
-              <span className="text-[10px] font-mono text-amber-700 flex items-center gap-0.5">
+              <span className="text-xl font-extrabold text-amber-900">{kpis.conversionRate}%</span>
+              <span className="text-[10px] font-mono text-amber-800 font-semibold flex items-center gap-0.5">
                 <TrendingUp className="size-3" /> do total
               </span>
             </div>
           </div>
 
-          <div className="rounded-lg border border-purple-200 bg-purple-50/40 p-3 shadow-2xs">
-            <span className="text-[10px] font-bold text-purple-800 uppercase tracking-wider block">
+          <div className="rounded-lg border border-purple-300 bg-purple-50/70 p-3 shadow-2xs">
+            <span className="text-[10px] font-bold text-purple-900 uppercase tracking-wider block">
               Cupons de Recompensa
             </span>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl font-extrabold text-purple-700">{kpis.rewardsIssued}</span>
+              <span className="text-xl font-extrabold text-purple-800">{kpis.rewardsIssued}</span>
               <span className="text-[10px] font-mono text-purple-800">gerados</span>
             </div>
           </div>
 
-          <div className="col-span-2 sm:col-span-4 lg:col-span-1 rounded-lg border border-blue-200 bg-blue-50/40 p-3 shadow-2xs flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">
+          <div className="col-span-2 sm:col-span-4 lg:col-span-1 rounded-lg border border-blue-300 bg-blue-50/70 p-3 shadow-2xs flex flex-col justify-between">
+            <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider block">
               Em Atendimento
             </span>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl font-extrabold text-blue-700">{kpis.inProgress}</span>
+              <span className="text-xl font-extrabold text-blue-800">{kpis.inProgress}</span>
               <span className="text-[10px] font-mono text-blue-800">no funil</span>
             </div>
           </div>
@@ -599,10 +603,10 @@ export default function Indicacoes() {
                       }
                     }}
                     className={cn(
-                      'flex flex-col flex-1 min-w-[280px] rounded-lg border bg-white shadow-2xs transition-colors',
-                      isOver
-                        ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-300/40'
-                        : col.borderClass,
+                      'flex flex-col flex-1 min-w-[280px] rounded-lg border shadow-xs transition-colors',
+                      col.columnBg,
+                      col.borderClass,
+                      isOver ? 'ring-2 ring-amber-500 shadow-md' : '',
                     )}
                   >
                     {/* Header da Coluna */}
@@ -635,9 +639,9 @@ export default function Indicacoes() {
                     </header>
 
                     {/* Lista de Cards da Coluna */}
-                    <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-2.5 bg-[#fcfdfe]">
+                    <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-2.5 bg-black/[0.015]">
                       {items.length === 0 ? (
-                        <div className="p-4 text-center text-[11px] text-[#94a3b8] border border-dashed border-[#e2e8f0] rounded-md my-2">
+                        <div className="p-4 text-center text-[11px] text-[#8c7865] border border-dashed border-[#d8c8b6] rounded-md my-2 bg-white/40">
                           Nenhuma indicação nesta etapa
                         </div>
                       ) : (
@@ -659,10 +663,8 @@ export default function Indicacoes() {
                                 setOverStage(null)
                               }}
                               className={cn(
-                                'group cursor-grab rounded-md border bg-white p-3 shadow-2xs hover:border-[#cbd5e1] hover:shadow-xs transition active:cursor-grabbing flex flex-col justify-between',
-                                isConverted
-                                  ? 'border-emerald-300 bg-emerald-50/20'
-                                  : 'border-[#e2e8f0]',
+                                'group cursor-grab rounded-md border bg-white p-3 shadow-2xs hover:border-[#bda895] hover:shadow-xs transition active:cursor-grabbing flex flex-col justify-between border-[#ded2c3]',
+                                isConverted && 'border-emerald-300 bg-emerald-50/20',
                                 draggingId === ref.id && 'opacity-40 scale-[0.98]',
                               )}
                             >

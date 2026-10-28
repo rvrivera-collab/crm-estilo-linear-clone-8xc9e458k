@@ -96,9 +96,9 @@ export default function Recovery() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#fcfcfd]">
+    <div className="flex h-full min-h-0 flex-col bg-[#faf7f2]">
       {/* Top Header */}
-      <div className="shrink-0 border-b border-[#e5e7eb] bg-white px-4 pb-4 pt-5 sm:px-6">
+      <div className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 pb-4 pt-5 sm:px-6 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -106,14 +106,14 @@ export default function Recovery() {
                 <Snowflake className="size-3 text-blue-600" />
                 Recuperação ativa
               </span>
-              <span className="font-mono text-[10px] text-[#94a3b8]">Sem contato há 5+ dias</span>
+              <span className="font-mono text-[10px] text-[#786655]">Sem contato há 5+ dias</span>
             </div>
-            <h1 className="mt-1 text-xl sm:text-2xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">
+            <h1 className="mt-1 text-xl sm:text-2xl font-extrabold tracking-[-.035em] text-[#2b1c13]">
               Central de Recuperação
             </h1>
-            <p className="mt-1 text-xs text-[#64748b]">
-              Monitore leads esfriando, priorize por criticidade e retome contato instantaneamente
-              com auxílio da IA.
+            <p className="mt-1 text-xs text-[#705e4d]">
+              Monitore oportunidades esfriando, priorize por criticidade e retome contato com áreas
+              demarcadas.
             </p>
           </div>
 
@@ -138,52 +138,56 @@ export default function Recovery() {
 
         {/* Metric Cards Row */}
         <div data-tour-id="recovery-kpis" className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-3">
+          <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-blue-800 uppercase tracking-wide">
+              <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wide">
                 Total para recuperar
               </span>
               <Snowflake className="size-3.5 text-blue-600" />
             </div>
-            <p className="mt-1.5 font-mono text-xl font-bold text-blue-950">
+            <p className="mt-1.5 font-mono text-xl font-extrabold text-blue-950">
               {rawColdLeads.length}
             </p>
-            <p className="mt-0.5 text-[9px] text-blue-700">Leads ativos sem follow-up</p>
+            <p className="mt-0.5 text-[9px] text-blue-800 font-medium">
+              Leads ativos sem follow-up
+            </p>
           </div>
 
-          <div className="rounded-lg border border-red-100 bg-red-50/40 p-3">
+          <div className="rounded-lg border border-red-200 bg-red-50/70 p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-red-800 uppercase tracking-wide">
+              <span className="text-[10px] font-bold text-red-900 uppercase tracking-wide">
                 Estado crítico (10d+)
               </span>
               <Flame className="size-3.5 text-red-600" />
             </div>
-            <p className="mt-1.5 font-mono text-xl font-bold text-red-950">{criticalCount}</p>
-            <p className="mt-0.5 text-[9px] text-red-700">Necessitam ação imediata</p>
+            <p className="mt-1.5 font-mono text-xl font-extrabold text-red-950">{criticalCount}</p>
+            <p className="mt-0.5 text-[9px] text-red-800 font-medium">Necessitam ação imediata</p>
           </div>
 
-          <div className="rounded-lg border border-amber-100 bg-amber-50/40 p-3">
+          <div className="rounded-lg border border-[#ebdcc6] bg-[#faf2ea] p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-amber-800 uppercase tracking-wide">
+              <span className="text-[10px] font-bold text-[#693910] uppercase tracking-wide">
                 Receita em risco
               </span>
               <Sparkles className="size-3.5 text-amber-600" />
             </div>
-            <p className="mt-1.5 font-mono text-xl font-bold text-amber-950">
+            <p className="mt-1.5 font-mono text-xl font-extrabold text-[#4a270b]">
               {money.format(totalValueAtRisk)}
             </p>
-            <p className="mt-0.5 text-[9px] text-amber-700">Soma das propostas paradas</p>
+            <p className="mt-0.5 text-[9px] text-[#705e4d] font-medium">
+              Soma das propostas paradas
+            </p>
           </div>
 
-          <div className="rounded-lg border border-[#e5e7eb] bg-white p-3 shadow-2xs">
+          <div className="rounded-lg border border-[#ded2c3] bg-white p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">
+              <span className="text-[10px] font-bold text-[#786655] uppercase tracking-wide">
                 Ação recomendada
               </span>
-              <Mail className="size-3.5 text-amber-500" />
+              <Mail className="size-3.5 text-amber-600" />
             </div>
-            <p className="mt-1.5 font-semibold text-xs text-[#1c1c1e]">Retomada com IA</p>
-            <p className="mt-0.5 text-[9px] text-[#94a3b8]">Dispara e-mail personalizado</p>
+            <p className="mt-1.5 font-bold text-xs text-[#2b1c13]">Retomada com IA</p>
+            <p className="mt-0.5 text-[9px] text-[#786655]">Dispara e-mail personalizado</p>
           </div>
         </div>
 

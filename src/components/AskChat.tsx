@@ -809,16 +809,18 @@ export function AskChat({
         )}
 
         {/* Footer do bottom estilo Linear "What's new / Agent" */}
-        <footer className="flex h-8 shrink-0 items-center justify-between border-t border-[#e5e7eb] bg-[#f8fafc] px-4 text-[10px] text-[#64748b]">
+        <footer className="flex h-8 shrink-0 items-center justify-between border-t border-[#ded2c3] bg-[#f5ede2] px-4 text-[10px] text-[#5c4735]">
           <div className="flex items-center gap-2">
-            <span className="rounded bg-[#e2e8f0] px-1.5 py-0.5 font-medium text-[#475569]">
-              Dica
+            <span className="rounded bg-white/80 border border-[#d6c7b6] px-1.5 py-0.5 font-bold text-[#2b1c13]">
+              Barista IA
             </span>
-            <span>Use o Copiloto para mover negócios, consultar SLAs ou criar oportunidades.</span>
+            <span>
+              Use o Copiloto para consultar pedidos, clientes em risco ou métricas do café.
+            </span>
           </div>
-          <div className="flex items-center gap-1 text-[#64748b]">
+          <div className="flex items-center gap-1 text-[#8c531b] font-bold">
             <Sparkles className="size-3 text-amber-600" />
-            <span>CRM Agent</span>
+            <span>CRM Barista Agent</span>
           </div>
         </footer>
       </section>

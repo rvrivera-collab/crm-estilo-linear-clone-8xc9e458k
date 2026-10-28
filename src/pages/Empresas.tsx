@@ -102,15 +102,15 @@ export default function Empresas() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-[#faf7f2]">
       {/* Header Linear */}
-      <div className="shrink-0 border-b border-[#e5e7eb] px-4 pb-3 pt-4 sm:px-5">
+      <div className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 pb-3 pt-4 sm:px-5 shadow-2xs">
         <div data-tour-id="empresas-header-actions" className="flex items-start">
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600">
+            <p className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
               Contas & Organizações
             </p>
-            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
+            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13] flex items-center gap-2">
               <Building2 className="size-5 text-amber-600" />
               Empresas
             </h1>
@@ -159,9 +159,9 @@ export default function Empresas() {
       </div>
 
       {/* Tabela Linear de Empresas */}
-      <div data-tour-id="empresas-table-list" className="min-h-0 flex-1 overflow-auto">
+      <div data-tour-id="empresas-table-list" className="min-h-0 flex-1 overflow-auto bg-[#faf7f2]">
         <div className="hidden min-w-[960px] sm:block">
-          <div className="grid h-8 grid-cols-[minmax(200px,1.4fr)_140px_100px_90px_90px_130px_100px_110px_35px] items-center border-b border-[#e5e7eb] bg-[#fafafa] px-3 text-[9px] font-semibold text-[#64748b]">
+          <div className="grid h-8 grid-cols-[minmax(200px,1.4fr)_140px_100px_90px_90px_130px_100px_110px_35px] items-center border-b border-[#ded2c3] bg-[#f3ece0] px-3 text-[9px] font-bold text-[#5c4735]">
             <span>Empresa</span>
             <span>Setor</span>
             <span>Porte</span>

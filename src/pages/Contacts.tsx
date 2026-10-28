@@ -115,17 +115,17 @@ export default function Contacts() {
 
   if (loading) return <PageSkeleton />
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="shrink-0 border-b border-[#e5e7eb] px-4 pb-3 pt-4 sm:px-5">
+    <div className="flex h-full min-h-0 flex-col bg-[#faf7f2]">
+      <div className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 pb-3 pt-4 sm:px-5 shadow-2xs">
         <div data-tour-id="contacts-header-actions" className="flex items-start">
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600">
+            <p className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
               Base de Clientes · Cafés Especiais
             </p>
-            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">
+            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13]">
               Clientes & Fidelidade
             </h1>
-            <p className="mt-1 text-xs text-[#64748b]">
+            <p className="mt-1 text-xs text-[#705e4d]">
               Gerenciamento de clientes, histórico de compras, aniversários e níveis de fidelidade.
             </p>
           </div>
@@ -152,11 +152,11 @@ export default function Contacts() {
               <span>Campanha WhatsApp ({selectedIds.length})</span>
             </button>
 
-            {/* Botão discreto de Importar Planilha (Linear style) */}
+            {/* Botão discreto de Importar Planilha */}
             <button
               type="button"
               onClick={() => setImportModalOpen(true)}
-              className="flex h-8 items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-2.5 text-[11px] font-medium text-[#475569] shadow-2xs transition hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              className="flex h-8 items-center gap-1.5 rounded-md border border-[#d6c7b6] bg-white px-2.5 text-[11px] font-medium text-[#5c4735] shadow-2xs transition hover:bg-[#f3ece0]"
               title="Importar base de clientes a partir de planilha (.xlsx/.csv)"
             >
               <FileSpreadsheet className="size-3.5 text-amber-600" />
@@ -168,20 +168,20 @@ export default function Contacts() {
                 <button
                   type="button"
                   disabled={isExporting}
-                  className="flex h-8 items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-2.5 text-[11px] font-medium text-[#475569] shadow-2xs transition hover:bg-[#f8fafc] hover:text-[#1c1c1e] disabled:opacity-50"
+                  className="flex h-8 items-center gap-1.5 rounded-md border border-[#d6c7b6] bg-white px-2.5 text-[11px] font-medium text-[#5c4735] shadow-2xs transition hover:bg-[#f3ece0] disabled:opacity-50"
                   title="Exportar base em planilha"
                 >
                   {isExporting ? (
                     <Loader2 className="size-3.5 animate-spin text-amber-600" />
                   ) : (
-                    <Download className="size-3.5 text-[#64748b]" />
+                    <Download className="size-3.5 text-[#786655]" />
                   )}
                   <span>Exportar planilha</span>
-                  <ChevronDown className="size-3 text-[#94a3b8]" />
+                  <ChevronDown className="size-3 text-[#9c8978]" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 text-[11px]">
-                <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-wider text-[#94a3b8]">
+                <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-wider text-[#9c8978]">
                   Exportar em Excel (.xlsx)
                 </DropdownMenuLabel>
                 <DropdownMenuItem
@@ -190,8 +190,8 @@ export default function Contacts() {
                 >
                   <FileSpreadsheet className="size-3.5 text-emerald-600" />
                   <div className="flex flex-col">
-                    <span className="font-medium text-[#1c1c1e]">Lista atual visível (.xlsx)</span>
-                    <span className="text-[10px] text-[#64748b]">
+                    <span className="font-medium text-[#2b1c13]">Lista atual visível (.xlsx)</span>
+                    <span className="text-[10px] text-[#786655]">
                       {filtered.length} cliente(s) {isFiltered ? '(filtros ativos)' : ''} + aba
                       Compras
                     </span>
@@ -205,10 +205,10 @@ export default function Contacts() {
                   >
                     <FileSpreadsheet className="size-3.5 text-emerald-700" />
                     <div className="flex flex-col">
-                      <span className="font-medium text-[#1c1c1e]">
+                      <span className="font-medium text-[#2b1c13]">
                         Toda a base completa (.xlsx)
                       </span>
-                      <span className="text-[10px] text-[#64748b]">
+                      <span className="text-[10px] text-[#786655]">
                         Todos os {contacts.length} clientes sem filtros + aba Compras
                       </span>
                     </div>
@@ -217,7 +217,7 @@ export default function Contacts() {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-wider text-[#94a3b8]">
+                <DropdownMenuLabel className="font-mono text-[9px] uppercase tracking-wider text-[#9c8978]">
                   Opção alternativa (.csv)
                 </DropdownMenuLabel>
                 <DropdownMenuItem
@@ -226,8 +226,8 @@ export default function Contacts() {
                 >
                   <FileText className="size-3.5 text-blue-600" />
                   <div className="flex flex-col">
-                    <span className="font-medium text-[#1c1c1e]">Exportar como CSV (.csv)</span>
-                    <span className="text-[10px] text-[#64748b]">
+                    <span className="font-medium text-[#2b1c13]">Exportar como CSV (.csv)</span>
+                    <span className="text-[10px] text-[#786655]">
                       {filtered.length} cliente(s) formatados em UTF-8
                     </span>
                   </div>
@@ -239,10 +239,10 @@ export default function Contacts() {
                   >
                     <FileText className="size-3.5 text-blue-700" />
                     <div className="flex flex-col">
-                      <span className="font-medium text-[#1c1c1e]">
+                      <span className="font-medium text-[#2b1c13]">
                         Toda a base como CSV (.csv)
                       </span>
-                      <span className="text-[10px] text-[#64748b]">
+                      <span className="text-[10px] text-[#786655]">
                         Todos os {contacts.length} clientes em UTF-8
                       </span>
                     </div>
@@ -256,7 +256,7 @@ export default function Contacts() {
                 setEditing(null)
                 setDialogOpen(true)
               }}
-              className="flex h-8 items-center gap-1.5 rounded-md bg-amber-500 px-3 text-[11px] font-bold text-white shadow-xs transition hover:bg-amber-600"
+              className="flex h-8 items-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-3.5 text-[11px] font-bold text-white shadow-xs transition hover:bg-[#724113]"
             >
               <UserPlus className="size-3.5" /> Novo cliente
             </button>
@@ -264,22 +264,22 @@ export default function Contacts() {
         </div>
 
         <div data-tour-id="contacts-search-bar" className="mt-4 flex flex-wrap gap-2">
-          <label className="flex h-8 min-w-0 flex-1 items-center rounded-md border border-[#e2e8f0] bg-white px-2.5 shadow-2xs sm:max-w-sm">
-            <Search className="mr-2 size-3.5 text-[#94a3b8]" />
+          <label className="flex h-8 min-w-0 flex-1 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs sm:max-w-sm">
+            <Search className="mr-2 size-3.5 text-[#8c7865]" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nome, e-mail, telefone ou café..."
-              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#1c1c1e] outline-none placeholder:text-[#94a3b8]"
+              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
             />
           </label>
 
-          <label className="flex h-8 items-center rounded-md border border-[#e2e8f0] bg-white px-2 text-[#64748b] shadow-2xs">
+          <label className="flex h-8 items-center rounded-md border border-[#d6c7b6] bg-white px-2 text-[#5c4735] shadow-2xs">
             <Coffee className="mr-1.5 size-3 text-amber-600" />
             <select
               value={loyaltyFilter}
               onChange={(e) => setLoyaltyFilter(e.target.value as typeof loyaltyFilter)}
-              className="bg-transparent text-[10px] text-[#1c1c1e] outline-none"
+              className="bg-transparent text-[10px] text-[#2b1c13] outline-none"
             >
               <option value="todos">Todos os níveis</option>
               <option value="1">Nível 1 - Grão (0–9)</option>
@@ -290,12 +290,12 @@ export default function Contacts() {
             </select>
           </label>
 
-          <label className="flex h-8 items-center rounded-md border border-[#e2e8f0] bg-white px-2 text-[#64748b] shadow-2xs">
+          <label className="flex h-8 items-center rounded-md border border-[#d6c7b6] bg-white px-2 text-[#5c4735] shadow-2xs">
             <Filter className="mr-1.5 size-3" />
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as typeof status)}
-              className="bg-transparent text-[10px] text-[#1c1c1e] outline-none"
+              className="bg-transparent text-[10px] text-[#2b1c13] outline-none"
             >
               <option value="todos">Todos os status</option>
               <option value="ativo">Ativo</option>
@@ -306,9 +306,9 @@ export default function Contacts() {
         </div>
       </div>
 
-      <div data-tour-id="contacts-table-list" className="min-h-0 flex-1 overflow-auto">
+      <div data-tour-id="contacts-table-list" className="min-h-0 flex-1 overflow-auto bg-[#faf7f2]">
         <div className="hidden min-w-[1100px] sm:block">
-          <div className="grid h-8 grid-cols-[36px_minmax(190px,1.2fr)_130px_110px_minmax(170px,1fr)_120px_130px_110px_90px_40px] items-center border-b border-[#e5e7eb] bg-[#fafafa] px-3 text-[9px] font-semibold text-[#64748b]">
+          <div className="grid h-8 grid-cols-[36px_minmax(190px,1.2fr)_130px_110px_minmax(170px,1fr)_120px_130px_110px_90px_40px] items-center border-b border-[#ded2c3] bg-[#f3ece0] px-3 text-[9px] font-bold text-[#5c4735]">
             <span className="flex items-center justify-center">
               <input
                 type="checkbox"

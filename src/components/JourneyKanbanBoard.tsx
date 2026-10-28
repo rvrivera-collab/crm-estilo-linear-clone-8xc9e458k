@@ -46,56 +46,62 @@ const STAGE_ORDER: {
   borderAccent: string
   badgeBg: string
   textColor: string
+  columnBg: string
 }[] = [
   {
     key: 'novo',
     label: 'Novos & Boas-Vindas',
     subtitle: 'Primeira impressão Disney · Apresentar método e grãos',
     icon: Sparkles,
-    headerBg: 'bg-blue-50/70',
-    borderAccent: 'border-blue-200',
-    badgeBg: 'bg-blue-100 text-blue-800',
-    textColor: 'text-blue-900',
+    headerBg: 'bg-[#edf4fd]',
+    borderAccent: 'border-[#cce0f5]',
+    badgeBg: 'bg-blue-100 text-blue-900 border border-blue-300',
+    textColor: 'text-[#1d4f8f]',
+    columnBg: 'bg-[#f4f8fd]',
   },
   {
     key: 'ativo',
     label: 'Ativos & Recorrentes',
     subtitle: 'Compras regulares nos últimos 30 dias',
     icon: HeartHandshake,
-    headerBg: 'bg-emerald-50/70',
-    borderAccent: 'border-emerald-200',
-    badgeBg: 'bg-emerald-100 text-emerald-800',
-    textColor: 'text-emerald-900',
+    headerBg: 'bg-[#ecf7f1]',
+    borderAccent: 'border-[#c4e8d8]',
+    badgeBg: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+    textColor: 'text-[#126343]',
+    columnBg: 'bg-[#f2f9f5]',
   },
   {
     key: 'em_risco',
     label: 'Em Risco / Vencendo',
     subtitle: '30 a 59 dias sem comprar · Grãos acabando',
     icon: Clock,
-    headerBg: 'bg-amber-50/70',
-    borderAccent: 'border-amber-200',
-    badgeBg: 'bg-amber-100 text-amber-800',
-    textColor: 'text-amber-900',
+    headerBg: 'bg-[#fbf4eb]',
+    borderAccent: 'border-[#ecdcc6]',
+    badgeBg: 'bg-amber-100 text-amber-900 border border-amber-300',
+    textColor: 'text-[#693910]',
+    columnBg: 'bg-[#faf2ea]',
   },
   {
     key: 'reengajamento',
     label: 'Reengajamento Urgente',
     subtitle: '60+ dias sem comprar · Resgate com carinho e cupom',
     icon: Flame,
-    headerBg: 'bg-rose-50/70',
-    borderAccent: 'border-rose-200',
-    badgeBg: 'bg-rose-100 text-rose-800',
-    textColor: 'text-rose-900',
+    headerBg: 'bg-[#faecec]',
+    borderAccent: 'border-[#f5c7c7]',
+    badgeBg: 'bg-rose-100 text-rose-900 border border-rose-300',
+    textColor: 'text-[#8c1d1d]',
+    columnBg: 'bg-[#fdf5f5]',
   },
   {
     key: 'fa_incentivador',
     label: 'Fãs & Embaixadores VIP',
     subtitle: 'Nível 3+ (20+ compras) · Amantes do café especial',
     icon: Crown,
-    headerBg: 'bg-purple-50/70',
-    borderAccent: 'border-purple-200',
-    badgeBg: 'bg-purple-100 text-purple-800',
-    textColor: 'text-purple-900',
+    headerBg: 'bg-[#f4effc]',
+    borderAccent: 'border-[#dfd0f7]',
+    badgeBg: 'bg-purple-100 text-purple-900 border border-purple-300',
+    textColor: 'text-[#552796]',
+    columnBg: 'bg-[#f9f5fd]',
   },
 ]
 
@@ -135,43 +141,43 @@ export function JourneyKanbanBoard({
   }, [contacts, filterQuery])
 
   return (
-    <div className="flex flex-col h-full bg-[#fafbfc]">
+    <div className="flex flex-col h-full bg-[#f4ede3]">
       {/* Barra de cabeçalho do Quadro de Jornada */}
-      <div className="shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[#e5e7eb] bg-white px-4 py-3">
+      <div className="shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[#ded2c3] bg-[#fbf9f5] px-4 py-3 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600 font-bold">
+            <span className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
               Visão do Todo · Experiência Disney
             </span>
-            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
+            <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-[#693910]">
               <Users className="size-3" /> {contacts.length} clientes na jornada
             </span>
           </div>
-          <h2 className="mt-0.5 text-base font-extrabold text-[#1c1c1e] tracking-tight">
+          <h2 className="mt-0.5 text-base font-extrabold text-[#2b1c13] tracking-tight">
             Quadro Geral da Jornada do Cliente
           </h2>
-          <p className="text-[11px] text-[#64748b]">
-            Acompanhe onde cada apreciador está na sua experiência: acolhimento inicial, recompra
-            contínua, risco de perda ou lealdade máxima.
+          <p className="text-[11px] text-[#705e4d]">
+            Acompanhe onde cada apreciador está na sua experiência com colunas claramente
+            diferenciadas em tons de café e âmbar.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="flex h-8 w-64 items-center rounded-md border border-[#e2e8f0] bg-white px-2.5 shadow-2xs">
-            <Search className="mr-2 size-3.5 text-[#94a3b8]" />
+          <label className="flex h-8 w-64 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs">
+            <Search className="mr-2 size-3.5 text-[#8c7865]" />
             <input
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filtrar por nome, apelido, café..."
-              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#1c1c1e] outline-none placeholder:text-[#94a3b8]"
+              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
             />
           </label>
         </div>
       </div>
 
       {/* Colunas do Kanban da Jornada (touch scroll horizontal fluído) */}
-      <div className="flex-1 min-h-0 overflow-x-auto p-3 sm:p-4 touch-pan-x">
-        <div className="flex gap-3 h-full min-w-[1100px] sm:min-w-[1280px]">
+      <div className="flex-1 min-h-0 overflow-x-auto p-3 sm:p-4 touch-pan-x bg-[#ede4d8]">
+        <div className="flex gap-3.5 h-full min-w-[1100px] sm:min-w-[1280px]">
           {STAGE_ORDER.map((stage) => {
             const Icon = stage.icon
             const stageList = groupedContacts[stage.key] || []
@@ -180,7 +186,8 @@ export function JourneyKanbanBoard({
               <div
                 key={stage.key}
                 className={cn(
-                  'flex flex-col w-[245px] sm:w-[260px] lg:w-[280px] shrink-0 rounded-lg border bg-white shadow-2xs transition-colors',
+                  'flex flex-col w-[250px] sm:w-[265px] lg:w-[285px] shrink-0 rounded-lg border shadow-xs transition-colors',
+                  stage.columnBg,
                   stage.borderAccent,
                 )}
               >
@@ -210,9 +217,9 @@ export function JourneyKanbanBoard({
                 </div>
 
                 {/* Lista de Clientes nesta Coluna */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2 bg-[#fcfdfe]">
+                <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-2 bg-black/[0.015]">
                   {stageList.length === 0 ? (
-                    <div className="p-4 text-center text-[11px] text-[#94a3b8] border border-dashed border-[#e2e8f0] rounded-md my-2">
+                    <div className="p-4 text-center text-[11px] text-[#8c7865] border border-dashed border-[#d8c8b6] rounded-md my-2 bg-white/40">
                       Nenhum cliente neste estágio
                     </div>
                   ) : (
@@ -223,7 +230,7 @@ export function JourneyKanbanBoard({
                       return (
                         <div
                           key={contact.id}
-                          className="group rounded-md border border-[#e5e7eb] bg-white p-2.5 shadow-2xs hover:border-[#cbd5e1] hover:shadow-xs transition flex flex-col justify-between"
+                          className="group rounded-md border border-[#ded2c3] bg-white p-2.5 shadow-2xs hover:border-[#bda895] hover:shadow-xs transition flex flex-col justify-between"
                         >
                           <div>
                             {/* Linha 1: Nome, Apelido e Nível */}

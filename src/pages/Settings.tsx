@@ -138,51 +138,53 @@ export default function Settings() {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-white">
+    <div className="h-full w-full overflow-y-auto bg-[#faf7f2]">
       <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
-        <p className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600">Workspace</p>
-        <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">
+        <p className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
+          Workspace · Cafés Especiais
+        </p>
+        <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13]">
           Configurações
         </h1>
-        <p className="mt-1 text-xs text-[#64748b]">
-          Gerencie sua identidade de usuário e segurança de acesso à conta.
+        <p className="mt-1 text-xs text-[#705e4d]">
+          Gerencie sua identidade de usuário, segurança e canais do CRM.
         </p>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[180px_1fr]">
-          <nav className="space-y-1">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[190px_1fr]">
+          <nav className="space-y-1 rounded-lg border border-[#ded2c3] bg-[#f5ede2] p-2 shadow-2xs">
             <a
               href="#perfil"
-              className="flex h-8 items-center gap-2 rounded-md bg-[#f1f5f9] px-2.5 text-[11px] font-semibold text-[#1c1c1e]"
+              className="flex h-8 items-center gap-2 rounded-md bg-white border border-[#ded2c3] px-2.5 text-[11px] font-bold text-[#2b1c13] shadow-2xs"
             >
               <UserRound className="size-3.5 text-amber-600" /> Perfil
             </a>
             <a
               href="#email"
-              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-medium text-[#5c4735] hover:bg-[#ede3d4] hover:text-[#2b1c13]"
             >
               <Mail className="size-3.5" /> E-mail
             </a>
             <a
               href="#seguranca"
-              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-medium text-[#5c4735] hover:bg-[#ede3d4] hover:text-[#2b1c13]"
             >
               <ShieldCheck className="size-3.5" /> Segurança
             </a>
             <a
               href="#tour"
-              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-medium text-[#5c4735] hover:bg-[#ede3d4] hover:text-[#2b1c13]"
             >
               <Compass className="size-3.5" /> Tour guiado
             </a>
             <a
               href="#whatsapp"
-              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-medium text-[#5c4735] hover:bg-[#ede3d4] hover:text-[#2b1c13]"
             >
               <MessageCircle className="size-3.5" /> WhatsApp
             </a>
             <Link
               to="/formularios"
-              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1c1c1e]"
+              className="flex h-8 items-center gap-2 rounded-md px-2.5 text-[11px] font-medium text-[#5c4735] hover:bg-[#ede3d4] hover:text-[#2b1c13]"
             >
               <LayoutTemplate className="size-3.5" /> Formulário de Captação
             </Link>
@@ -437,10 +439,13 @@ function SettingsCard({
   children: React.ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-16 rounded-md border border-[#e5e7eb] bg-white shadow-xs">
-      <div className="border-b border-[#e5e7eb] px-4 py-3">
-        <h2 className="text-xs font-extrabold text-[#1c1c1e]">{title}</h2>
-        <p className="mt-1 text-[10px] text-[#64748b]">{description}</p>
+    <section
+      id={id}
+      className="scroll-mt-16 rounded-lg border border-[#ded2c3] bg-white shadow-2xs"
+    >
+      <div className="border-b border-[#ded2c3] bg-[#fbf9f5] px-4 py-3 rounded-t-lg">
+        <h2 className="text-xs font-extrabold text-[#2b1c13]">{title}</h2>
+        <p className="mt-1 text-[10px] text-[#705e4d]">{description}</p>
       </div>
       <div className="p-4">{children}</div>
     </section>

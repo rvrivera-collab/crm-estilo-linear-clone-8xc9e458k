@@ -155,27 +155,27 @@ export default function Reminders() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      {/* Header */}
-      <div className="shrink-0 border-b border-[#e5e7eb] px-4 pb-4 pt-4 sm:px-6">
+    <div className="flex h-full min-h-0 flex-col bg-[#faf7f2]">
+      {/* Header com estilo Linear em tons de café */}
+      <div className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 pb-4 pt-4 sm:px-6 shadow-2xs">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600">
+              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
                 Atendimento Ativo · Cafés Especiais
               </span>
               {birthdaysToday.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700 animate-pulse">
+                <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold text-rose-800 animate-pulse">
                   <Cake className="size-3" /> {birthdaysToday.length} aniversariante(s) hoje!
                 </span>
               )}
             </div>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-[-.035em] text-[#2b1c13]">
               Lembretes & Recorrência
             </h1>
-            <p className="mt-1 text-xs text-[#64748b]">
+            <p className="mt-1 text-xs text-[#705e4d]">
               Acompanhe aniversariantes para presentear com cupom de desconto e reative clientes sem
-              compras há mais de 30 dias.
+              compras com áreas demarcadas.
             </p>
           </div>
 
@@ -248,47 +248,47 @@ export default function Reminders() {
 
         {/* CARDS RESUMO */}
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3 shadow-2xs">
+          <div className="rounded-lg border border-rose-300 bg-rose-50/70 p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-rose-900 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wider">
                 Aniversários Hoje
               </span>
               <Cake className="size-4 text-rose-600" />
             </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-rose-950">
+            <p className="mt-1 font-mono text-2xl font-extrabold text-rose-950">
               {birthdaysToday.length}
             </p>
-            <p className="text-[10px] text-rose-800 mt-0.5">
+            <p className="text-[10px] text-rose-800 mt-0.5 font-medium">
               Envie um cupom e parabenize o cliente
             </p>
           </div>
 
-          <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3 shadow-2xs">
+          <div className="rounded-lg border border-amber-300 bg-amber-50/80 p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-amber-900 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
                 Próximos 7 Dias
               </span>
-              <Calendar className="size-4 text-amber-600" />
+              <Calendar className="size-4 text-amber-700" />
             </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-amber-950">
+            <p className="mt-1 font-mono text-2xl font-extrabold text-amber-950">
               {birthdayReminders.length}
             </p>
-            <p className="text-[10px] text-amber-800 mt-0.5">
+            <p className="text-[10px] text-amber-800 mt-0.5 font-medium">
               Aniversários para antecipar ações de fidelização
             </p>
           </div>
 
-          <div className="rounded-lg border border-orange-200 bg-orange-50/40 p-3 shadow-2xs">
+          <div className="rounded-lg border border-[#e4d0be] bg-[#faf2ea] p-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-orange-900 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[#693910] uppercase tracking-wider">
                 Recorrência (30+ Dias)
               </span>
-              <History className="size-4 text-orange-600" />
+              <History className="size-4 text-[#8c531b]" />
             </div>
-            <p className="mt-1 font-mono text-2xl font-bold text-orange-950">
+            <p className="mt-1 font-mono text-2xl font-extrabold text-[#4a270b]">
               {reengagementReminders.length}
             </p>
-            <p className="text-[10px] text-orange-800 mt-0.5">
+            <p className="text-[10px] text-[#705e4d] mt-0.5 font-medium">
               Clientes prontos para recompra de grãos frescos
             </p>
           </div>

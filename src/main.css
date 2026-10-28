@@ -6,44 +6,59 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 12%;
+    /* Tema Cafeteria Especial Linear: marrons de torra/espresso e âmbares de crema */
+    --background: 35 25% 97%;
+    --foreground: 25 35% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 12%;
+    --card-foreground: 25 35% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 12%;
-    --primary: 38 95% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 240 10% 15%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 95%;
-    --accent-foreground: 240 10% 12%;
+    --popover-foreground: 25 35% 15%;
+    --primary: 32 85% 42%;
+    --primary-foreground: 40 50% 98%;
+    --secondary: 33 22% 93%;
+    --secondary-foreground: 25 30% 20%;
+    --muted: 33 20% 92%;
+    --muted-foreground: 26 14% 45%;
+    --accent: 35 30% 91%;
+    --accent-foreground: 25 35% 15%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 88%;
-    --ring: 38 95% 48%;
+    --border: 30 18% 86%;
+    --input: 30 18% 84%;
+    --ring: 32 85% 42%;
     --radius: 0.375rem;
-    --sidebar-background: 220 14% 98%;
-    --sidebar-foreground: 240 10% 25%;
-    --sidebar-primary: 38 95% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 93%;
-    --sidebar-accent-foreground: 240 10% 12%;
-    --sidebar-border: 220 13% 90%;
-    --sidebar-ring: 38 95% 48%;
-    --chart-1: 38 95% 48%;
-    --chart-2: 142 71% 38%;
-    --chart-3: 217 91% 54%;
-    --chart-4: 262 83% 58%;
-    --chart-5: 220 9% 46%;
+
+    /* Sidebar espresso profundo refinado */
+    --sidebar-background: 25 30% 13%;
+    --sidebar-foreground: 36 28% 88%;
+    --sidebar-primary: 36 92% 52%;
+    --sidebar-primary-foreground: 25 35% 10%;
+    --sidebar-accent: 24 24% 19%;
+    --sidebar-accent-foreground: 38 45% 94%;
+    --sidebar-border: 24 20% 18%;
+    --sidebar-ring: 36 92% 52%;
+
+    /* Tons específicos de demarcação de café e âmbar */
+    --coffee-espresso: 24 35% 12%;
+    --coffee-dark: 24 28% 20%;
+    --coffee-medium: 25 30% 32%;
+    --coffee-light: 28 25% 48%;
+    --coffee-crema: 36 92% 50%;
+    --coffee-caramel: 33 75% 40%;
+    --coffee-foam: 36 40% 94%;
+    --coffee-paper: 35 30% 96%;
+    --coffee-border: 30 20% 86%;
+
+    --chart-1: 32 85% 44%;
+    --chart-2: 142 60% 36%;
+    --chart-3: 205 75% 42%;
+    --chart-4: 262 60% 50%;
+    --chart-5: 28 20% 50%;
   }
   * {
     @apply border-border;
     scrollbar-width: thin;
-    scrollbar-color: #d1d5db transparent;
+    scrollbar-color: #c9bbae transparent;
   }
   html {
     color-scheme: light;
@@ -78,11 +93,11 @@
   .crm-field-control > select,
   .crm-field-control > textarea {
     width: 100%;
-    border: 1px solid #e2e4e8;
+    border: 1px solid #dfd7ce;
     border-radius: 6px;
     background: #ffffff;
     padding: 0 10px;
-    color: #1c1c1e;
+    color: #261c14;
     font-size: 12px;
     outline: none;
     transition:
@@ -101,12 +116,12 @@
   .crm-field-control > input:focus,
   .crm-field-control > select:focus,
   .crm-field-control > textarea:focus {
-    border-color: rgba(217, 119, 6, 0.85);
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+    border-color: rgba(180, 83, 9, 0.85);
+    box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.18);
   }
   .crm-field-control option {
     background: #ffffff;
-    color: #1c1c1e;
+    color: #261c14;
   }
   .crm-mobile-close,
   .crm-menu-button {

@@ -138,14 +138,14 @@ export function Sidebar({
       )}
       <aside
         className={cn(
-          'crm-sidebar inset-y-0 left-0 z-50 flex flex-col border-r border-[#e5e7eb] bg-[#f8fafc] transition-[width,transform] duration-200 ease-in-out md:static md:translate-x-0 fixed',
+          'crm-sidebar inset-y-0 left-0 z-50 flex flex-col border-r border-[#382618] bg-[#1f150e] text-[#f2e9df] transition-[width,transform] duration-200 ease-in-out md:static md:translate-x-0 fixed shadow-[4px_0_24px_rgba(20,10,5,0.25)]',
           compact ? 'w-14 shrink-0' : 'w-60 shrink-0',
           mobileOpen ? 'crm-sidebar-open' : 'max-md:-translate-x-full',
         )}
       >
         <div
           className={cn(
-            'flex h-12 shrink-0 items-center border-b border-[#e5e7eb]',
+            'flex h-12 shrink-0 items-center border-b border-[#382618] bg-[#1a110a]',
             compact ? 'justify-center px-2' : 'justify-between px-3',
           )}
         >
@@ -154,12 +154,15 @@ export function Sidebar({
             <button
               onClick={() => setCollapsed(true)}
               title="Recolher sidebar"
-              className="rounded p-1.5 text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1c1c1e]"
+              className="rounded p-1.5 text-[#a89582] hover:bg-[#2e1f14] hover:text-[#fbf5ef] transition"
             >
               <ChevronsLeft className="size-3.5" />
             </button>
           )}
-          <button className="crm-mobile-close rounded p-1.5 text-[#64748b]" onClick={closeMobile}>
+          <button
+            className="crm-mobile-close rounded p-1.5 text-[#a89582] hover:bg-[#2e1f14]"
+            onClick={closeMobile}
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -168,7 +171,7 @@ export function Sidebar({
             <button
               onClick={() => setCollapsed(false)}
               title="Expandir sidebar"
-              className="mb-3 grid h-8 w-full place-items-center rounded text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1c1c1e]"
+              className="mb-3 grid h-8 w-full place-items-center rounded text-[#a89582] hover:bg-[#2e1f14] hover:text-[#fbf5ef]"
             >
               <PanelLeft className="size-4" />
             </button>
@@ -185,17 +188,17 @@ export function Sidebar({
                     'group flex h-8 items-center rounded-md text-[12px] font-medium transition',
                     compact ? 'justify-center' : 'justify-between px-2',
                     isActive
-                      ? 'bg-[#e2e8f0] text-[#1c1c1e] font-semibold'
-                      : 'text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1c1c1e]',
+                      ? 'bg-[#3d2719] text-[#fff8f0] font-bold shadow-2xs border-l-2 border-amber-400 pl-1.5'
+                      : 'text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-[#ffffff]',
                   )
                 }
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <Icon className="size-3.5 shrink-0 text-amber-600" />
+                  <Icon className="size-3.5 shrink-0 text-amber-400" />
                   {!compact && <span>{label}</span>}
                 </div>
                 {!compact && badge && (
-                  <span className="rounded border border-amber-500/30 bg-amber-500/10 px-1 py-0.2 font-mono text-[9px] font-bold text-amber-700">
+                  <span className="rounded border border-amber-400/40 bg-amber-500/20 px-1 py-0.2 font-mono text-[9px] font-bold text-amber-300">
                     {badge}
                   </span>
                 )}
@@ -231,17 +234,17 @@ export function Sidebar({
                       'flex h-8 items-center rounded-md text-[12px] transition',
                       compact ? 'justify-center' : 'justify-between px-2',
                       isActive
-                        ? 'bg-[#e2e8f0] text-[#1c1c1e] font-semibold'
-                        : 'text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1c1c1e]',
+                        ? 'bg-[#3d2719] text-[#fff8f0] font-bold shadow-2xs border-l-2 border-amber-400 pl-1.5'
+                        : 'text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-[#ffffff]',
                     )
                   }
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Icon className="size-3.5 shrink-0 text-[#64748b]" />
+                    <Icon className="size-3.5 shrink-0 text-[#b5a08c]" />
                     {!compact && <span className="truncate">{label}</span>}
                   </div>
                   {!compact && badge && (
-                    <span className="rounded border border-rose-300 bg-rose-50 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-700">
+                    <span className="rounded border border-rose-400/40 bg-rose-500/20 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-300">
                       {badge}
                     </span>
                   )}
@@ -258,18 +261,18 @@ export function Sidebar({
                 closeMobile()
               }}
               className={cn(
-                'flex h-8 w-full items-center rounded-md text-[12px] text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1c1c1e]',
+                'flex h-8 w-full items-center rounded-md text-[12px] text-[#b5a08c] hover:bg-[#2e1f14] hover:text-[#fff8f0]',
                 compact ? 'justify-center' : 'gap-2 px-2',
               )}
             >
-              <MessageSquarePlus className="size-3.5" />
+              <MessageSquarePlus className="size-3.5 text-amber-400" />
               {!compact && 'Nova conversa'}
             </button>
             {!compact &&
               conversations.slice(0, 6).map((conversation) => (
                 <div
                   key={conversation.id}
-                  className="group relative flex h-7 w-full items-center rounded-md px-2 pl-7 hover:bg-[#f1f5f9]"
+                  className="group relative flex h-7 w-full items-center rounded-md px-2 pl-7 hover:bg-[#2a1c12]"
                 >
                   <button
                     type="button"
@@ -281,8 +284,8 @@ export function Sidebar({
                     className={cn(
                       'min-w-0 flex-1 truncate text-left text-[10px] transition',
                       activeConversationId === conversation.id
-                        ? 'font-medium text-[#1c1c1e]'
-                        : 'text-[#64748b] group-hover:text-[#1c1c1e]',
+                        ? 'font-bold text-[#fff8f0]'
+                        : 'text-[#b5a08c] group-hover:text-[#ffffff]',
                     )}
                     title={conversation.title}
                   >
@@ -295,7 +298,7 @@ export function Sidebar({
                       setConversationToDelete(conversation)
                     }}
                     title="Excluir conversa"
-                    className="ml-1 shrink-0 rounded p-1 text-[#94a3b8] opacity-0 transition hover:bg-[#e2e8f0] hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                    className="ml-1 shrink-0 rounded p-1 text-[#8f7966] opacity-0 transition hover:bg-[#3d2719] hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
                   >
                     <Trash2 className="size-3" />
                   </button>
@@ -303,24 +306,24 @@ export function Sidebar({
               ))}
           </SidebarSection>
         </div>
-        <div className="relative shrink-0 border-t border-[#e5e7eb] p-2 bg-[#f8fafc]">
+        <div className="relative shrink-0 border-t border-[#382618] p-2 bg-[#1a110a]">
           {userOpen && !compact && (
-            <div className="absolute bottom-14 left-2 right-2 overflow-hidden rounded-lg border border-[#e2e8f0] bg-white py-1 shadow-[0_10px_30px_rgba(0,0,0,.12)]">
+            <div className="absolute bottom-14 left-2 right-2 overflow-hidden rounded-lg border border-[#442e1d] bg-[#24170f] py-1 shadow-[0_10px_30px_rgba(0,0,0,.5)]">
               <button
                 onClick={() => {
                   navigate('/configuracoes')
                   setUserOpen(false)
                 }}
-                className="flex h-8 w-full items-center gap-2 px-3 text-[11px] text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1c1c1e]"
+                className="flex h-8 w-full items-center gap-2 px-3 text-[11px] text-[#d6c4b2] hover:bg-[#342216] hover:text-white"
               >
-                <Settings className="size-3.5" /> Configurações
+                <Settings className="size-3.5 text-amber-400" /> Configurações
               </button>
               <button
                 onClick={() => {
                   logout()
                   navigate('/login')
                 }}
-                className="flex h-8 w-full items-center gap-2 px-3 text-[11px] text-red-600 hover:bg-red-50"
+                className="flex h-8 w-full items-center gap-2 px-3 text-[11px] text-red-400 hover:bg-red-950/40"
               >
                 <LogOut className="size-3.5" /> Sair
               </button>
@@ -330,17 +333,17 @@ export function Sidebar({
             onClick={() => (compact ? navigate('/configuracoes') : setUserOpen(!userOpen))}
             title={compact ? 'Configurações' : undefined}
             className={cn(
-              'flex h-9 w-full items-center rounded-md text-[#475569] hover:bg-[#e2e8f0] hover:text-[#1c1c1e]',
+              'flex h-9 w-full items-center rounded-md text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-white',
               compact ? 'justify-center' : 'gap-2 px-2',
             )}
           >
             <UserAvatar user={user} />
             {!compact && (
               <>
-                <span className="min-w-0 flex-1 truncate text-left text-[11px] font-semibold text-[#1c1c1e]">
+                <span className="min-w-0 flex-1 truncate text-left text-[11px] font-semibold text-[#f8efe6]">
                   {user?.name || 'Usuário'}
                 </span>
-                <CircleUserRound className="size-3.5 text-[#94a3b8]" />
+                <CircleUserRound className="size-3.5 text-[#9a8673]" />
               </>
             )}
           </button>
@@ -357,20 +360,20 @@ export function Sidebar({
                   : 'Iniciar tour guiado desta página'
             }
             className={cn(
-              'mt-1 flex h-8 w-full items-center rounded-md text-[11px] font-medium text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1c1c1e] transition',
+              'mt-1 flex h-8 w-full items-center rounded-md text-[11px] font-medium text-[#b5a08c] hover:bg-[#2a1c12] hover:text-white transition',
               compact ? 'justify-center' : 'gap-2 px-2',
             )}
           >
             <Compass
               className={cn(
                 'size-3.5 shrink-0',
-                tourDisabled ? 'text-[#94a3b8]' : 'text-amber-600',
+                tourDisabled ? 'text-[#85705e]' : 'text-amber-400',
               )}
             />
             {!compact && <span className="flex-1 text-left truncate">Tour guiado</span>}
             {!compact && tourDisabled && (
               <span
-                className="font-mono text-[9px] text-[#94a3b8] px-1 rounded bg-[#e2e8f0]"
+                className="font-mono text-[9px] text-[#85705e] px-1 rounded bg-[#2e1f14]"
                 title="Auto-disparo desativado"
               >
                 manual
@@ -442,7 +445,7 @@ function SidebarSection({
       {!compact && (
         <button
           onClick={() => setOpen(!open)}
-          className="mb-1 flex h-6 w-full items-center justify-between px-2 text-[10px] font-bold uppercase tracking-[.08em] text-[#94a3b8]"
+          className="mb-1 flex h-6 w-full items-center justify-between px-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#9a8673]"
         >
           <span>{title}</span>
           <ChevronDown

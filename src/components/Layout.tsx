@@ -76,16 +76,16 @@ function AppFrame() {
   }, [navigate, setOpen])
   return (
     <TourProvider>
-      <div className="crm-layout flex h-screen w-full overflow-hidden bg-white text-[#1c1c1e]">
+      <div className="crm-layout flex h-screen w-full overflow-hidden bg-[#f7f4ee] text-[#2b1c13]">
         <Sidebar
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           mobileOpen={mobileOpen}
           setMobileOpen={setMobileOpen}
         />
-        <div className="crm-main-container flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="crm-main-container flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f7f4ee]">
           <Topbar onMenu={() => setMobileOpen(true)} />
-          <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#fbf9f4]">
             <Outlet />
           </main>
         </div>

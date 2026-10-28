@@ -53,6 +53,7 @@ interface OrderFunnelColumn {
   accentBorder: string
   accentBadge: string
   textColor: string
+  columnBg: string
 }
 
 const ORDER_COLUMNS: OrderFunnelColumn[] = [
@@ -61,50 +62,55 @@ const ORDER_COLUMNS: OrderFunnelColumn[] = [
     label: 'Pedido feito',
     subtitle: 'Pedido recebido, separando cafés frescos e calibrando moagem',
     icon: ShoppingBag,
-    accentBg: 'bg-amber-50/70',
-    accentBorder: 'border-amber-200',
-    accentBadge: 'bg-amber-100 text-amber-900',
-    textColor: 'text-amber-950',
+    accentBg: 'bg-[#f7efe0]',
+    accentBorder: 'border-[#e8d5be]',
+    accentBadge: 'bg-amber-100 text-amber-900 border border-amber-300',
+    textColor: 'text-[#633a10]',
+    columnBg: 'bg-[#fbf7f0]',
   },
   {
     key: 'pedido_enviado',
     label: 'Pedido enviado',
     subtitle: 'Despachado via Correios / transportadora ou motoboy local',
     icon: Truck,
-    accentBg: 'bg-blue-50/70',
-    accentBorder: 'border-blue-200',
-    accentBadge: 'bg-blue-100 text-blue-900',
-    textColor: 'text-blue-950',
+    accentBg: 'bg-[#e7f0fa]',
+    accentBorder: 'border-[#c9def5]',
+    accentBadge: 'bg-blue-100 text-blue-900 border border-blue-300',
+    textColor: 'text-[#1d4f8f]',
+    columnBg: 'bg-[#f5f8fc]',
   },
   {
     key: 'pedido_recebido',
     label: 'Pedido recebido',
     subtitle: 'Cliente confirmou entrega ou encomenda chegou com sucesso',
     icon: Package,
-    accentBg: 'bg-emerald-50/70',
-    accentBorder: 'border-emerald-200',
-    accentBadge: 'bg-emerald-100 text-emerald-900',
-    textColor: 'text-emerald-950',
+    accentBg: 'bg-[#e2f3ec]',
+    accentBorder: 'border-[#c1e6d7]',
+    accentBadge: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+    textColor: 'text-[#126343]',
+    columnBg: 'bg-[#f3f9f6]',
   },
   {
     key: 'pedir_avaliacao_google',
     label: 'Pedir avaliação do Google',
     subtitle: 'Acolher a experiência e convidar com carinho para avaliar no Google',
     icon: Star,
-    accentBg: 'bg-purple-50/70',
-    accentBorder: 'border-purple-300 ring-1 ring-purple-200',
-    accentBadge: 'bg-purple-100 text-purple-900',
-    textColor: 'text-purple-950',
+    accentBg: 'bg-[#efe9fa]',
+    accentBorder: 'border-[#decff7]',
+    accentBadge: 'bg-purple-100 text-purple-900 border border-purple-300',
+    textColor: 'text-[#5b299e]',
+    columnBg: 'bg-[#f8f5fc]',
   },
   {
     key: 'concluido',
     label: 'Concluído',
     subtitle: 'Negociação e experiência finalizadas com excelência Disney',
     icon: CheckCircle2,
-    accentBg: 'bg-slate-50/70',
-    accentBorder: 'border-slate-200',
-    accentBadge: 'bg-slate-100 text-slate-800',
-    textColor: 'text-slate-900',
+    accentBg: 'bg-[#ede5da]',
+    accentBorder: 'border-[#d6c4b2]',
+    accentBadge: 'bg-[#dfd3c3] text-[#4d3a2b] border border-[#cbbca9]',
+    textColor: 'text-[#3d2c1e]',
+    columnBg: 'bg-[#f5ede2]',
   },
 ]
 
@@ -244,36 +250,37 @@ export default function Orders() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#fafbfc]">
-      {/* Header Linear */}
-      <div className="shrink-0 border-b border-[#e5e7eb] bg-white px-4 py-3 sm:px-6">
+    <div className="flex flex-col h-full bg-[#f4ece1]">
+      {/* Header Linear com tema de café */}
+      <div className="shrink-0 border-b border-[#ded2c3] bg-[#fbf9f5] px-4 py-3 sm:px-6 shadow-2xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600 font-bold">
+              <span className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
                 Funil de Negociação · Cafés Especiais
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
+              <span className="inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-[#693910]">
                 <ShoppingBag className="size-3" /> {orders.length} pedidos
               </span>
             </div>
-            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e] flex items-center gap-2">
+            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13] flex items-center gap-2">
               Funil de Pedidos & Negociação
             </h1>
-            <p className="mt-0.5 text-xs text-[#64748b]">
-              Acompanhe os cards desde o pedido feito até a solicitação de avaliação no Google.
+            <p className="mt-0.5 text-xs text-[#705e4d]">
+              Demarcação visual por etapas: desde o pedido feito até a solicitação de avaliação no
+              Google.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[10px] text-[#64748b] bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md hidden sm:inline-block">
-              VALOR TOTAL: <strong>{money.format(totalValue)}</strong>
+            <span className="font-mono text-[10px] text-[#5c4735] bg-[#f3ece0] border border-[#d6c7b6] px-2.5 py-1 rounded-md hidden sm:inline-block">
+              VALOR TOTAL: <strong className="text-[#2b1c13]">{money.format(totalValue)}</strong>
             </span>
 
             <button
               onClick={() => refresh()}
               title="Recarregar pedidos"
-              className="inline-flex items-center gap-1 rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#475569] shadow-2xs hover:bg-[#f8fafc] transition"
+              className="inline-flex items-center gap-1 rounded-md border border-[#d6c7b6] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#5c4735] shadow-2xs hover:bg-[#f3ece0] transition"
             >
               <RefreshCw className="size-3.5" />
             </button>
@@ -283,7 +290,7 @@ export default function Orders() {
                 setPresetStage('pedido_feito')
                 setDialogOpen(true)
               }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#724113] transition"
             >
               <Plus className="size-3.5" /> Novo Pedido
             </button>
@@ -292,21 +299,21 @@ export default function Orders() {
 
         {/* Busca */}
         <div className="mt-3 flex items-center justify-between">
-          <label className="flex h-8 w-full sm:w-80 items-center rounded-md border border-[#e2e8f0] bg-white px-2.5 shadow-2xs">
-            <Search className="mr-2 size-3.5 text-[#94a3b8]" />
+          <label className="flex h-8 w-full sm:w-80 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs">
+            <Search className="mr-2 size-3.5 text-[#8c7865]" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por cliente, café ou item..."
-              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#1c1c1e] outline-none placeholder:text-[#94a3b8]"
+              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
             />
           </label>
         </div>
       </div>
 
-      {/* Kanban Board estilo Linear */}
-      <div className="flex-1 min-h-0 overflow-x-auto p-3 sm:p-5 touch-pan-x">
-        <div className="flex gap-3 h-full min-w-[1100px] sm:min-w-[1300px]">
+      {/* Kanban Board com demarcação nítida por coluna */}
+      <div className="flex-1 min-h-0 overflow-x-auto p-3 sm:p-5 touch-pan-x bg-[#ede4d8]">
+        <div className="flex gap-3.5 h-full min-w-[1100px] sm:min-w-[1300px]">
           {ORDER_COLUMNS.map((col) => {
             const Icon = col.icon
             const items = ordersByStage[col.key] || []
@@ -327,10 +334,10 @@ export default function Orders() {
                 }}
                 onDrop={() => handleDrop(col.key)}
                 className={cn(
-                  'flex flex-col w-[250px] sm:w-[275px] shrink-0 rounded-lg border bg-white shadow-2xs transition-colors',
-                  isOver
-                    ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-300/40'
-                    : col.accentBorder,
+                  'flex flex-col w-[260px] sm:w-[285px] shrink-0 rounded-lg border shadow-xs transition-colors',
+                  col.columnBg,
+                  col.accentBorder,
+                  isOver ? 'ring-2 ring-amber-500 shadow-md' : '',
                 )}
               >
                 {/* Header da Coluna */}
@@ -369,9 +376,9 @@ export default function Orders() {
                 </header>
 
                 {/* Cards da Coluna */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2.5 bg-[#fcfdfe]">
+                <div className="flex-1 min-h-0 overflow-y-auto p-2.5 space-y-2.5 bg-black/[0.015]">
                   {items.length === 0 ? (
-                    <div className="p-4 text-center text-[11px] text-[#94a3b8] border border-dashed border-[#e2e8f0] rounded-md my-2">
+                    <div className="p-4 text-center text-[11px] text-[#8c7865] border border-dashed border-[#d8c8b6] rounded-md my-2 bg-white/40">
                       Nenhum pedido aqui
                     </div>
                   ) : (
@@ -393,10 +400,8 @@ export default function Orders() {
                             setOverStage(null)
                           }}
                           className={cn(
-                            'group cursor-grab rounded-md border bg-white p-3 shadow-2xs hover:border-[#cbd5e1] hover:shadow-xs transition active:cursor-grabbing flex flex-col justify-between',
-                            isGoogleStage
-                              ? 'border-purple-300 bg-purple-50/20'
-                              : 'border-[#e2e8f0]',
+                            'group cursor-grab rounded-md border bg-white p-3 shadow-2xs hover:border-[#bda895] hover:shadow-xs transition active:cursor-grabbing flex flex-col justify-between border-[#ded2c3]',
+                            isGoogleStage && 'border-purple-300 bg-purple-50/30',
                             draggingOrderId === order.id && 'opacity-40 scale-[0.98]',
                           )}
                         >

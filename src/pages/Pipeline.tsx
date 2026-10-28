@@ -75,23 +75,64 @@ export default function Pipeline() {
       toast({ variant: 'destructive', title: 'Não foi possível mover o negócio' })
     }
   }
+  const stageTones = [
+    {
+      bg: 'bg-[#faf2ea]',
+      border: 'border-[#ecdcc6]',
+      header: 'bg-[#f7ece0]',
+      text: 'text-[#693910]',
+    },
+    {
+      bg: 'bg-[#fdf9ee]',
+      border: 'border-[#ede0be]',
+      header: 'bg-[#faf1d9]',
+      text: 'text-[#714705]',
+    },
+    {
+      bg: 'bg-[#f5f8fc]',
+      border: 'border-[#cde0f7]',
+      header: 'bg-[#e7f0fa]',
+      text: 'text-[#1d4f8f]',
+    },
+    {
+      bg: 'bg-[#f3f9f6]',
+      border: 'border-[#c7e9dc]',
+      header: 'bg-[#e2f3ec]',
+      text: 'text-[#126343]',
+    },
+    {
+      bg: 'bg-[#f8f5fc]',
+      border: 'border-[#dfd3f4]',
+      header: 'bg-[#efe9fa]',
+      text: 'text-[#5b299e]',
+    },
+    {
+      bg: 'bg-[#f7efe8]',
+      border: 'border-[#e4d0c1]',
+      header: 'bg-[#f1e0d2]',
+      text: 'text-[#5c3821]',
+    },
+  ]
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 px-4 pb-3 pt-4 sm:px-5">
+    <div className="flex h-full flex-col bg-[#f4ece1]">
+      <div className="shrink-0 px-4 pb-3 pt-4 sm:px-5 border-b border-[#ded2c3] bg-[#fbf9f5] shadow-2xs">
         <div className="flex items-end">
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[.15em] text-amber-600">
-              Fluxo comercial
+            <p className="font-mono text-[9px] uppercase tracking-[.15em] text-[#8c531b] font-bold">
+              Fluxo comercial · Cafés Especiais
             </p>
-            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#1c1c1e]">
-              Pipeline
+            <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13]">
+              Pipeline de Oportunidades
             </h1>
-            <p className="mt-1 text-xs text-[#64748b]">Arraste os negócios entre os estágios.</p>
+            <p className="mt-1 text-xs text-[#705e4d]">
+              Arraste os negócios entre as etapas demarcadas.
+            </p>
           </div>
           <div className="flex-1" />
           <span
             data-tour-id="pipeline-header-stats"
-            className="font-mono text-[9px] text-[#64748b] bg-slate-50 border border-slate-200 px-2 py-1 rounded"
+            className="font-mono text-[9px] text-[#5c4735] bg-[#f3ece0] border border-[#d6c7b6] px-2.5 py-1 rounded font-bold"
           >
             {active.length} ATIVOS · {money.format(active.reduce((sum, d) => sum + d.value, 0))}
           </span>
@@ -99,14 +140,15 @@ export default function Pipeline() {
       </div>
       <div
         data-tour-id="pipeline-kanban-board"
-        className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-3 pb-4 sm:px-5"
+        className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-3.5 sm:p-5 bg-[#ede4d8]"
       >
-        <div className="flex h-full min-w-max snap-x gap-2.5">
-          {stages.map((stage) => {
+        <div className="flex h-full min-w-max snap-x gap-3.5">
+          {stages.map((stage, idx) => {
             const items = active
               .filter((deal) => deal.stage === stage.id)
               .sort((a, b) => a.position - b.position)
             const total = items.reduce((sum, item) => sum + item.value, 0)
+            const tone = stageTones[idx % stageTones.length]
             return (
               <section
                 key={stage.id}
@@ -119,13 +161,16 @@ export default function Pipeline() {
                 }}
                 onDrop={() => drop(stage.id)}
                 className={cn(
-                  'flex w-[300px] snap-start flex-col rounded-md border bg-[#f8fafc] transition-colors',
-                  overStage === stage.id
-                    ? 'border-amber-500/50 bg-amber-50/50'
-                    : 'border-[#e2e8f0]',
+                  'flex w-[305px] snap-start flex-col rounded-lg border shadow-xs transition-colors',
+                  tone.bg,
+                  tone.border,
+                  overStage === stage.id ? 'ring-2 ring-amber-500 shadow-md' : '',
                 )}
               >
-                <header className="shrink-0 border-b border-[#e2e8f0] bg-white p-3 rounded-t-md">
+                <header
+                  className={cn('shrink-0 border-b p-3 rounded-t-lg', tone.header, tone.border)}
+                >
+                  {' '}
                   <div className="flex items-center">
                     <span
                       className="size-2 rounded-full"
@@ -140,7 +185,7 @@ export default function Pipeline() {
                     </span>
                   </div>
                 </header>
-                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
+                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5 bg-black/[0.015]">
                   {items.map((deal, dealIdx) => {
                     const cold = isDealCold(deal, 5)
                     const days = daysSince(deal.last_contact_at || deal.created)
@@ -163,12 +208,12 @@ export default function Pipeline() {
                           setOverStage(null)
                         }}
                         className={cn(
-                          'group cursor-grab rounded-md border bg-white p-3 shadow-2xs transition hover:border-[#cbd5e1] hover:shadow-xs active:cursor-grabbing',
+                          'group cursor-grab rounded-md border bg-white p-3 shadow-2xs transition hover:border-[#bda895] hover:shadow-xs active:cursor-grabbing border-[#ded2c3]',
                           isStalled
-                            ? 'border-amber-300 bg-amber-50/20'
+                            ? 'border-amber-300 bg-amber-50/30'
                             : cold
-                              ? 'border-blue-200/80 bg-blue-50/15'
-                              : 'border-[#e2e8f0]',
+                              ? 'border-blue-200 bg-blue-50/20'
+                              : '',
                           dragging === deal.id && 'animate-drag-lift opacity-55',
                         )}
                       >
