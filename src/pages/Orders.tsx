@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   MessageCircle,
   Package,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -122,6 +123,7 @@ export default function Orders() {
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [presetStage, setPresetStage] = useState<OrderStage>('pedido_feito')
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
 
   // Drag-and-drop state
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null)
@@ -287,6 +289,7 @@ export default function Orders() {
 
             <button
               onClick={() => {
+                setEditingOrder(null)
                 setPresetStage('pedido_feito')
                 setDialogOpen(true)
               }}
@@ -521,13 +524,31 @@ export default function Orders() {
                             )}
 
                             <div className="flex items-center gap-1">
+                              {/* Botão de Editar Pedido (visível no hover e sempre acessível no mobile/toque) */}
                               <button
                                 type="button"
-                                onClick={() => handleDeleteOrder(order.id)}
-                                title="Excluir pedido"
-                                className="rounded p-1 text-[#94a3b8] opacity-0 hover:bg-[#f1f5f9] hover:text-red-600 group-hover:opacity-100 transition"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingOrder(order)
+                                  setDialogOpen(true)
+                                }}
+                                title="Editar pedido"
+                                className="inline-flex items-center gap-1 rounded p-1 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-[#f3ece0] text-[#8c531b] hover:text-[#6f3f12] transition"
                               >
-                                <Trash2 className="size-3" />
+                                <Pencil className="size-3.5" />
+                                <span className="text-[10px] font-semibold sm:hidden">Editar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteOrder(order.id)
+                                }}
+                                title="Excluir pedido"
+                                className="rounded p-1 text-[#94a3b8] sm:opacity-0 sm:group-hover:opacity-100 hover:bg-[#f3ece0] hover:text-red-600 transition"
+                              >
+                                <Trash2 className="size-3.5" />
                               </button>
                             </div>
                           </div>
@@ -540,6 +561,7 @@ export default function Orders() {
                   <button
                     type="button"
                     onClick={() => {
+                      setEditingOrder(null)
                       setPresetStage(col.key)
                       setDialogOpen(true)
                     }}
@@ -554,8 +576,16 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* Dialog para Criar Novo Pedido */}
-      <OrderDialog open={dialogOpen} onOpenChange={setDialogOpen} presetStage={presetStage} />
+      {/* Dialog para Criar ou Editar Pedido */}
+      <OrderDialog
+        open={dialogOpen}
+        onOpenChange={(isOpen) => {
+          setDialogOpen(isOpen)
+          if (!isOpen) setEditingOrder(null)
+        }}
+        order={editingOrder}
+        presetStage={presetStage}
+      />
 
       {/* Modal de Disparo WhatsApp para Avaliação do Google */}
       <SendWhatsAppModal

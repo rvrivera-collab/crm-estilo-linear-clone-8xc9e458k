@@ -9,9 +9,10 @@ import {
   Truck,
   User,
   X,
+  Pencil,
 } from 'lucide-react'
 import { useCrm } from '@/contexts/CrmContext'
-import { createOrder, ORDER_STAGE_LABELS } from '@/services/crm'
+import { createOrder, updateOrder, ORDER_STAGE_LABELS } from '@/services/crm'
 import type { Contact, Order, OrderStage } from '@/types/crm'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -19,20 +20,26 @@ import { cn } from '@/lib/utils'
 interface OrderDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  order?: Order | null
   presetStage?: OrderStage
   presetContactId?: string
   onCreated?: (order: Order) => void
+  onUpdated?: (order: Order) => void
 }
 
 export function OrderDialog({
   open,
   onOpenChange,
+  order,
   presetStage = 'pedido_feito',
   presetContactId,
   onCreated,
+  onUpdated,
 }: OrderDialogProps) {
   const { contacts, refresh } = useCrm()
   const { toast } = useToast()
+
+  const isEditing = Boolean(order?.id)
 
   const [contactId, setContactId] = useState(presetContactId || '')
   const [title, setTitle] = useState('')
@@ -46,16 +53,27 @@ export function OrderDialog({
 
   useEffect(() => {
     if (open) {
-      setContactId(presetContactId || (contacts[0]?.id ?? ''))
-      setStage(presetStage)
-      setTitle('')
-      setItemsDescription('')
-      setValue('')
-      setTrackingCode('')
-      setNotes('')
-      setRegisterPurchase(true)
+      if (order) {
+        setContactId(order.contact || '')
+        setStage(order.stage || 'pedido_feito')
+        setTitle(order.title || '')
+        setItemsDescription(order.items_description || '')
+        setValue(order.value !== undefined && order.value !== null ? String(order.value) : '')
+        setTrackingCode(order.tracking_code || '')
+        setNotes(order.notes || '')
+        setRegisterPurchase(false)
+      } else {
+        setContactId(presetContactId || (contacts[0]?.id ?? ''))
+        setStage(presetStage)
+        setTitle('')
+        setItemsDescription('')
+        setValue('')
+        setTrackingCode('')
+        setNotes('')
+        setRegisterPurchase(true)
+      }
     }
-  }, [open, presetContactId, presetStage, contacts])
+  }, [open, order, presetContactId, presetStage, contacts])
 
   if (!open) return null
 
@@ -81,28 +99,48 @@ export function OrderDialog({
     const numValue = value ? parseFloat(value.replace(',', '.')) : 0
     setSaving(true)
     try {
-      const order = await createOrder({
-        contactId,
-        title: title.trim(),
-        items_description: itemsDescription.trim(),
-        value: isNaN(numValue) ? 0 : numValue,
-        stage,
-        tracking_code: trackingCode.trim(),
-        notes: notes.trim(),
-        registerPurchaseRecord: registerPurchase,
-      })
+      if (isEditing && order) {
+        const updated = await updateOrder(order.id, {
+          contact: contactId,
+          title: title.trim(),
+          items_description: itemsDescription.trim(),
+          value: isNaN(numValue) ? 0 : numValue,
+          stage,
+          tracking_code: trackingCode.trim(),
+          notes: notes.trim(),
+        })
 
-      await refresh()
-      toast({
-        title: '📦 Pedido criado com sucesso!',
-        description: `Adicionado ao funil na coluna "${ORDER_STAGE_LABELS[stage]}".`,
-      })
-      if (onCreated) onCreated(order)
-      onOpenChange(false)
+        await refresh()
+        toast({
+          title: '✏️ Pedido atualizado!',
+          description: `Alterações salvas com sucesso na coluna "${ORDER_STAGE_LABELS[stage]}".`,
+        })
+        if (onUpdated) onUpdated(updated)
+        onOpenChange(false)
+      } else {
+        const created = await createOrder({
+          contactId,
+          title: title.trim(),
+          items_description: itemsDescription.trim(),
+          value: isNaN(numValue) ? 0 : numValue,
+          stage,
+          tracking_code: trackingCode.trim(),
+          notes: notes.trim(),
+          registerPurchaseRecord: registerPurchase,
+        })
+
+        await refresh()
+        toast({
+          title: '📦 Pedido criado com sucesso!',
+          description: `Adicionado ao funil na coluna "${ORDER_STAGE_LABELS[stage]}".`,
+        })
+        if (onCreated) onCreated(created)
+        onOpenChange(false)
+      }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao criar pedido',
+        title: isEditing ? 'Erro ao atualizar pedido' : 'Erro ao criar pedido',
         description: err instanceof Error ? err.message : 'Tente novamente.',
       })
     } finally {
@@ -117,17 +155,21 @@ export function OrderDialog({
         if (e.target === e.currentTarget && !saving) onOpenChange(false)
       }}
     >
-      <div className="w-full max-w-lg animate-panel-rise rounded-xl border border-[#e5e7eb] bg-white text-[#1c1c1e] shadow-[0_20px_50px_rgba(0,0,0,.15)] flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-lg animate-panel-rise rounded-xl border border-[#ded2c3] bg-white text-[#1c1c1e] shadow-[0_20px_50px_rgba(0,0,0,.15)] flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="flex h-13 items-center justify-between border-b border-[#e5e7eb] px-5 py-3">
+        <div className="flex h-13 items-center justify-between border-b border-[#ded2c3] bg-[#fbf9f5] px-5 py-3 rounded-t-xl">
           <div className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-lg bg-amber-50 border border-amber-200 text-amber-600">
-              <ShoppingBag className="size-4" />
+            <span className="grid size-8 place-items-center rounded-lg bg-[#f7efe0] border border-[#e8d5be] text-[#8c531b]">
+              {isEditing ? <Pencil className="size-4" /> : <ShoppingBag className="size-4" />}
             </span>
             <div>
-              <h2 className="text-sm font-extrabold text-[#1c1c1e]">Novo Pedido / Negociação</h2>
-              <p className="text-[10px] text-[#64748b]">
-                Registre a venda e acompanhe até a avaliação no Google
+              <h2 className="text-sm font-extrabold text-[#2b1c13]">
+                {isEditing ? 'Editar Pedido' : 'Novo Pedido / Negociação'}
+              </h2>
+              <p className="text-[10px] text-[#705e4d]">
+                {isEditing
+                  ? 'Altere dados, itens, valor ou a etapa do pedido'
+                  : 'Registre a venda e acompanhe até a avaliação no Google'}
               </p>
             </div>
           </div>
@@ -135,7 +177,7 @@ export function OrderDialog({
             type="button"
             disabled={saving}
             onClick={() => onOpenChange(false)}
-            className="rounded p-1.5 text-[#64748b] hover:bg-[#f1f5f9]"
+            className="rounded p-1.5 text-[#705e4d] hover:bg-[#f3ece0]"
           >
             <X className="size-4" />
           </button>
@@ -215,7 +257,7 @@ export function OrderDialog({
 
             <div>
               <label className="block text-[11px] font-bold text-[#475569] mb-1">
-                Estágio Inicial
+                {isEditing ? 'Estágio do Funil' : 'Estágio Inicial'}
               </label>
               <select
                 value={stage}
@@ -259,40 +301,42 @@ export function OrderDialog({
             />
           </div>
 
-          {/* Checkbox para sincronizar com compras / fidelidade */}
-          <label className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50/50 p-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={registerPurchase}
-              onChange={(e) => setRegisterPurchase(e.target.checked)}
-              className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
-            />
-            <div className="text-[11px] text-[#475569]">
-              <span className="font-bold text-amber-950 block">
-                Acumular no Programa de Fidelidade & Histórico
-              </span>
-              Registra automaticamente o valor no histórico de compras do cliente para pontuar no
-              Clube de Fidelidade Disney.
-            </div>
-          </label>
+          {/* Checkbox para sincronizar com compras / fidelidade (apenas em novo pedido) */}
+          {!isEditing && (
+            <label className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50/50 p-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={registerPurchase}
+                onChange={(e) => setRegisterPurchase(e.target.checked)}
+                className="mt-0.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+              />
+              <div className="text-[11px] text-[#475569]">
+                <span className="font-bold text-amber-950 block">
+                  Acumular no Programa de Fidelidade & Histórico
+                </span>
+                Registra automaticamente o valor no histórico de compras do cliente para pontuar no
+                Clube de Fidelidade Disney.
+              </div>
+            </label>
+          )}
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e5e7eb]">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#ded2c3]">
             <button
               type="button"
               disabled={saving}
               onClick={() => onOpenChange(false)}
-              className="rounded-md border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#475569] hover:bg-[#f8fafc]"
+              className="rounded-md border border-[#d6c7b6] bg-white px-3 py-1.5 text-xs font-semibold text-[#5c4735] hover:bg-[#f3ece0]"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-600 disabled:opacity-60 transition"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#724113] disabled:opacity-60 transition"
             >
               {saving ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
-              Criar Pedido
+              {isEditing ? 'Salvar Alterações' : 'Criar Pedido'}
             </button>
           </div>
         </form>

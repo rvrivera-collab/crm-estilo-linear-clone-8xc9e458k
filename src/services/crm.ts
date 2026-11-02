@@ -445,9 +445,10 @@ export async function updateOrder(id: string, data: Partial<Order>) {
     .catch(() => null)
   const updated = await pb.collection<Order>('orders').update(id, data, { expand: 'contact,owner' })
 
+  const ownerId = pb.authStore.record?.id
+
   // Se o estágio mudou, registrar evento na jornada
   if (data.stage && previous && previous.stage !== data.stage) {
-    const ownerId = pb.authStore.record?.id
     const prevLabel = ORDER_STAGE_LABELS[previous.stage] || previous.stage
     const nextLabel = ORDER_STAGE_LABELS[data.stage] || data.stage
 
@@ -461,6 +462,41 @@ export async function updateOrder(id: string, data: Partial<Order>) {
         channel: 'pedidos',
         metadata: { orderId: updated.id, fromStage: previous.stage, toStage: data.stage },
       })
+    } catch {
+      /* intentionally ignored */
+    }
+  } else if (
+    previous &&
+    (data.title !== undefined ||
+      data.value !== undefined ||
+      data.items_description !== undefined ||
+      data.tracking_code !== undefined)
+  ) {
+    // Registro de atualização das informações do pedido na jornada
+    try {
+      const changedSummary: string[] = []
+      if (data.title && data.title !== previous.title) {
+        changedSummary.push(`Título: "${data.title}"`)
+      }
+      if (data.value !== undefined && Number(data.value) !== Number(previous.value)) {
+        changedSummary.push(
+          `Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.value) || 0)}`,
+        )
+      }
+      if (data.tracking_code && data.tracking_code !== previous.tracking_code) {
+        changedSummary.push(`Rastreio: ${data.tracking_code}`)
+      }
+      if (changedSummary.length > 0) {
+        await pb.collection('journey_events').create({
+          contact: updated.contact,
+          owner: ownerId,
+          type: 'pedido_criado',
+          title: `✏️ Pedido Atualizado: ${updated.title}`,
+          description: `Detalhes do pedido ajustados (${changedSummary.join(', ')}).`,
+          channel: 'pedidos',
+          metadata: { orderId: updated.id, changes: changedSummary },
+        })
+      }
     } catch {
       /* intentionally ignored */
     }
