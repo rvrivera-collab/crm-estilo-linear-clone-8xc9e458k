@@ -206,6 +206,41 @@ export const PAGE_TOURS: Record<string, PageTourDefinition> = {
       },
     ],
   },
+  '/fidelidade': {
+    pagePath: '/fidelidade',
+    pageName: 'Fidelidade',
+    steps: [
+      {
+        target: '[data-tour-id="fidelidade-how-it-works"]',
+        title: 'Como Funciona o Programa',
+        description:
+          'A cada 10 compras o cliente sobe de nível — do nível 1 (10 compras) até o nível 10 (100 compras). Clientes com 0 a 9 compras ainda estão sem nível.',
+        placement: 'bottom',
+      },
+      {
+        target: '[data-tour-id="fidelidade-levels-grid"]',
+        title: 'Os 10 Níveis e Recompensas Internas',
+        description:
+          'Cada cartão mostra o nome do nível, a meta de compras e a recompensa — marcada como uso interno, nunca enviada ao cliente em mensagens.',
+        placement: 'top',
+        badge: 'Uso interno',
+      },
+      {
+        target: '[data-tour-id="fidelidade-distribution"]',
+        title: 'Distribuição da Base por Nível',
+        description:
+          'Veja quantos clientes estão em cada nível do programa, atualizado em tempo real com a base do CRM.',
+        placement: 'top',
+      },
+      {
+        target: '[data-tour-id="fidelidade-client-list"]',
+        title: 'Progresso de Cada Cliente',
+        description:
+          'Lista com nível atual, total de compras e quantas faltam para o próximo nível. Clique para abrir a ficha completa do cliente.',
+        placement: 'top',
+      },
+    ],
+  },
   '/empresas': {
     pagePath: '/empresas',
     pageName: 'Empresas',

@@ -125,10 +125,12 @@ export default function Contacts() {
               Base de Clientes · Cafés Especiais
             </p>
             <h1 className="mt-1 text-xl font-extrabold tracking-[-.035em] text-[#2b1c13]">
-              Clientes & Fidelidade
+              Clientes
             </h1>
             <p className="mt-1 text-xs text-[#705e4d]">
-              Gerenciamento de clientes, histórico de compras, aniversários e níveis de fidelidade.
+              Base de clientes, busca, cadastro/edição, importação/exportação de planilha e mimos
+              enviados. O panorama do programa de fidelidade está na aba{' '}
+              <strong className="text-[#8c531b]">Fidelidade</strong>.
             </p>
           </div>
           <div className="flex-1" />

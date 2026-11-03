@@ -10,6 +10,7 @@ import ConfirmEmailChange from '@/pages/ConfirmEmailChange'
 import Campaigns from '@/pages/Campaigns'
 import CaptureForms from '@/pages/CaptureForms'
 import Contacts from '@/pages/Contacts'
+import Fidelidade from '@/pages/Fidelidade'
 import CustomerJourney from '@/pages/CustomerJourney'
 import Deals from '@/pages/Deals'
 import Agenda from '@/pages/Agenda'
@@ -60,6 +61,7 @@ export default function App() {
                 <Route path="recuperacao" element={<Recovery />} />
                 <Route path="negocios" element={<Deals />} />
                 <Route path="contatos" element={<Contacts />} />
+                <Route path="fidelidade" element={<Fidelidade />} />
                 <Route path="empresas" element={<Empresas />} />
                 <Route path="campanhas" element={<Campaigns />} />
                 <Route path="formularios" element={<CaptureForms />} />
