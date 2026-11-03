@@ -223,8 +223,10 @@ export function TourProvider({ children }: PropsWithChildren) {
     // Se o usuário ainda não viu o tour desta página, disparar automaticamente após um pequeno delay para a DOM montar
     if (!hasSeenTourForPage(tour.pagePath)) {
       const timer = window.setTimeout(() => {
-        // Checar novamente para evitar race condition
-        if (!tourDisabled) {
+        // Checar novamente para evitar race condition: não abrir se desabilitado ou se o usuário já estiver com foco em um input
+        const active = document.activeElement
+        const isEditing = active?.matches('input, textarea, select, [contenteditable=true]')
+        if (!tourDisabled && !isEditing) {
           setCurrentTour(tour)
           setCurrentStepIndex(0)
           setIsOpen(true)

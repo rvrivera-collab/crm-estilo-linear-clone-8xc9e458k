@@ -162,16 +162,33 @@ export function JourneyKanbanBoard({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="flex h-8 w-64 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs">
-            <Search className="mr-2 size-3.5 text-[#8c7865]" />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex h-9 sm:h-8 w-full sm:w-64 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs transition-colors focus-within:border-amber-600 focus-within:ring-1 focus-within:ring-amber-500/30">
+            <Search className="mr-2 size-3.5 shrink-0 text-[#8c7865]" />
             <input
+              id="journey-search-input"
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filtrar por nome, apelido, café..."
-              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
+              className="min-w-0 flex-1 bg-transparent text-xs sm:text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
             />
-          </label>
+            {filterQuery && (
+              <button
+                type="button"
+                onClick={() => setFilterQuery('')}
+                aria-label="Limpar filtro"
+                className="ml-1 text-[11px] font-bold text-[#8c7865] hover:text-[#2b1c13] px-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

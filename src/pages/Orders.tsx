@@ -302,15 +302,32 @@ export default function Orders() {
 
         {/* Busca */}
         <div className="mt-3 flex items-center justify-between">
-          <label className="flex h-8 w-full sm:w-80 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs">
-            <Search className="mr-2 size-3.5 text-[#8c7865]" />
+          <div className="flex h-9 sm:h-8 w-full sm:w-80 items-center rounded-md border border-[#d6c7b6] bg-white px-2.5 shadow-2xs transition-colors focus-within:border-amber-600 focus-within:ring-1 focus-within:ring-amber-500/30">
+            <Search className="mr-2 size-3.5 shrink-0 text-[#8c7865]" />
             <input
+              id="orders-search-input"
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por cliente, café ou item..."
-              className="min-w-0 flex-1 bg-transparent text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
+              className="min-w-0 flex-1 bg-transparent text-xs sm:text-[11px] text-[#2b1c13] outline-none placeholder:text-[#9c8978]"
             />
-          </label>
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label="Limpar busca"
+                className="ml-1 text-[11px] font-bold text-[#8c7865] hover:text-[#2b1c13] px-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

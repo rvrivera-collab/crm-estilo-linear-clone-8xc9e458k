@@ -36,7 +36,14 @@ function AppFrame() {
     let timer = 0
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.matches('input, textarea, select, [contenteditable=true]')) return
+      const activeEl = document.activeElement
+      if (
+        target?.matches('input, textarea, select, [contenteditable=true]') ||
+        target?.closest('input, textarea, select, [contenteditable=true]') ||
+        activeEl?.matches('input, textarea, select, [contenteditable=true]')
+      ) {
+        return
+      }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         setOpen(true)
