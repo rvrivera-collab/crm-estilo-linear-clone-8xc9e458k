@@ -81,9 +81,107 @@ export interface LoyaltyLevelInfo {
   nextThreshold: number
   remainingToNext: number
   progressPct: number
-  discountPct: number
+  reward: string
   description: string
 }
+
+/**
+ * Programa de Fidelidade São Domingos — 10 níveis oficiais.
+ * O cliente atinge o nível quando as compras acumuladas >= threshold (minPurchases).
+ * 0–9 compras = ainda sem nível. Pode pular níveis (ex.: 35 compras → Nível 3).
+ * REGRAS: recompensas são INTERNAS (só dentro do CRM, nunca em mensagens ao cliente).
+ */
+export const LOYALTY_LEVELS: Array<{
+  level: number
+  minPurchases: number
+  name: string
+  reward: string
+  badgeColor: string
+  description: string
+}> = [
+  {
+    level: 1,
+    minPurchases: 10,
+    name: 'Semente Energética',
+    reward: '1 pacote de 250g',
+    badgeColor: 'border-amber-700/30 bg-amber-800/10 text-amber-900',
+    description: 'Atingido a partir de 10 compras — primeira muda da jornada',
+  },
+  {
+    level: 2,
+    minPurchases: 20,
+    name: 'Mudinha de CAFÉÉÉÉ',
+    reward: '1 dripp coffee',
+    badgeColor: 'border-orange-600/30 bg-orange-600/10 text-orange-800',
+    description: 'Atingido a partir de 20 compras',
+  },
+  {
+    level: 3,
+    minPurchases: 30,
+    name: 'Doce Grão de Cereja',
+    reward: '1 cápsula nespresso*',
+    badgeColor: 'border-amber-600/30 bg-amber-500/15 text-amber-800',
+    description: 'Atingido a partir de 30 compras',
+  },
+  {
+    level: 4,
+    minPurchases: 40,
+    name: 'Catuaí Amarelo',
+    reward: 'Caneta + chaveiro São Domingos',
+    badgeColor: 'border-yellow-600/30 bg-yellow-500/10 text-yellow-800',
+    description: 'Atingido a partir de 40 compras',
+  },
+  {
+    level: 5,
+    minPurchases: 50,
+    name: 'Topázio',
+    reward: 'Caneca São Domingos',
+    badgeColor: 'border-emerald-600/30 bg-emerald-600/10 text-emerald-800',
+    description: 'Atingido a partir de 50 compras',
+  },
+  {
+    level: 6,
+    minPurchases: 60,
+    name: 'Graúna Bordô',
+    reward: '1 pacote de 500g',
+    badgeColor: 'border-rose-600/30 bg-rose-600/10 text-rose-800',
+    description: 'Atingido a partir de 60 compras',
+  },
+  {
+    level: 7,
+    minPurchases: 70,
+    name: 'Jatobá Secreto',
+    reward: '1 café, drip e cápsula',
+    badgeColor: 'border-red-700/30 bg-red-700/10 text-red-800',
+    description: 'Atingido a partir de 70 compras',
+  },
+  {
+    level: 8,
+    minPurchases: 80,
+    name: 'Arara da SD',
+    reward: 'Camisa São Domingos',
+    badgeColor: 'border-sky-600/30 bg-sky-600/10 text-sky-800',
+    description: 'Atingido a partir de 80 compras',
+  },
+  {
+    level: 9,
+    minPurchases: 90,
+    name: 'Geisha Brasileño',
+    reward: 'Garrafa de água personalizada São Domingos',
+    badgeColor: 'border-violet-600/30 bg-violet-600/10 text-violet-800',
+    description: 'Atingido a partir de 90 compras',
+  },
+  {
+    level: 10,
+    minPurchases: 100,
+    name: 'Embaixador São Domingos',
+    reward: 'Caneca embaixador personalizada + uma tarde de visita e café na fazenda São Domingos',
+    badgeColor: 'border-purple-600/30 bg-purple-600/10 text-purple-800',
+    description: 'Nível máximo — atingido a partir de 100 compras',
+  },
+]
+
+export const MAX_LOYALTY_LEVEL = LOYALTY_LEVELS[LOYALTY_LEVELS.length - 1].level
 
 export interface Purchase extends RecordModel {
   contact: string
@@ -376,8 +474,9 @@ export function buildDisneyWhatsAppMessage(params: {
   }
 
   if (moment === 'nivel_fidelidade') {
+    // IMPORTANTE: nunca revelar a recompensa do nível em mensagem ao cliente (uso interno do CRM)
     let msg = `Parabéns, ${displayName}! ⭐☕ Você atingiu o *Nível ${loyalty.level} — ${loyalty.name}* no nosso Clube de Fidelidade!\n\n`
-    msg += `Cada visita sua enriquece a nossa história e nos enche de orgulho. Como ${loyalty.name}, você agora conta com *${loyalty.discountPct}% de benefício especial* em microlotes selecionados.`
+    msg += `Cada visita sua enriquece a nossa história e nos enche de orgulho. A sua preferência pelo nosso trabalho artesanal e pelo café especial é motivo de muita comemoração.`
     if (coffeeDetail) {
       msg += `\n\nO seu amor por *${coffeeDetail}* faz toda a diferença para o nosso time!`
     }
@@ -425,8 +524,9 @@ export function buildLoyaltyProgressMessage(params: {
 
   if (leveledUp) {
     // Reaproveita o texto caloroso de parabéns por novo nível
+    // IMPORTANTE: nunca revelar a recompensa do nível em mensagem ao cliente (uso interno do CRM)
     let msg = `Parabéns, ${displayName}! ⭐☕ Você atingiu o *Nível ${loyalty.level} — ${loyalty.name}* no nosso Clube de Fidelidade!\n\n`
-    msg += `Essa conquista veio com a sua *compra nº ${count}* e cada visita sua enriquece a nossa história. Como ${loyalty.name}, você agora conta com *${loyalty.discountPct}% de benefício especial* em microlotes selecionados.`
+    msg += `Essa conquista veio com a sua *compra nº ${count}* e cada visita sua enriquece a nossa história. Temos uma surpresa especial reservada para celebrar você!`
     if (coffeeDetail) {
       msg += `\n\nO seu amor por *${coffeeDetail}* faz toda a diferença para o nosso time!`
     }
@@ -439,82 +539,54 @@ export function buildLoyaltyProgressMessage(params: {
   const nextLevelName = getLoyaltyLevel(loyalty.nextThreshold).name
 
   let msg = `Oi, ${displayName}! ☕✨ Obrigado pela sua *compra nº ${count}* — é uma alegria imensa fazer parte do seu dia!`
-  msg += `\n\n📊 *Seu progresso no Clube de Fidelidade:*\n• Nível atual: *${loyalty.level} — ${loyalty.name}* (${loyalty.discountPct}% de benefício)`
+  msg += `\n\n📊 *Seu progresso no Clube de Fidelidade:*\n• Nível atual: *${loyalty.level} — ${loyalty.name}*`
   if (remaining > 0) {
-    msg += `\n• Faltam só *${remaining} ${remaining === 1 ? 'compra' : 'compras'}* para você alcançar o nível *${nextLevelName}* e ganhar um bônus ainda mais especial!`
+    msg += `\n• Faltam só *${remaining} ${remaining === 1 ? 'compra' : 'compras'}* para você desbloquear o seu próximo nível: *${nextLevelName}*!`
   } else {
-    msg += `\n• Você já conquistou o nível máximo *Mestre Cafeteiro* — você faz parte do seleto clube VIP da casa! 👑`
+    msg += `\n• Você já conquistou o nível máximo *${loyalty.name}* — você faz parte do seleto clube VIP da casa! 👑`
   }
   msg += coffeeLine
   msg += `\n\nTe esperamos de braços abertos para a próxima xícara! ✨💛`
   return msg
 }
 
+/**
+ * Nível de fidelidade por CONTAGEM DE COMPRAS do cliente.
+ * O cliente atinge o nível quando compras >= threshold do nível (pode pular níveis).
+ * 0–9 compras = sem nível ainda (level 0, "Sem nível").
+ * RECOMPENSAS SÃO INTERNAS: aparecem só dentro do CRM, nunca em mensagens ao cliente.
+ */
 export function getLoyaltyLevel(purchasesCount = 0): LoyaltyLevelInfo {
   const count = Math.max(0, purchasesCount)
-  // Cada 10 compras sobe 1 nível:
-  // 0–9: Nível 1 ("Grão")
-  // 10–19: Nível 2 ("Torra")
-  // 20–29: Nível 3 ("Blend")
-  // 30–39: Nível 4 ("Barista")
-  // 40+: Nível 5 ("Mestre Cafeteiro")
-  const level = Math.floor(count / 10) + 1
 
-  const levelsMeta: Record<
-    number,
-    { name: string; badgeColor: string; discountPct: number; description: string }
-  > = {
-    1: {
-      name: 'Grão',
-      badgeColor: 'border-amber-700/30 bg-amber-800/10 text-amber-900',
-      discountPct: 5,
-      description: 'Cliente iniciante na jornada dos cafés especiais (0 a 9 compras)',
-    },
-    2: {
-      name: 'Torra Artesanal',
-      badgeColor: 'border-orange-600/30 bg-orange-600/10 text-orange-800',
-      discountPct: 10,
-      description: 'Apreciador frequente de métodos e microlotes (10 a 19 compras)',
-    },
-    3: {
-      name: 'Blend Nobre',
-      badgeColor: 'border-amber-600/30 bg-amber-500/15 text-amber-800',
-      discountPct: 15,
-      description: 'Cliente fiel e conhecedor de perfis sensoriais (20 a 29 compras)',
-    },
-    4: {
-      name: 'Barista',
-      badgeColor: 'border-emerald-600/30 bg-emerald-600/10 text-emerald-800',
-      discountPct: 20,
-      description: 'Especialista em métodos de extração e origens (30 a 39 compras)',
-    },
-    5: {
-      name: 'Mestre Cafeteiro',
-      badgeColor: 'border-purple-600/30 bg-purple-600/10 text-purple-800',
-      discountPct: 25,
-      description: 'Nível máximo VIP dos cafés especiais (40+ compras)',
-    },
-  }
+  // Nível mais alto cujo threshold já foi alcançado (0 quando count < 10)
+  const level = LOYALTY_LEVELS.reduce((acc, l) => (count >= l.minPurchases ? l.level : acc), 0)
+  const meta = LOYALTY_LEVELS.find((l) => l.level === level)
+  const nextMeta = LOYALTY_LEVELS.find((l) => l.level === level + 1)
+  const maxed = level >= MAX_LOYALTY_LEVEL
 
-  const meta = levelsMeta[Math.min(level, 5)] || levelsMeta[5]
-  const minPurchases = (level - 1) * 10
-  const maxPurchases = minPurchases + 9
-  const nextThreshold = level * 10
-  const remainingToNext = level >= 5 ? 0 : Math.max(0, nextThreshold - count)
-  const currentInTier = count - minPurchases
-  const progressPct = level >= 5 ? 100 : Math.min(100, Math.round((currentInTier / 10) * 100))
+  const minPurchases = meta?.minPurchases ?? 0
+  // Faixa exibida: do threshold deste nível até véspera do próximo (ou "100+")
+  const maxPurchases = maxed ? Number.POSITIVE_INFINITY : (nextMeta?.minPurchases ?? 0) - 1
+  const nextThreshold = maxed ? minPurchases : (nextMeta?.minPurchases ?? 0)
+  const remainingToNext = maxed ? 0 : Math.max(0, nextThreshold - count)
+  // Progresso dentro da faixa atual: 0 no threshold, 99% véspera do próximo
+  const span = maxed ? 1 : Math.max(1, nextThreshold - minPurchases)
+  const progressPct = maxed ? 100 : Math.min(99, Math.round(((count - minPurchases) / span) * 100))
 
   return {
     level,
-    name: meta.name,
-    badgeColor: meta.badgeColor,
+    name: meta?.name ?? 'Sem nível',
+    badgeColor: meta?.badgeColor ?? 'border-slate-300/60 bg-slate-100 text-slate-600',
     minPurchases,
     maxPurchases,
     nextThreshold,
     remainingToNext,
     progressPct,
-    discountPct: meta.discountPct,
-    description: meta.description,
+    reward: meta?.reward ?? '—',
+    description:
+      meta?.description ??
+      `Cliente ainda sem nível de fidelidade (0 a ${LOYALTY_LEVELS[0].minPurchases - 1} compras)`,
   }
 }
 

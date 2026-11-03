@@ -52,7 +52,9 @@ export default function Contacts() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<'todos' | Contact['status']>('todos')
-  const [loyaltyFilter, setLoyaltyFilter] = useState<'todos' | '1' | '2' | '3' | '4' | '5'>('todos')
+  const [loyaltyFilter, setLoyaltyFilter] = useState<
+    'todos' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10'
+  >('todos')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
   const [isExporting, setIsExporting] = useState(false)
@@ -299,11 +301,17 @@ export default function Contacts() {
               className="bg-transparent text-[10px] text-[#2b1c13] outline-none"
             >
               <option value="todos">Todos os níveis</option>
-              <option value="1">Nível 1 - Grão (0–9)</option>
-              <option value="2">Nível 2 - Torra (10–19)</option>
-              <option value="3">Nível 3 - Blend (20–29)</option>
-              <option value="4">Nível 4 - Barista (30–39)</option>
-              <option value="5">Nível 5 - Mestre (40+)</option>
+              <option value="0">Sem nível (0–9)</option>
+              <option value="1">Nível 1 - Semente (10+)</option>
+              <option value="2">Nível 2 - Mudinha (20+)</option>
+              <option value="3">Nível 3 - Grão de Cereja (30+)</option>
+              <option value="4">Nível 4 - Catuaí (40+)</option>
+              <option value="5">Nível 5 - Topázio (50+)</option>
+              <option value="6">Nível 6 - Graúna (60+)</option>
+              <option value="7">Nível 7 - Jatobá (70+)</option>
+              <option value="8">Nível 8 - Arara (80+)</option>
+              <option value="9">Nível 9 - Geisha (90+)</option>
+              <option value="10">Nível 10 - Embaixador (100+)</option>
             </select>
           </label>
 

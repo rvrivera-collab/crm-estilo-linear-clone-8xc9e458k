@@ -86,7 +86,19 @@ export default function Index() {
     let bdayToday = 0
     let bdayNext7Days = 0
     let needReengagement = 0
-    const loyaltyCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    const loyaltyCounts: Record<number, number> = {
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+      6: 0,
+      7: 0,
+      8: 0,
+      9: 0,
+      10: 0,
+    }
     let totalPurchasesSum = 0
     let totalSpentSum = 0
 
@@ -783,26 +795,34 @@ export default function Index() {
               </div>
               <div className="mt-2 flex flex-wrap gap-1 text-[10px] font-mono font-bold">
                 <span
-                  className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900"
-                  title="Grão (0-9 compras)"
+                  className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700"
+                  title="Sem nível (0-9 compras)"
                 >
-                  Grão: {coffeeMetrics.loyaltyCounts[1] || 0}
+                  Sem nível: {coffeeMetrics.loyaltyCounts[0] || 0}
+                </span>
+                <span
+                  className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900"
+                  title="Semente Energética (10-19 compras)"
+                >
+                  Semente: {coffeeMetrics.loyaltyCounts[1] || 0}
                 </span>
                 <span
                   className="rounded bg-orange-100 px-1.5 py-0.5 text-orange-900"
-                  title="Torra (10-19 compras)"
+                  title="Mudinha de CAFÉÉÉÉ (20-29 compras)"
                 >
-                  Torra: {coffeeMetrics.loyaltyCounts[2] || 0}
+                  Mudinha: {coffeeMetrics.loyaltyCounts[2] || 0}
                 </span>
                 <span
                   className="rounded bg-amber-200 px-1.5 py-0.5 text-amber-950"
-                  title="Blend (20-29 compras)"
+                  title="Doce Grão de Cereja (30-39 compras)"
                 >
-                  Blend: {coffeeMetrics.loyaltyCounts[3] || 0}
+                  Grão de Cereja: {coffeeMetrics.loyaltyCounts[3] || 0}
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-[11px] text-amber-800">Subida de nível a cada 10 compras</p>
+            <p className="mt-2 text-[11px] text-amber-800">
+              10 níveis oficiais: um a cada 10 compras
+            </p>
           </article>
         </section>
         {/* ============================================================ */}

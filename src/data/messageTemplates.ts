@@ -124,13 +124,13 @@ Que seu dia seja maravilhoso! Te esperamos para um brinde com a xícara perfeita
     id: 'fidelidade_novo_patamar',
     title: 'Parabéns por Novo Nível de Fidelidade',
     category: 'nivel_fidelidade',
-    description: 'Reconhecimento do avanço de nível com destaque aos benefícios exclusivos.',
+    description: 'Reconhecimento do avanço de nível, sem revelar a recompensa (uso interno).',
     tags: ['Fidelidade', 'Clube', 'VIP'],
     text: `Parabéns, {apelido}! ⭐🏆 Você atingiu o *{nivel}* no nosso Clube de Fidelidade!
 
 Cada encontro com você enriquece a nossa trajetória e nos enche de orgulho. A sua preferência pelo nosso trabalho artesanal e pelo café *{cafe_favorito}* é motivo de muita comemoração para toda a nossa equipe.
 
-Como cliente {nivel}, você agora conta com benefícios e descontos exclusivos na nossa seleção de microlotes.
+Temos uma surpresa especial reservada para celebrar você — é só pedir na próxima visita!
 
 Obrigado por nos escolher. Esperamos você em breve para celebrarmos essa conquista juntos! ✨☕`,
   },
@@ -176,7 +176,7 @@ export function formatTemplateText(
   const roast = contact.roast_preference?.trim() || 'torra artesanal'
   const loyalty = getLoyaltyLevel(contact.purchase_count || 0)
   const coupon = overrides?.couponCode || contact.last_coupon_code || 'CAFE-ESPECIAL'
-  const discount = overrides?.discountText || `${loyalty.discountPct || 10}% OFF`
+  const discount = overrides?.discountText || '10% OFF'
   const reviewUrl = overrides?.googleReviewUrl || 'https://g.page/r/sua-cafeteria/review' // URL de exemplo padrão configurável
 
   return templateText

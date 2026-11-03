@@ -36,6 +36,7 @@ import {
   getCustomerJourneyStage,
   getDaysSinceLastPurchase,
   getLoyaltyLevel,
+  MAX_LOYALTY_LEVEL,
   money,
   relativeTime,
   type Activity,
@@ -628,7 +629,7 @@ export function ContactDrawer({
                     Nível {loyalty.level} ({loyalty.name})
                   </span>
                   <span>
-                    {loyalty.level >= 5
+                    {loyalty.level >= MAX_LOYALTY_LEVEL
                       ? 'Nível Máximo Atingido'
                       : `Faltam ${loyalty.remainingToNext} compras para Nível ${loyalty.level + 1}`}
                   </span>
@@ -639,6 +640,13 @@ export function ContactDrawer({
                     style={{ width: `${loyalty.progressPct}%` }}
                   />
                 </div>
+                {/* RECOMPENSA: uso EXCLUSIVAMENTE interno (nunca em WhatsApp ao cliente) */}
+                {loyalty.level > 0 && (
+                  <p className="mt-2 border-t border-amber-200/60 pt-2 text-[10px] text-amber-800">
+                    <span className="font-bold">Recompensa do nível (uso interno):</span>{' '}
+                    {loyalty.reward}
+                  </p>
+                )}
               </div>
             </div>
 

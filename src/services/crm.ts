@@ -1,5 +1,5 @@
 import pb from '@/lib/pocketbase/client'
-import { buildLoyaltyProgressMessage } from '@/types/crm'
+import { buildLoyaltyProgressMessage, getLoyaltyLevel } from '@/types/crm'
 import type {
   Activity,
   Campaign,
@@ -715,9 +715,10 @@ export async function registerPurchase(params: {
     /* intentionally ignored */
   }
 
-  // 5. Verificar se atingiu marco de novo nível de fidelidade (múltiplo de 10)
-  const previousLevel = Math.floor(currentCount / 10) + 1
-  const newLevel = Math.floor((currentCount + 1) / 10) + 1
+  // 5. Verificar se atingiu marco de novo nível de fidelidade (threshold por contagem de compras)
+  // Níveis oficiais: 10 níveis, um a cada 10 compras (0-9 = sem nível). Importado de types/crm.
+  const previousLevel = getLoyaltyLevel(currentCount).level
+  const newLevel = getLoyaltyLevel(currentCount + 1).level
   const leveledUp = newLevel > previousLevel
   if (leveledUp) {
     try {
