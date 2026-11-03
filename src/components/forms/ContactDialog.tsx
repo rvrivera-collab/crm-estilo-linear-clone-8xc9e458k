@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useCrm } from '@/contexts/CrmContext'
 import { useToast } from '@/hooks/use-toast'
 import { extractFieldErrors, getErrorMessage } from '@/lib/pocketbase/errors'
+import { safeDateInput, safeIsoOrNull } from '@/lib/safe-date'
 import { createContact, updateContact } from '@/services/crm'
 import type { Contact } from '@/types/crm'
 
@@ -30,7 +31,7 @@ export function ContactDialog({
       nickname: contact?.nickname || '',
       email: contact?.email || '',
       phone: contact?.phone || '',
-      birthday: contact?.birthday ? contact.birthday.split('T')[0] : '',
+      birthday: safeDateInput(contact?.birthday),
       favorite_coffee: contact?.favorite_coffee || '',
       roast_preference: contact?.roast_preference || '',
       brew_method_preference: contact?.brew_method_preference || '',
@@ -41,7 +42,7 @@ export function ContactDialog({
       intensity_preference: contact?.intensity_preference || '',
       dietary_restrictions: contact?.dietary_restrictions || '',
       special_date_description: contact?.special_date_description || '',
-      special_date: contact?.special_date ? contact.special_date.split('T')[0] : '',
+      special_date: safeDateInput(contact?.special_date),
       acquisition_channel: contact?.acquisition_channel || '',
       service_notes: contact?.service_notes || '',
       city: contact?.city || '',
@@ -131,16 +132,10 @@ export function ContactDialog({
         coffee_preference: form.coffee_preference.trim(),
         owner: contact?.owner || user?.id,
       }
-      if (form.birthday) {
-        data.birthday = new Date(`${form.birthday}T00:00:00.000Z`).toISOString()
-      } else {
-        data.birthday = null
-      }
-      if (form.special_date) {
-        data.special_date = new Date(`${form.special_date}T00:00:00.000Z`).toISOString()
-      } else {
-        data.special_date = null
-      }
+      // Datas sempre seguras: vazio/inválido vira null (limpa o campo) em vez de
+      // lançar "Invalid time value" ao chamar toISOString em Date inválido.
+      data.birthday = safeIsoOrNull(form.birthday)
+      data.special_date = safeIsoOrNull(form.special_date)
       if (finalEmpresaId) {
         data.empresa = finalEmpresaId
       }

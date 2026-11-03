@@ -635,14 +635,18 @@ export function initials(name = ''): string {
 }
 
 export function datePt(value: string): string {
-  if (!value) return '—'
+  if (!value || value.startsWith('0001-01-01')) return '—'
+  const parsed = new Date(value)
+  if (isNaN(parsed.getTime())) return '—'
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
-    .format(new Date(value))
+    .format(parsed)
     .replace('.', '')
 }
 
 export function relativeTime(value: string): string {
-  const diff = Date.now() - new Date(value).getTime()
+  const time = new Date(value).getTime()
+  if (!value || isNaN(time)) return '—'
+  const diff = Date.now() - time
   const mins = Math.max(1, Math.floor(diff / 60000))
   if (mins < 60) return `há ${mins} min`
   const hours = Math.floor(mins / 60)
@@ -653,8 +657,9 @@ export function relativeTime(value: string): string {
 
 export function daysSince(dateStr?: string): number {
   if (!dateStr) return 0
-  const diff = Date.now() - new Date(dateStr).getTime()
-  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
+  const time = new Date(dateStr).getTime()
+  if (isNaN(time)) return 0
+  return Math.max(0, Math.floor((Date.now() - time) / (1000 * 60 * 60 * 24)))
 }
 
 export function getDealDaysIdle(deal: Deal, activities: Activity[] = []): number {
