@@ -44,11 +44,18 @@ export default function Settings() {
   const [savingWaba, setSavingWaba] = useState(false)
   const [wabaJustSaved, setWabaJustSaved] = useState(false)
 
+  // Mensagem automática de progresso de fidelidade (padrão: LIGADA)
+  const [loyaltyProgressEnabled, setLoyaltyProgressEnabled] = useState(true)
+  const [savingLoyaltyProgress, setSavingLoyaltyProgress] = useState(false)
+
   useEffect(() => {
     let alive = true
     getWhatsAppSettings()
       .then((rec) => {
-        if (alive && rec?.waba_id) setWabaId(rec.waba_id)
+        if (!alive || !rec) return
+        if (rec.waba_id) setWabaId(rec.waba_id)
+        if (typeof rec.loyalty_progress_disabled === 'boolean')
+          setLoyaltyProgressEnabled(!rec.loyalty_progress_disabled)
       })
       .catch(() => {})
     return () => {
@@ -105,6 +112,32 @@ export default function Settings() {
       setErrors({ waba_id: getErrorMessage(error) })
     } finally {
       setSavingWaba(false)
+    }
+  }
+
+  async function handleToggleLoyaltyProgress(enabled: boolean) {
+    const previous = loyaltyProgressEnabled
+    setLoyaltyProgressEnabled(enabled)
+    setSavingLoyaltyProgress(true)
+    try {
+      await saveWhatsAppSettings(wabaId.replace(/\D/g, ''), {
+        loyaltyProgressDisabled: !enabled,
+      })
+      toast({
+        title: enabled ? 'Mensagem de progresso ativada' : 'Mensagem de progresso desativada',
+        description: enabled
+          ? 'A cada compra registrada, o cliente recebe a mensagem de progresso no Clube de Fidelidade.'
+          : 'As próximas compras não disparam a mensagem automática de progresso.',
+      })
+    } catch (error) {
+      setLoyaltyProgressEnabled(previous)
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar preferência',
+        description: getErrorMessage(error),
+      })
+    } finally {
+      setSavingLoyaltyProgress(false)
     }
   }
 
@@ -456,6 +489,31 @@ export default function Settings() {
                     Deixando vazio e salvando, o CRM volta a tentar descobrir a conta
                     automaticamente pela conexão.
                   </p>
+                </div>
+
+                {/* Mensagem automática de progresso de fidelidade (liga/desliga) */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50/60 p-3">
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-amber-950">
+                      Mensagem automática de progresso de fidelidade
+                    </p>
+                    <p className="text-[10px] leading-4 text-amber-900/90 max-w-xl">
+                      A cada compra registrada, o cliente recebe no WhatsApp uma mensagem no tom
+                      Disney com o número da compra, o nível atual do Clube de Fidelidade e quantas
+                      compras faltam para o próximo nível (com bônus especial). Ao subir de nível,
+                      ele recebe um parabéns no lugar da mensagem comum.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {savingLoyaltyProgress ? (
+                      <LoaderCircle className="size-3.5 animate-spin text-amber-700" />
+                    ) : null}
+                    <Switch
+                      checked={loyaltyProgressEnabled}
+                      disabled={savingLoyaltyProgress}
+                      onCheckedChange={handleToggleLoyaltyProgress}
+                    />
+                  </div>
                 </div>
               </div>
             </SettingsCard>

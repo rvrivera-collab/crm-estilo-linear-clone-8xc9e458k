@@ -1,4 +1,5 @@
 import pb from '@/lib/pocketbase/client'
+import { buildLoyaltyProgressMessage } from '@/types/crm'
 import type {
   Activity,
   Campaign,
@@ -81,7 +82,30 @@ export async function sendDisneyWhatsApp(params: {
 export interface CrmWhatsAppSettings {
   id: string
   waba_id: string
+  loyalty_progress_disabled?: boolean
   updated?: string
+}
+
+/** Resultado do envio automático da mensagem de progresso de fidelidade */
+export interface LoyaltyProgressResult {
+  /** 'disabled' = opção desligada nas Configurações; 'no-phone' = cliente sem WhatsApp */
+  skipped?: 'disabled' | 'no-phone'
+  attempted: boolean
+  whatsappSent?: boolean
+  sendMethod?: 'api' | 'link' | 'none'
+  waFallbackUrl?: string | null
+  warning?: string | null
+  message?: string
+}
+
+/** A mensagem automática de progresso está ligada? (padrão: ligada) */
+export async function isLoyaltyProgressEnabled(): Promise<boolean> {
+  try {
+    const settings = await getWhatsAppSettings()
+    return !settings?.loyalty_progress_disabled
+  } catch {
+    return true
+  }
 }
 
 // Busca o WABA ID manual salvo pelo próprio usuário (crm_settings, 1 registro por dono)
@@ -100,7 +124,10 @@ export async function getWhatsAppSettings() {
 
 // Salva (cria ou atualiza) o registro único de configurações do usuário.
 // waba_id vazio limpa o valor e volta à descoberta automática pelo conector.
-export async function saveWhatsAppSettings(wabaId: string) {
+export async function saveWhatsAppSettings(
+  wabaId: string,
+  extra?: { loyaltyProgressDisabled?: boolean },
+) {
   const ownerId = pb.authStore.record?.id
   if (!ownerId) throw new Error('Usuário não autenticado.')
   const clean = wabaId.replace(/\D/g, '')
@@ -108,11 +135,15 @@ export async function saveWhatsAppSettings(wabaId: string) {
   if (existing) {
     return pb.collection<CrmWhatsAppSettings>('crm_settings').update(existing.id, {
       waba_id: clean,
+      ...(extra && extra.loyaltyProgressDisabled !== undefined
+        ? { loyalty_progress_disabled: extra.loyaltyProgressDisabled }
+        : {}),
     })
   }
   return pb.collection<CrmWhatsAppSettings>('crm_settings').create({
     owner: ownerId,
     waba_id: clean,
+    loyalty_progress_disabled: extra?.loyaltyProgressDisabled ?? false,
   })
 }
 
@@ -459,18 +490,38 @@ export async function createOrder(data: {
   // Se solicitado, registrar também como compra/fidelidade do cliente
   if (data.registerPurchaseRecord && data.value && data.value > 0) {
     try {
-      await registerPurchase({
+      const res = await registerPurchase({
         contactId: data.contactId,
         amount: data.value,
         itemsDescription: data.items_description || data.title,
         notes: `Gerado a partir do pedido: ${data.title}`,
       })
+      // Propaga o resultado do disparo automático de progresso de fidelidade para a UI
+      return Object.assign(newOrder, { loyaltyProgress: res.loyaltyProgress })
     } catch {
       /* intentionally ignored */
     }
   }
 
   return newOrder
+}
+
+/** Dispara manualmente a mensagem de progresso de fidelidade (usado quando o automático ficou pendente) */
+export async function resendLoyaltyProgress(contactId: string) {
+  const contact = await pb.collection<Contact>('contacts').getOne(contactId)
+  const count = Number(contact.purchase_count || 0)
+  if (count <= 0) throw new Error('Cliente ainda não tem compras registradas.')
+  const message = buildLoyaltyProgressMessage({
+    contact,
+    purchaseCount: count,
+    leveledUp: false,
+  })
+  return sendDisneyWhatsApp({
+    contactId,
+    message,
+    momentType: 'personalizado',
+    title: '☕ Progresso no Clube de Fidelidade',
+  })
 }
 
 export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
@@ -667,7 +718,8 @@ export async function registerPurchase(params: {
   // 5. Verificar se atingiu marco de novo nível de fidelidade (múltiplo de 10)
   const previousLevel = Math.floor(currentCount / 10) + 1
   const newLevel = Math.floor((currentCount + 1) / 10) + 1
-  if (newLevel > previousLevel) {
+  const leveledUp = newLevel > previousLevel
+  if (leveledUp) {
     try {
       await pb.collection('journey_events').create({
         contact: params.contactId,
@@ -683,7 +735,58 @@ export async function registerPurchase(params: {
     }
   }
 
-  return { purchase, contact: updatedContact }
+  // 6. Mensagem AUTOMÁTICA de progresso de fidelidade via WhatsApp (respeita o toggle em Configurações;
+  //    usa exatamente o mesmo pipeline do hook crm_send_whatsapp — API oficial com fallback wa.me)
+  let loyaltyProgress: LoyaltyProgressResult = { attempted: false }
+  if (await isLoyaltyProgressEnabled()) {
+    const phoneDigits = (updatedContact.phone || '').replace(/\D/g, '')
+    if (!phoneDigits) {
+      // Cliente sem WhatsApp cadastrado: a compra segue normalmente, sem tentativa de envio
+      loyaltyProgress = { attempted: false, skipped: 'no-phone' }
+    } else {
+      try {
+        const message = buildLoyaltyProgressMessage({
+          contact: updatedContact,
+          purchaseCount: currentCount + 1,
+          leveledUp,
+          newLevel: leveledUp ? newLevel : undefined,
+        })
+        const sendRes = await sendDisneyWhatsApp({
+          contactId: params.contactId,
+          message,
+          momentType: leveledUp ? 'nivel_fidelidade' : 'personalizado',
+          title: leveledUp
+            ? '⭐ Parabéns por Novo Nível de Fidelidade'
+            : '☕ Progresso no Clube de Fidelidade',
+        })
+        if (sendRes.phoneMissing) {
+          // Número ausente/inválido no cadastro: tratado como "sem WhatsApp"
+          loyaltyProgress = { attempted: false, skipped: 'no-phone' }
+        } else {
+          loyaltyProgress = {
+            attempted: true,
+            whatsappSent: sendRes.whatsappSent,
+            sendMethod: sendRes.sendMethod,
+            waFallbackUrl: sendRes.waFallbackUrl || null,
+            warning: sendRes.warning || sendRes.metaErrorDetail || null,
+            message,
+          }
+        }
+      } catch {
+        // Falhou a comunicação com o hook: registra como pendente, sem bloquear a compra
+        loyaltyProgress = {
+          attempted: true,
+          whatsappSent: false,
+          sendMethod: 'link',
+          warning: 'Não foi possível disparar automaticamente — mensagem registrada como pendente.',
+        }
+      }
+    }
+  } else {
+    loyaltyProgress = { attempted: false, skipped: 'disabled' }
+  }
+
+  return { purchase, contact: updatedContact, loyaltyProgress }
 }
 
 export async function deletePurchase(purchaseId: string, contactId: string) {

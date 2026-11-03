@@ -55,6 +55,7 @@ import {
   registerPurchase,
   ORDER_STAGE_LABELS,
 } from '@/services/crm'
+import type { LoyaltyProgressResult } from '@/services/crm'
 import { EmailComposerModal } from '@/components/forms/EmailComposerModal'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import { OrderDialog } from '@/components/forms/OrderDialog'
@@ -204,9 +205,25 @@ export function ContactDrawer({
       setNewPurchaseOpen(false)
       await refresh()
 
+      // Confirmação discreta do disparo automático da mensagem de progresso de fidelidade
+      let progressSuffix = ''
+      const lp: LoyaltyProgressResult = res.loyaltyProgress
+      if (lp.skipped === 'no-phone') {
+        progressSuffix = ' Cliente sem WhatsApp cadastrado — mensagem automática não enviada.'
+      } else if (lp.skipped === 'disabled') {
+        progressSuffix = ' Mensagem automática de progresso está desligada nas Configurações.'
+      } else if (lp.whatsappSent) {
+        progressSuffix =
+          lp.sendMethod === 'api'
+            ? ' Mensagem de progresso enviada via WhatsApp API Oficial. ✅'
+            : ' Mensagem de progresso pronta via link wa.me (WhatsApp Web). ✅'
+      } else if (lp.attempted) {
+        progressSuffix = ' Mensagem de progresso pendente — link wa.me disponível em Mensagens.'
+      }
+
       toast({
         title: 'Compra registrada com sucesso!',
-        description: `Adicionado ${money.format(numAmount)} ao cliente. Total de compras: ${res.contact.purchase_count}.`,
+        description: `Adicionado ${money.format(numAmount)} ao cliente. Total de compras: ${res.contact.purchase_count}.${progressSuffix}`,
       })
     } catch (err) {
       toast({

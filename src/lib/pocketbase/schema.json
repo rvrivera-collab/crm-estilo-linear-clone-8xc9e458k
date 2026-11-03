@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T18:09:15.522Z",
+  "generatedAt": "2026-11-03T20:06:04.310Z",
   "collections": [
     {
       "name": "users",
@@ -1558,6 +1558,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "loyalty_progress_disabled",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_crm_settings_owner ON crm_settings (owner)"]

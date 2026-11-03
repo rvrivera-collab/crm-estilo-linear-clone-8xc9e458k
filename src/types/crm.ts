@@ -398,6 +398,58 @@ export function buildDisneyWhatsAppMessage(params: {
   return msg.trim()
 }
 
+/**
+ * Mensagem automática de PROGRESSO DE FIDELIDADE enviada a cada nova compra registrada.
+ * Tom Disney, personalizada com nome/apelido, café favorito e método preferido.
+ * - levelUp = true → parabeniza o novo nível (reaproveita o texto de "nivel_fidelidade")
+ * - caso contrário → mostra compra atual, nível atual e quantas faltam para o próximo nível.
+ */
+export function buildLoyaltyProgressMessage(params: {
+  contact: Contact
+  purchaseCount: number
+  leveledUp?: boolean
+  newLevel?: number
+}): string {
+  const { contact, purchaseCount, leveledUp } = params
+  const displayName = contact.nickname?.trim() || contact.name.trim().split(' ')[0] || 'Cliente'
+  const coffeeDetail = contact.favorite_coffee?.trim()
+  const brewMethod = contact.brew_method_preference?.trim()
+  const count = Math.max(1, purchaseCount)
+  const loyalty = getLoyaltyLevel(count)
+
+  const coffeeLine = coffeeDetail
+    ? ` Sabemos do seu bom gosto pelo nosso café *${coffeeDetail}*${brewMethod ? ` preparado na ${brewMethod}` : ''} — cada xícara sua é um momento único.`
+    : brewMethod
+      ? ` Preparar o seu ${brewMethod} do jeitinho que você gosta é sempre um prazer.`
+      : ''
+
+  if (leveledUp) {
+    // Reaproveita o texto caloroso de parabéns por novo nível
+    let msg = `Parabéns, ${displayName}! ⭐☕ Você atingiu o *Nível ${loyalty.level} — ${loyalty.name}* no nosso Clube de Fidelidade!\n\n`
+    msg += `Essa conquista veio com a sua *compra nº ${count}* e cada visita sua enriquece a nossa história. Como ${loyalty.name}, você agora conta com *${loyalty.discountPct}% de benefício especial* em microlotes selecionados.`
+    if (coffeeDetail) {
+      msg += `\n\nO seu amor por *${coffeeDetail}* faz toda a diferença para o nosso time!`
+    }
+    msg += `\n\nObrigado por confiar no nosso trabalho artesanal. Esperamos você em breve para brindar essa conquista! ✨🏆`
+    return msg
+  }
+
+  const remaining = loyalty.remainingToNext
+  // Nome do próximo nível: o nível alcançado ao completar o limite atual (nextThreshold)
+  const nextLevelName = getLoyaltyLevel(loyalty.nextThreshold).name
+
+  let msg = `Oi, ${displayName}! ☕✨ Obrigado pela sua *compra nº ${count}* — é uma alegria imensa fazer parte do seu dia!`
+  msg += `\n\n📊 *Seu progresso no Clube de Fidelidade:*\n• Nível atual: *${loyalty.level} — ${loyalty.name}* (${loyalty.discountPct}% de benefício)`
+  if (remaining > 0) {
+    msg += `\n• Faltam só *${remaining} ${remaining === 1 ? 'compra' : 'compras'}* para você alcançar o nível *${nextLevelName}* e ganhar um bônus ainda mais especial!`
+  } else {
+    msg += `\n• Você já conquistou o nível máximo *Mestre Cafeteiro* — você faz parte do seleto clube VIP da casa! 👑`
+  }
+  msg += coffeeLine
+  msg += `\n\nTe esperamos de braços abertos para a próxima xícara! ✨💛`
+  return msg
+}
+
 export function getLoyaltyLevel(purchasesCount = 0): LoyaltyLevelInfo {
   const count = Math.max(0, purchasesCount)
   // Cada 10 compras sobe 1 nível:

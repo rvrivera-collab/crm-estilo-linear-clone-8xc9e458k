@@ -14,6 +14,7 @@ import {
 import { useCrm } from '@/contexts/CrmContext'
 import { createOrder, updateOrder, ORDER_STAGE_LABELS } from '@/services/crm'
 import type { Contact, Order, OrderStage } from '@/types/crm'
+import type { LoyaltyProgressResult } from '@/services/crm'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -130,9 +131,26 @@ export function OrderDialog({
         })
 
         await refresh()
+        // Confirmação discreta do disparo automático da mensagem de progresso de fidelidade
+        let progressSuffix = ''
+        const lp = (created as Order & { loyaltyProgress?: LoyaltyProgressResult }).loyaltyProgress
+        if (lp) {
+          if (lp.skipped === 'no-phone') {
+            progressSuffix = ' Cliente sem WhatsApp cadastrado — mensagem automática não enviada.'
+          } else if (lp.skipped === 'disabled') {
+            progressSuffix = ' Mensagem automática de progresso está desligada nas Configurações.'
+          } else if (lp.whatsappSent) {
+            progressSuffix =
+              lp.sendMethod === 'api'
+                ? ' Mensagem de progresso enviada via WhatsApp API Oficial. ✅'
+                : ' Mensagem de progresso pronta via link wa.me (WhatsApp Web). ✅'
+          } else if (lp.attempted) {
+            progressSuffix = ' Mensagem de progresso pendente — link wa.me disponível em Mensagens.'
+          }
+        }
         toast({
           title: '📦 Pedido criado com sucesso!',
-          description: `Adicionado ao funil na coluna "${ORDER_STAGE_LABELS[stage]}".`,
+          description: `Adicionado ao funil na coluna "${ORDER_STAGE_LABELS[stage]}".${progressSuffix}`,
         })
         if (onCreated) onCreated(created)
         onOpenChange(false)
