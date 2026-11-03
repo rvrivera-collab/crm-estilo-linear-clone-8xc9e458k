@@ -101,6 +101,7 @@ routerAdd(
               } else if (raw && typeof raw === 'object') {
                 if (raw.id) return String(raw.id)
                 if (raw.phone_number_id) return String(raw.phone_number_id)
+                if (raw.phoneNumberId) return String(raw.phoneNumberId)
               }
 
               for (let i = 0; i < candidateList.length; i++) {
@@ -113,45 +114,89 @@ routerAdd(
               return null
             }
 
-            // Helper para extrair lista de WABAs (IDs)
-            const extractWabaIds = (res) => {
-              if (!res || !res.successful || !res.data) return []
+            // Helper para extrair waba_id configurado na resposta de detalhes da conta
+            const extractConfiguredWabaId = (res) => {
+              if (!res || !res.successful || !res.data) return null
               const raw = res.data
-              let list = []
-              if (Array.isArray(raw)) {
-                list = raw
-              } else if (raw && Array.isArray(raw.data)) {
-                list = raw.data
-              } else if (raw && Array.isArray(raw.accounts)) {
-                list = raw.accounts
-              } else if (raw && Array.isArray(raw.business_accounts)) {
-                list = raw.business_accounts
-              } else if (raw && typeof raw === 'object' && raw.id) {
-                list = [raw]
+              if (typeof raw === 'object' && raw !== null) {
+                if (raw.id) return String(raw.id)
+                if (raw.waba_id) return String(raw.waba_id)
+                if (raw.wabaId) return String(raw.wabaId)
+                if (raw.account_id) return String(raw.account_id)
               }
-
-              const ids = []
-              for (let i = 0; i < list.length; i++) {
-                const item = list[i]
-                if (item && item.id) {
-                  ids.push(String(item.id))
-                }
-              }
-              return ids
+              return null
             }
 
             // Descobre o phone_number_id para um executor (user ou owner)
+            // REGRA: Nunca enviar waba_ids arbitrários nem BM IDs em chamadas à Meta.
+            // A conexão WhatsApp da Composio/Skip vincula a conexão a um WABA específico.
+            // Deixar a plataforma resolver sem waba_id, ou usar o waba_id retornado pelos detalhes da conta conectada.
             const resolvePhoneForExecutor = (executeFn, label) => {
               let lastErr = null
 
-              // 1. Tentar WHATSAPP_GET_PHONE_NUMBERS({}) sem waba_id
+              // 1. Tentar obter os detalhes da conta da conexão via WHATSAPP_GET_BUSINESS_ACCOUNT_DETAILS({})
+              let connectionWabaId = null
+              try {
+                console.log(
+                  `[${label}] Consultando WHATSAPP_GET_BUSINESS_ACCOUNT_DETAILS sem waba_id...`,
+                )
+                const detailsRes = executeFn('WHATSAPP_GET_BUSINESS_ACCOUNT_DETAILS', {})
+                if (detailsRes && detailsRes.successful) {
+                  connectionWabaId = extractConfiguredWabaId(detailsRes)
+                  console.log(
+                    `[${label}] WABA ID obtido dos detalhes da conta conectada:`,
+                    connectionWabaId,
+                  )
+                } else {
+                  console.log(
+                    `[${label}] WHATSAPP_GET_BUSINESS_ACCOUNT_DETAILS retorno:`,
+                    formatMetaError(detailsRes),
+                  )
+                }
+              } catch (dErr) {
+                console.log(
+                  `[${label}] Exceção em WHATSAPP_GET_BUSINESS_ACCOUNT_DETAILS:`,
+                  dErr.message,
+                )
+              }
+
+              // 2. Se obteve o connectionWabaId legítimo da conexão, tentar listar números com ele
+              if (connectionWabaId) {
+                try {
+                  console.log(
+                    `[${label}] Tentando WHATSAPP_GET_PHONE_NUMBERS com connectionWabaId ${connectionWabaId}...`,
+                  )
+                  const wabaNumRes = executeFn('WHATSAPP_GET_PHONE_NUMBERS', {
+                    waba_id: connectionWabaId,
+                  })
+                  const phoneId = extractPhoneNumberId(wabaNumRes)
+                  if (phoneId) {
+                    console.log(
+                      `[${label}] phone_number_id encontrado com connectionWabaId ${connectionWabaId}: ${phoneId}`,
+                    )
+                    return { phoneId, wabaId: connectionWabaId, error: null }
+                  }
+                  const formatted = formatMetaError(wabaNumRes, `WABA ${connectionWabaId}`)
+                  if (formatted) lastErr = formatted
+                } catch (wErr) {
+                  lastErr = wErr.message
+                  console.log(
+                    `[${label}] Exceção em WHATSAPP_GET_PHONE_NUMBERS com connectionWabaId:`,
+                    wErr.message,
+                  )
+                }
+              }
+
+              // 3. Tentar WHATSAPP_GET_PHONE_NUMBERS({}) sem waba_id (a plataforma usa o WABA da conexão)
               try {
                 console.log(`[${label}] Tentando WHATSAPP_GET_PHONE_NUMBERS sem waba_id...`)
                 const res = executeFn('WHATSAPP_GET_PHONE_NUMBERS', {})
                 const phoneId = extractPhoneNumberId(res)
                 if (phoneId) {
-                  console.log(`[${label}] phone_number_id encontrado diretamente: ${phoneId}`)
-                  return { phoneId, error: null }
+                  console.log(
+                    `[${label}] phone_number_id encontrado diretamente sem waba_id: ${phoneId}`,
+                  )
+                  return { phoneId, wabaId: connectionWabaId, error: null }
                 }
                 const formatted = formatMetaError(res, 'WHATSAPP_GET_PHONE_NUMBERS')
                 if (formatted) lastErr = formatted
@@ -164,72 +209,11 @@ routerAdd(
                 console.log(`[${label}] Exceção em WHATSAPP_GET_PHONE_NUMBERS:`, err.message)
               }
 
-              // 2. Se falhou (ex: Meta exige WABA ID), tentar descobrir WABAs via WHATSAPP_GET_OWNED_BUSINESS_ACCOUNTS
-              // Conforme erro registrado: "The waba_id parameter must be a WhatsApp Business Account ID (WABA ID), not a Business Manager ID (BM ID)"
-              // O BM ID conhecido do usuário é 498339428899726
-              const candidateBmIds = ['498339428899726']
-              for (let b = 0; b < candidateBmIds.length; b++) {
-                const bmId = candidateBmIds[b]
-                try {
-                  console.log(`[${label}] Buscando WABAs para business_id ${bmId}...`)
-                  const ownedRes = executeFn('WHATSAPP_GET_OWNED_BUSINESS_ACCOUNTS', {
-                    business_id: bmId,
-                  })
-                  const wabaIds = extractWabaIds(ownedRes)
-                  console.log(`[${label}] WABAs encontradas para ${bmId}:`, JSON.stringify(wabaIds))
-
-                  for (let w = 0; w < wabaIds.length; w++) {
-                    const wabaId = wabaIds[w]
-                    try {
-                      console.log(`[${label}] Consultando números para WABA ${wabaId}...`)
-                      const numRes = executeFn('WHATSAPP_GET_PHONE_NUMBERS', { waba_id: wabaId })
-                      const phoneId = extractPhoneNumberId(numRes)
-                      if (phoneId) {
-                        console.log(
-                          `[${label}] phone_number_id encontrado via WABA ${wabaId}: ${phoneId}`,
-                        )
-                        return { phoneId, error: null }
-                      }
-                      const numErr = formatMetaError(numRes, `WABA ${wabaId}`)
-                      if (numErr) lastErr = numErr
-                    } catch (wErr) {
-                      console.log(`[${label}] Erro consultando WABA ${wabaId}:`, wErr.message)
-                      lastErr = wErr.message
-                    }
-                  }
-
-                  // Também tentar WHATSAPP_GET_CLIENT_BUSINESS_ACCOUNTS se não encontrou em owned
-                  if (wabaIds.length === 0) {
-                    const clientRes = executeFn('WHATSAPP_GET_CLIENT_BUSINESS_ACCOUNTS', {
-                      business_id: bmId,
-                    })
-                    const clientWabaIds = extractWabaIds(clientRes)
-                    console.log(
-                      `[${label}] Client WABAs para ${bmId}:`,
-                      JSON.stringify(clientWabaIds),
-                    )
-                    for (let cw = 0; cw < clientWabaIds.length; cw++) {
-                      const cwabaId = clientWabaIds[cw]
-                      const cnumRes = executeFn('WHATSAPP_GET_PHONE_NUMBERS', { waba_id: cwabaId })
-                      const cphoneId = extractPhoneNumberId(cnumRes)
-                      if (cphoneId) {
-                        console.log(
-                          `[${label}] phone_number_id encontrado via Client WABA ${cwabaId}: ${cphoneId}`,
-                        )
-                        return { phoneId, cphoneId, error: null }
-                      }
-                    }
-                  }
-                } catch (bmErr) {
-                  console.log(`[${label}] Erro buscando WABAs para BM ${bmId}:`, bmErr.message)
-                  lastErr = bmErr.message
-                }
-              }
-
-              return { phoneId: null, error: lastErr }
+              return { phoneId: null, wabaId: connectionWabaId, error: lastErr }
             }
 
             let resolvedPhoneId = null
+            let resolvedWabaId = null
             let authMode = null
             let discoveryError = null
 
@@ -239,6 +223,7 @@ routerAdd(
               const userRes = resolvePhoneForExecutor(userExec, 'user')
               if (userRes.phoneId) {
                 resolvedPhoneId = userRes.phoneId
+                resolvedWabaId = userRes.wabaId
                 authMode = 'user'
               } else if (userRes.error) {
                 discoveryError = userRes.error
@@ -252,6 +237,7 @@ routerAdd(
                 const ownerRes = resolvePhoneForExecutor(ownerExec, 'owner')
                 if (ownerRes.phoneId) {
                   resolvedPhoneId = ownerRes.phoneId
+                  resolvedWabaId = ownerRes.wabaId
                   authMode = 'owner'
                 } else if (ownerRes.error && !discoveryError) {
                   discoveryError = ownerRes.error
@@ -301,22 +287,14 @@ routerAdd(
                 }
               }
 
-              // Fallback se primário falhou
+              // Fallback se primário falhou (apenas se o modo alternativo tiver o mesmo phone_number_id válido)
               if (!sendResult || !sendResult.successful) {
                 if (authMode !== 'user' && typeof $connectors.execute === 'function' && e.auth) {
                   try {
+                    console.log('[fallback user] Tentando WHATSAPP_SEND_MESSAGE...')
                     sendResult = $connectors.execute(e.auth, 'WHATSAPP_SEND_MESSAGE', sendParams)
                   } catch (uFallbackErr) {
                     console.log('Fallback user falhou:', uFallbackErr.message)
-                  }
-                } else if (
-                  authMode !== 'owner' &&
-                  typeof $connectors.executeAsOwner === 'function'
-                ) {
-                  try {
-                    sendResult = $connectors.executeAsOwner('WHATSAPP_SEND_MESSAGE', sendParams)
-                  } catch (oFallbackErr) {
-                    console.log('Fallback owner falhou:', oFallbackErr.message)
                   }
                 }
               }
