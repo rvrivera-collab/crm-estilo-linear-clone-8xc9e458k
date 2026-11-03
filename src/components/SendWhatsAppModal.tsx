@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   ExternalLink,
   Flame,
   HeartHandshake,
+  Info,
   LoaderCircle,
   MessageCircle,
   Sparkles,
@@ -11,6 +13,7 @@ import {
 } from 'lucide-react'
 import { buildDisneyWhatsAppMessage, getLoyaltyLevel, type Contact } from '@/types/crm'
 import { sendDisneyWhatsApp } from '@/services/crm'
+import { getWhatsAppSettings } from '@/services/crm'
 import {
   DISNEY_MESSAGE_TEMPLATES,
   formatTemplateText,
@@ -60,6 +63,28 @@ export function SendWhatsAppModal({
   const [sending, setSending] = useState(false)
   const [waFallbackUrl, setWaFallbackUrl] = useState<string | null>(null)
   const [lastWarning, setLastWarning] = useState<string | null>(null)
+  const [manualWabaId, setManualWabaId] = useState<string | null>(null)
+
+  // Busca o WABA ID manual configurado em Configurações para sugerir a correção certa
+  useEffect(() => {
+    if (!open) return
+    let alive = true
+    getWhatsAppSettings()
+      .then((rec) => {
+        if (alive) setManualWabaId(rec?.waba_id ? rec.waba_id : null)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [open])
+
+  // A Meta reclamou de waba_id / Business Manager? → sugerir colar o WABA ID em Configurações
+  const isWabaIdError =
+    !!lastWarning &&
+    (lastWarning.toLowerCase().includes('waba_id') ||
+      lastWarning.toLowerCase().includes('waba id') ||
+      lastWarning.toLowerCase().includes('business manager'))
 
   // Gerar o rascunho caloroso no estilo Disney
   const currentContact = activeContact || initialContact || null
@@ -475,6 +500,37 @@ export function SendWhatsAppModal({
                   <p className="text-[11px] text-amber-800 mt-0.5 font-mono break-words leading-relaxed">
                     {lastWarning}
                   </p>
+                  {isWabaIdError && (
+                    <div className="mt-1.5 flex items-start gap-1.5 rounded-md border border-amber-300 bg-white/80 p-2 text-[10px] leading-4 text-amber-900">
+                      <Info className="size-3 shrink-0 mt-0.5 text-amber-700" />
+                      <span>
+                        A conexão parece apontar para um ID de <strong>Business Manager</strong> em
+                        vez de uma conta WhatsApp Business (WABA).{' '}
+                        {manualWabaId ? (
+                          <>
+                            Revise o WABA ID salvo em{' '}
+                            <Link
+                              to="/configuracoes#whatsapp"
+                              className="font-bold underline underline-offset-2 hover:text-amber-700"
+                            >
+                              Configurações → WhatsApp
+                            </Link>
+                            .
+                          </>
+                        ) : (
+                          <>
+                            <Link
+                              to="/configuracoes#whatsapp"
+                              className="font-bold underline underline-offset-2 hover:text-amber-700"
+                            >
+                              Cole seu WABA ID em Configurações → WhatsApp
+                            </Link>{' '}
+                            para destravar o envio pela API.
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-[10px] text-amber-900/80 mt-1 font-sans">
                     O evento foi registrado na linha do tempo da jornada com o motivo real
                     retornado.

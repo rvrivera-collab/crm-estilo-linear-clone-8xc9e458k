@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Camera,
+  CheckCircle2,
   Compass,
+  Info,
   KeyRound,
   LayoutTemplate,
   LoaderCircle,
@@ -20,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTour } from '@/contexts/TourContext'
 import { useToast } from '@/hooks/use-toast'
 import { extractFieldErrors, getErrorMessage } from '@/lib/pocketbase/errors'
+import { getWhatsAppSettings, saveWhatsAppSettings } from '@/services/crm'
 import pb from '@/lib/pocketbase/client'
 
 export default function Settings() {
@@ -35,6 +38,23 @@ export default function Settings() {
   const [passwords, setPasswords] = useState({ old: '', next: '', confirm: '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState('')
+
+  // WABA ID manual (conta WhatsApp Business) usado pelos envios via API oficial
+  const [wabaId, setWabaId] = useState('')
+  const [savingWaba, setSavingWaba] = useState(false)
+  const [wabaJustSaved, setWabaJustSaved] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    getWhatsAppSettings()
+      .then((rec) => {
+        if (alive && rec?.waba_id) setWabaId(rec.waba_id)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const avatarPreview = useMemo(() => (avatar ? URL.createObjectURL(avatar) : ''), [avatar])
 
@@ -59,6 +79,32 @@ export default function Settings() {
       })
     } finally {
       setUpdatingTour(false)
+    }
+  }
+
+  async function saveWabaId() {
+    const clean = wabaId.replace(/\D/g, '')
+    if (clean && clean.length < 6) {
+      setErrors({ waba_id: 'Um WABA ID válido tem 6 dígitos ou mais.' })
+      return
+    }
+    setSavingWaba(true)
+    setErrors({})
+    try {
+      await saveWhatsAppSettings(clean)
+      setWabaId(clean)
+      setWabaJustSaved(true)
+      setTimeout(() => setWabaJustSaved(false), 4000)
+      toast({
+        title: clean ? 'WABA ID salvo' : 'WABA ID removido',
+        description: clean
+          ? 'Os próximos envios pela API oficial vão usar este WABA ID.'
+          : 'O CRM volta a descobrir a conta WhatsApp Business automaticamente pela conexão.',
+      })
+    } catch (error) {
+      setErrors({ waba_id: getErrorMessage(error) })
+    } finally {
+      setSavingWaba(false)
     }
   }
 
@@ -361,6 +407,55 @@ export default function Settings() {
                       1 clique pelo link seguro wa.me (WhatsApp Web/App).
                     </li>
                   </ul>
+                </div>
+
+                {/* WABA ID manual — escape-hatch quando a conexão aponta para um Business Manager */}
+                <div className="rounded-md border border-amber-200 bg-amber-50/60 p-3 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <Info className="size-3.5 shrink-0 mt-0.5 text-amber-700" />
+                    <div className="flex-1 space-y-1">
+                      <p className="text-[11px] font-bold text-amber-950">
+                        WABA ID (conta WhatsApp Business)
+                      </p>
+                      <p className="text-[10px] leading-4 text-amber-900/90">
+                        Cole aqui o ID da sua conta WhatsApp Business (WABA). Copie em{' '}
+                        <span className="font-mono">developers.facebook.com</span> → seu app →{' '}
+                        <span className="font-mono">WhatsApp</span> →{' '}
+                        <span className="font-mono">API Setup</span>, seção{' '}
+                        <strong>Business Account</strong>. Quando preenchido, ele tem precedência
+                        sobre a conta detectada automaticamente pela conexão.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      value={wabaId}
+                      onChange={(e) => setWabaId(e.target.value)}
+                      placeholder="Ex.: 123456789012345"
+                      inputMode="numeric"
+                      className="w-full sm:max-w-xs rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-mono text-[#1c1c1e] outline-none focus:border-amber-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={saveWabaId}
+                      disabled={savingWaba}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 transition disabled:opacity-60 shrink-0"
+                    >
+                      {savingWaba ? (
+                        <LoaderCircle className="size-3.5 animate-spin" />
+                      ) : wabaJustSaved ? (
+                        <CheckCircle2 className="size-3.5" />
+                      ) : null}
+                      {wabaId.trim() ? 'Salvar WABA ID' : 'Limpar e voltar ao automático'}
+                    </button>
+                  </div>
+                  {errors.waba_id && (
+                    <p className="text-[10px] font-semibold text-red-600">{errors.waba_id}</p>
+                  )}
+                  <p className="text-[10px] text-[#64748b]">
+                    Deixando vazio e salvando, o CRM volta a tentar descobrir a conta
+                    automaticamente pela conexão.
+                  </p>
                 </div>
               </div>
             </SettingsCard>

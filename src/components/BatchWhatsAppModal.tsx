@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   AlertCircle,
+  Info,
   CheckCircle2,
   ExternalLink,
   Flame,
@@ -17,7 +19,7 @@ import {
   formatTemplateText,
   type MessageTemplate,
 } from '@/data/messageTemplates'
-import { sendDisneyWhatsApp } from '@/services/crm'
+import { getWhatsAppSettings, sendDisneyWhatsApp } from '@/services/crm'
 import type { Contact } from '@/types/crm'
 import { getLoyaltyLevel } from '@/types/crm'
 import { useToast } from '@/hooks/use-toast'
@@ -60,6 +62,33 @@ export function BatchWhatsAppModal({
   const [results, setResults] = useState<Record<string, BatchSendResult>>({})
   const [currentIndex, setCurrentIndex] = useState<number>(0)
   const [finished, setFinished] = useState(false)
+  const [manualWabaId, setManualWabaId] = useState<string | null>(null)
+
+  // Busca o WABA ID manual configurado em Configurações para sugerir a correção certa
+  useEffect(() => {
+    if (!open) return
+    let alive = true
+    getWhatsAppSettings()
+      .then((rec) => {
+        if (alive) setManualWabaId(rec?.waba_id ? rec.waba_id : null)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [open])
+
+  // O erro da Meta é sobre waba_id/Business Manager? Mostra a dica de corrigir em Configurações
+  const showWabaHint =
+    !!manualWabaId ||
+    Object.values(results).some(
+      (r) =>
+        (r.status === 'fallback_link' || r.status === 'error') &&
+        r.errorText &&
+        (r.errorText.toLowerCase().includes('waba_id') ||
+          r.errorText.toLowerCase().includes('waba id') ||
+          r.errorText.toLowerCase().includes('business manager')),
+    )
 
   if (!open) return null
 
@@ -356,6 +385,39 @@ export function BatchWhatsAppModal({
                   }}
                 />
               </div>
+
+              {/* Dica acionável quando a Meta reclama de waba_id / Business Manager */}
+              {showWabaHint && (
+                <div className="mt-2 flex items-start gap-1.5 rounded-md border border-amber-300 bg-amber-50/80 p-2 text-[10px] leading-4 text-amber-900">
+                  <Info className="size-3 shrink-0 mt-0.5 text-amber-700" />
+                  <span>
+                    {manualWabaId ? (
+                      <>
+                        Enviando com o WABA ID manual salvo em{' '}
+                        <Link
+                          to="/configuracoes#whatsapp"
+                          className="font-bold underline underline-offset-2 hover:text-amber-700"
+                        >
+                          Configurações → WhatsApp
+                        </Link>
+                        . Se algum disparo ainda falhar, revise o ID lá.
+                      </>
+                    ) : (
+                      <>
+                        A conexão parece apontar para um ID de <strong>Business Manager</strong> em
+                        vez de um WABA.{' '}
+                        <Link
+                          to="/configuracoes#whatsapp"
+                          className="font-bold underline underline-offset-2 hover:text-amber-700"
+                        >
+                          Cole seu WABA ID em Configurações → WhatsApp
+                        </Link>{' '}
+                        para destravar o envio pela API.
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
 
               {/* Lista dos clientes e status */}
               <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1">

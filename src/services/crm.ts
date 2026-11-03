@@ -62,6 +62,8 @@ export async function sendDisneyWhatsApp(params: {
     phoneMissing: boolean
     sendMethod?: 'api' | 'link' | 'none'
     usedPhoneNumberId?: string | null
+    usedWabaId?: string | null
+    wabaSource?: string
     warning?: string | null
     metaErrorDetail?: string | null
     journeyEventId?: string
@@ -71,6 +73,46 @@ export async function sendDisneyWhatsApp(params: {
   }>('/backend/v1/crm/send-whatsapp', {
     method: 'POST',
     body: JSON.stringify(params),
+  })
+}
+
+// ===== Configurações do WhatsApp (aba Configurações) =====
+
+export interface CrmWhatsAppSettings {
+  id: string
+  waba_id: string
+  updated?: string
+}
+
+// Busca o WABA ID manual salvo pelo próprio usuário (crm_settings, 1 registro por dono)
+export async function getWhatsAppSettings() {
+  const ownerId = pb.authStore.record?.id
+  if (!ownerId) return null
+  try {
+    const record = await pb
+      .collection<CrmWhatsAppSettings>('crm_settings')
+      .getFirstListItem(`owner = "${ownerId}"`)
+    return record
+  } catch {
+    return null
+  }
+}
+
+// Salva (cria ou atualiza) o registro único de configurações do usuário.
+// waba_id vazio limpa o valor e volta à descoberta automática pelo conector.
+export async function saveWhatsAppSettings(wabaId: string) {
+  const ownerId = pb.authStore.record?.id
+  if (!ownerId) throw new Error('Usuário não autenticado.')
+  const clean = wabaId.replace(/\D/g, '')
+  const existing = await getWhatsAppSettings()
+  if (existing) {
+    return pb.collection<CrmWhatsAppSettings>('crm_settings').update(existing.id, {
+      waba_id: clean,
+    })
+  }
+  return pb.collection<CrmWhatsAppSettings>('crm_settings').create({
+    owner: ownerId,
+    waba_id: clean,
   })
 }
 
