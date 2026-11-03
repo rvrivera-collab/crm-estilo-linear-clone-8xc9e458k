@@ -518,6 +518,20 @@ export default function Orders() {
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
+                              {/* Link Correios Empresas (portal de login) — acima do rastreio */}
+                              <a
+                                href="https://empresas.correios.com.br/#/login"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                title="Abrir portal Correios Empresas em nova aba"
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8c531b] hover:text-[#633a10] hover:underline px-1 py-1 rounded transition"
+                              >
+                                <ExternalLink className="size-2.5 shrink-0 text-[#8c531b]" />
+                                <span>Correios Empresas</span>
+                              </a>
+
                               {order.tracking_code && (
                                 <button
                                   type="button"
