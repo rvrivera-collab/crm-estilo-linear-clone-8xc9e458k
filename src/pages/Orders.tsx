@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   AlertCircle,
   ArrowRight,
@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
 import { OrderDialog } from '@/components/forms/OrderDialog'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
+import { OrderShippingStatus } from '@/components/OrderShippingStatus'
 import {
   deleteOrder,
   markGoogleReviewRequested,
@@ -45,6 +46,7 @@ import {
   type OrderStage,
 } from '@/types/crm'
 import { useToast } from '@/hooks/use-toast'
+import { isSameLocalDay } from '@/lib/order-shipping'
 import { cn } from '@/lib/utils'
 
 interface OrderFunnelColumn {
@@ -141,6 +143,15 @@ export default function Orders() {
 
   // Feedback de cópia do rastreio: armazena orderId copiado
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null)
+
+  // Dia corrente para o contador de envio: verifica a cada minuto e só re-renderiza ao virar o dia
+  const [today, setToday] = useState(() => new Date())
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setToday((prev) => (isSameLocalDay(prev, new Date()) ? prev : new Date()))
+    }, 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const handleCopyTracking = async (orderId: string, code: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -581,6 +592,9 @@ export default function Orders() {
                                 <ExternalLink className="size-2.5 shrink-0 text-[#8c531b]" />
                                 <span>Rastreamento Correios</span>
                               </a>
+
+                              {/* Data do envio e contador de dias (ou "Recebido") */}
+                              <OrderShippingStatus order={order} now={today} />
                             </div>
 
                             {/* Valor e Data */}

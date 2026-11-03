@@ -465,6 +465,8 @@ export async function createOrder(data: {
       value: data.value || 0,
       stage,
       tracking_code: data.tracking_code || '',
+      // Data do envio: registrada no momento em que o rastreio entra no pedido
+      ...(data.tracking_code?.trim() ? { shipped_at: new Date().toISOString() } : {}),
       google_review_requested: false,
       notes: data.notes || '',
       position: 1,
@@ -537,7 +539,13 @@ export async function updateOrder(id: string, data: Partial<Order>) {
     .collection<Order>('orders')
     .getOne(id)
     .catch(() => null)
-  const updated = await pb.collection<Order>('orders').update(id, data, { expand: 'contact,owner' })
+  // Rastreio adicionado agora (antes estava vazio): grava a data do envio
+  const addingTracking = !!data.tracking_code?.trim() && !previous?.tracking_code?.trim()
+  const payload: Partial<Order> =
+    addingTracking && !data.shipped_at ? { ...data, shipped_at: new Date().toISOString() } : data
+  const updated = await pb
+    .collection<Order>('orders')
+    .update(id, payload, { expand: 'contact,owner' })
 
   const ownerId = pb.authStore.record?.id
 

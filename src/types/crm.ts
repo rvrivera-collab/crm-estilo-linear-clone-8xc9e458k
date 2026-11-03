@@ -211,6 +211,8 @@ export interface Order extends RecordModel {
   value?: number
   stage: OrderStage
   tracking_code?: string
+  /** Dia em que o rastreio foi adicionado (data do envio). */
+  shipped_at?: string
   google_review_requested?: boolean
   google_review_date?: string
   notes?: string
