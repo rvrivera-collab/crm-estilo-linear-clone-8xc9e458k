@@ -3,6 +3,11 @@ import type { Order, OrderStage } from '@/types/crm'
 
 const MS_PER_DAY = 86_400_000
 
+/** Formata uma data como dd/mm/aaaa no fuso local. */
+export function formatDateFull(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
 /** Estágios a partir de "Pedido recebido" (inclusive): o contador de envio para. */
 const DELIVERED_STAGES: OrderStage[] = ['pedido_recebido', 'pedir_avaliacao_google', 'concluido']
 

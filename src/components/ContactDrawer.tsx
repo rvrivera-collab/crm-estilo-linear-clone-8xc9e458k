@@ -497,6 +497,59 @@ export function ContactDrawer({
               </div>
             </div>
 
+            {/* BOX AÇÕES JÁ PEDIDAS: FEEDBACK GOOGLE & INDICAÇÃO DE AMIGOS */}
+            <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50/60 p-3 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-amber-700" />
+                  <span>Ações Já Pedidas ao Cliente</span>
+                </span>
+                <span className="font-mono text-[10px] text-amber-800 font-semibold">
+                  {[contact.google_review_asked, contact.referral_asked].filter(Boolean).length}
+                  /2 pedidas
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-amber-200">
+                <div
+                  className={`rounded border px-2 py-1.5 text-center transition ${
+                    contact.google_review_asked
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white/70 text-slate-400'
+                  }`}
+                  title={
+                    contact.google_review_asked
+                      ? 'Feedback pedido na ficha do Google'
+                      : 'Feedback da ficha do Google ainda não pedido'
+                  }
+                >
+                  <span className="block text-base leading-none">⭐</span>
+                  <span className="mt-1 block text-[10px] font-bold leading-tight">
+                    {contact.google_review_asked
+                      ? '✓ Feedback Google pedido'
+                      : 'Feedback Google pendente'}
+                  </span>
+                </div>
+
+                <div
+                  className={`rounded border px-2 py-1.5 text-center transition ${
+                    contact.referral_asked
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white/70 text-slate-400'
+                  }`}
+                  title={
+                    contact.referral_asked
+                      ? 'Indicação de amigos pedida ao cliente'
+                      : 'Indicação de amigos ainda não pedida'
+                  }
+                >
+                  <span className="block text-base leading-none">👥</span>
+                  <span className="mt-1 block text-[10px] font-bold leading-tight">
+                    {contact.referral_asked ? '✓ Indicação pedida' : 'Indicação pendente'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* BOX DISNEY: O QUE FAZ ESSE CLIENTE SE SENTIR ÚNICO */}
             <div className="mt-3 rounded-lg border border-amber-300 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 p-3.5 shadow-2xs space-y-2">
               <div className="flex items-center justify-between">

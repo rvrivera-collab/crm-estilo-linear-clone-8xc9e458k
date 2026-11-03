@@ -29,6 +29,9 @@ export interface MessageTemplate {
  * - {desconto}: Percentual de desconto (% OFF)
  * - {link_avaliacao}: Link para avaliação no Google
  */
+/** Link oficial da ficha do Google (perfil Empresa) usado em mensagens e cards. */
+export const GOOGLE_REVIEW_URL = 'https://g.page/r/Cc1UruBeWXaZEBE/review'
+
 export const DISNEY_MESSAGE_TEMPLATES: MessageTemplate[] = [
   // ==========================================
   // RECOMPRA 30 DIAS (3 Variantes Calorosas com Tom Disney)

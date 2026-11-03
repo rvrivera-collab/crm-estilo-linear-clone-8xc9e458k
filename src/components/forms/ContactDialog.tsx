@@ -39,6 +39,8 @@ export function ContactDialog({
       sent_mug: Boolean(contact?.sent_mug),
       sent_welcome_folder: Boolean(contact?.sent_welcome_folder),
       sent_stickers: Boolean(contact?.sent_stickers),
+      google_review_asked: Boolean(contact?.google_review_asked),
+      referral_asked: Boolean(contact?.referral_asked),
       intensity_preference: contact?.intensity_preference || '',
       dietary_restrictions: contact?.dietary_restrictions || '',
       special_date_description: contact?.special_date_description || '',
@@ -120,6 +122,8 @@ export function ContactDialog({
         sent_mug: Boolean(form.sent_mug),
         sent_welcome_folder: Boolean(form.sent_welcome_folder),
         sent_stickers: Boolean(form.sent_stickers),
+        google_review_asked: Boolean(form.google_review_asked),
+        referral_asked: Boolean(form.referral_asked),
         intensity_preference: form.intensity_preference.trim(),
         dietary_restrictions: form.dietary_restrictions.trim(),
         special_date_description: form.special_date_description.trim(),
@@ -284,6 +288,43 @@ export function ContactDialog({
                   className="mt-0.5 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer shrink-0"
                 />
                 <span className="leading-snug select-none font-medium">Já enviei os adesivos</span>
+              </label>
+            </div>
+          </div>
+
+          {/* SEÇÃO AÇÕES COM O CLIENTE: FEEDBACK GOOGLE & INDICAÇÃO DE AMIGOS */}
+          <div className="sm:col-span-2 rounded-lg border border-amber-300 bg-amber-50/70 p-3 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+              <span className="flex items-center gap-1.5">
+                <span>⭐ Ações já pedidas ao cliente</span>
+              </span>
+              <span className="text-[10px] font-normal text-amber-800">
+                Marque o que você já pediu para este cliente
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 pt-1 border-t border-amber-200">
+              <label className="flex items-start gap-2 rounded-md bg-white/80 border border-amber-200/80 p-2 cursor-pointer transition hover:bg-white text-[11px] text-[#1c1c1e]">
+                <input
+                  type="checkbox"
+                  checked={form.google_review_asked}
+                  onChange={(e) => setForm({ ...form, google_review_asked: e.target.checked })}
+                  className="mt-0.5 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer shrink-0"
+                />
+                <span className="leading-snug select-none font-medium">
+                  Já pedi o feedback do cliente na ficha do Google
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 rounded-md bg-white/80 border border-amber-200/80 p-2 cursor-pointer transition hover:bg-white text-[11px] text-[#1c1c1e]">
+                <input
+                  type="checkbox"
+                  checked={form.referral_asked}
+                  onChange={(e) => setForm({ ...form, referral_asked: e.target.checked })}
+                  className="mt-0.5 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer shrink-0"
+                />
+                <span className="leading-snug select-none font-medium">
+                  Já pedi a indicação de amigos para o cliente
+                </span>
               </label>
             </div>
           </div>

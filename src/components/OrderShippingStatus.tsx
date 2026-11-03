@@ -1,29 +1,53 @@
-import { CheckCircle2, Clock } from 'lucide-react'
-import { formatDaysSince, getOrderShippingInfo } from '@/lib/order-shipping'
+import { CheckCircle2, Clock, PackageCheck } from 'lucide-react'
+import { formatDateFull, formatDaysSince, getOrderShippingInfo } from '@/lib/order-shipping'
+import { safeParseDate } from '@/lib/safe-date'
 import type { Order } from '@/types/crm'
 
 interface OrderShippingStatusProps {
-  order: Pick<Order, 'tracking_code' | 'stage' | 'shipped_at'>
+  order: Pick<Order, 'tracking_code' | 'stage' | 'shipped_at' | 'received_at'>
   /** Instante usado para calcular os dias (atualizado pela página ao virar o dia). */
   now: Date
+}
+
+/** Data de recebimento formatada (dd/mm/aaaa), quando gravada. */
+function receivedDateLabel(receivedAt?: string): string | null {
+  const received = safeParseDate(receivedAt)
+  return received ? formatDateFull(received) : null
 }
 
 /** Linha compacta com a data do envio e o contador de dias do pedido no funil. */
 export function OrderShippingStatus({ order, now }: OrderShippingStatusProps) {
   const info = getOrderShippingInfo(order, now)
-  if (!info) return null
+  const receivedLabel = receivedDateLabel(order.received_at)
 
-  if (info.delivered) {
+  if (!info && !receivedLabel) return null
+
+  if (info?.delivered || (!info && receivedLabel)) {
     return (
-      <div className="flex items-center justify-between gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] text-emerald-800">
-        <span className="inline-flex items-center gap-1 font-bold min-w-0">
-          <CheckCircle2 className="size-2.5 shrink-0" />
-          <span className="truncate">Recebido</span>
-        </span>
-        {info.shippedDateLabel && (
-          <span className="font-mono shrink-0 text-emerald-700/80">
-            Enviado {info.shippedDateLabel}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] text-emerald-800">
+          <span className="inline-flex items-center gap-1 font-bold min-w-0">
+            <CheckCircle2 className="size-2.5 shrink-0" />
+            <span className="truncate">Recebido</span>
           </span>
+          {info?.shippedDateLabel && (
+            <span className="font-mono shrink-0 text-emerald-700/80">
+              Enviado {info.shippedDateLabel}
+            </span>
+          )}
+        </div>
+        {receivedLabel && (
+          <div className="flex items-center justify-between gap-1 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[9px] text-amber-900">
+            <span className="inline-flex items-center gap-1 font-bold min-w-0">
+              <PackageCheck className="size-2.5 shrink-0 text-amber-700" />
+              <span className="truncate">Recebido em {receivedLabel}</span>
+            </span>
+            {info?.shippedDateLabel && (
+              <span className="font-mono shrink-0 text-amber-800/80">
+                Enviado {info.shippedDateLabel}
+              </span>
+            )}
+          </div>
         )}
       </div>
     )

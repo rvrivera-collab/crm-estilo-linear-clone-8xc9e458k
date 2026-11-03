@@ -213,6 +213,8 @@ export interface Order extends RecordModel {
   tracking_code?: string
   /** Dia em que o rastreio foi adicionado (data do envio). */
   shipped_at?: string
+  /** Dia em que o pedido entrou no estágio "Pedido recebido". */
+  received_at?: string
   google_review_requested?: boolean
   google_review_date?: string
   notes?: string
@@ -338,6 +340,10 @@ export interface Contact extends RecordModel {
   sent_mug?: boolean
   sent_welcome_folder?: boolean
   sent_stickers?: boolean
+  /** Já pedi o feedback do cliente na ficha do Google. */
+  google_review_asked?: boolean
+  /** Já pedi a indicação de amigos para o cliente. */
+  referral_asked?: boolean
   intensity_preference?: string
   dietary_restrictions?: string
   special_date_description?: string

@@ -534,8 +534,10 @@ export default function Orders() {
                                 href="https://empresas.correios.com.br/#/login"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                draggable={false}
                                 onClick={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => e.stopPropagation()}
                                 title="Abrir portal Correios Empresas em nova aba"
                                 className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8c531b] hover:text-[#633a10] hover:underline px-1 py-1 rounded transition"
                               >
@@ -586,6 +588,7 @@ export default function Orders() {
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => e.stopPropagation()}
                                 title="Abrir portal de Rastreamento dos Correios em nova aba"
                                 className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8c531b] hover:text-[#633a10] hover:underline px-1 py-0.5 rounded transition"
                               >
@@ -595,6 +598,22 @@ export default function Orders() {
 
                               {/* Data do envio e contador de dias (ou "Recebido") */}
                               <OrderShippingStatus order={order} now={today} />
+
+                              {/* Avaliação da ficha do Google — abre em nova aba */}
+                              <a
+                                href="https://g.page/r/Cc1UruBeWXaZEBE/review"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                draggable={false}
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => e.stopPropagation()}
+                                title="Abrir a ficha do Google para avaliar a cafeteria em nova aba"
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8c531b] hover:text-[#633a10] hover:underline px-1 py-0.5 rounded transition"
+                              >
+                                <Star className="size-2.5 shrink-0 text-[#8c531b]" />
+                                <span>Avaliar no Google</span>
+                              </a>
                             </div>
 
                             {/* Valor e Data */}

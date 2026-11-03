@@ -1,5 +1,6 @@
 import pb from '@/lib/pocketbase/client'
 import { buildLoyaltyProgressMessage, getLoyaltyLevel } from '@/types/crm'
+import { isOrderDelivered } from '@/lib/order-shipping'
 import type {
   Activity,
   Campaign,
@@ -541,8 +542,14 @@ export async function updateOrder(id: string, data: Partial<Order>) {
     .catch(() => null)
   // Rastreio adicionado agora (antes estava vazio): grava a data do envio
   const addingTracking = !!data.tracking_code?.trim() && !previous?.tracking_code?.trim()
-  const payload: Partial<Order> =
+  // Entrou agora no estágio "Pedido recebido" (vindo de antes dele): grava a data do recebimento
+  const movingToReceived =
+    data.stage === 'pedido_recebido' && !!previous && !isOrderDelivered(previous.stage)
+  let payload: Partial<Order> =
     addingTracking && !data.shipped_at ? { ...data, shipped_at: new Date().toISOString() } : data
+  if (movingToReceived && !previous?.received_at && !payload.received_at) {
+    payload = { ...payload, received_at: new Date().toISOString() }
+  }
   const updated = await pb
     .collection<Order>('orders')
     .update(id, payload, { expand: 'contact,owner' })

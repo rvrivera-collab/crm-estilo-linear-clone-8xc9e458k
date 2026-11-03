@@ -33,6 +33,8 @@ export function formatContactForExport(contact: Contact) {
     'Mimo Caneca Enviada': contact.sent_mug ? 'Sim' : 'Não',
     'Mimo Folder Enviado': contact.sent_welcome_folder ? 'Sim' : 'Não',
     'Mimo Adesivos Enviados': contact.sent_stickers ? 'Sim' : 'Não',
+    'Feedback Google Já Pedido': contact.google_review_asked ? 'Sim' : 'Não',
+    'Indicação de Amigos Já Pedida': contact.referral_asked ? 'Sim' : 'Não',
     'Restrições Alimentares': contact.dietary_restrictions || '',
     'Data Especial (Motivo)': contact.special_date_description || '',
     'Data Especial (Data)': contact.special_date ? contact.special_date.split('T')[0] : '',
