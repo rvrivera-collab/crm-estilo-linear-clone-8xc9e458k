@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react'
 import {
   AlertCircle,
   ArrowRight,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   ExternalLink,
   GripVertical,
   LoaderCircle,
@@ -136,6 +138,41 @@ export default function Orders() {
 
   // Modal de Exclusão de Pedido
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Feedback de cópia do rastreio: armazena orderId copiado
+  const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null)
+
+  const handleCopyTracking = async (orderId: string, code: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiedTrackingId(orderId)
+      toast({
+        title: 'Código copiado!',
+        description: `${code} copiado para a área de transferência.`,
+      })
+      setTimeout(() => {
+        setCopiedTrackingId((curr) => (curr === orderId ? null : curr))
+      }, 2500)
+    } catch {
+      // Fallback simples caso clipboard API falhe
+      const textArea = document.createElement('textarea')
+      textArea.value = code
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopiedTrackingId(orderId)
+      toast({
+        title: 'Código copiado!',
+        description: `${code} copiado para a área de transferência.`,
+      })
+      setTimeout(() => {
+        setCopiedTrackingId((curr) => (curr === orderId ? null : curr))
+      }, 2500)
+    }
+  }
 
   // Filtro
   const filteredOrders = useMemo(() => {
@@ -475,13 +512,62 @@ export default function Orders() {
                               </p>
                             )}
 
-                            {/* Rastreio */}
-                            {order.tracking_code && (
-                              <div className="mt-1.5 flex items-center gap-1 font-mono text-[9px] text-blue-700 bg-blue-50/80 rounded px-1.5 py-0.5">
-                                <Truck className="size-2.5 shrink-0" />
-                                <span className="truncate">Rastreio: {order.tracking_code}</span>
-                              </div>
-                            )}
+                            {/* Rastreio dos Correios: Código clicável para cópia + Link oficial */}
+                            <div
+                              className="mt-2 space-y-1"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              {order.tracking_code && (
+                                <button
+                                  type="button"
+                                  onClick={(e) =>
+                                    handleCopyTracking(order.id, order.tracking_code, e)
+                                  }
+                                  title="Clique para copiar o código de rastreio"
+                                  className={cn(
+                                    'w-full flex items-center justify-between gap-1.5 font-mono text-[9.5px] rounded px-2 py-1 transition border text-left',
+                                    copiedTrackingId === order.id
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-300'
+                                      : 'bg-blue-50/90 hover:bg-blue-100/90 text-blue-800 border-blue-200/80 hover:border-blue-300 shadow-2xs',
+                                  )}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <Truck className="size-3 shrink-0 text-blue-600" />
+                                    <span className="font-semibold text-blue-900 shrink-0">
+                                      Rastreio:
+                                    </span>
+                                    <span className="truncate font-bold tracking-wider">
+                                      {order.tracking_code}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                                    {copiedTrackingId === order.id ? (
+                                      <span className="inline-flex items-center gap-0.5 font-sans font-bold text-[9px] text-emerald-700">
+                                        <Check className="size-3" /> Copiado!
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-0.5 font-sans text-[8.5px] text-blue-600 opacity-80 hover:opacity-100">
+                                        <Copy className="size-2.5" /> Copiar
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              )}
+
+                              <a
+                                href="https://rastreamento.correios.com.br/app/index.php"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                title="Abrir portal de Rastreamento dos Correios em nova aba"
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8c531b] hover:text-[#633a10] hover:underline px-1 py-0.5 rounded transition"
+                              >
+                                <ExternalLink className="size-2.5 shrink-0 text-[#8c531b]" />
+                                <span>Rastreamento Correios</span>
+                              </a>
+                            </div>
 
                             {/* Valor e Data */}
                             <div className="mt-2.5 flex items-center justify-between text-[10px] font-mono border-t border-[#f1f5f9] pt-2">
