@@ -34,6 +34,10 @@ export function ContactDialog({
       favorite_coffee: contact?.favorite_coffee || '',
       roast_preference: contact?.roast_preference || '',
       brew_method_preference: contact?.brew_method_preference || '',
+      coffee_machine: contact?.coffee_machine || '',
+      sent_mug: Boolean(contact?.sent_mug),
+      sent_welcome_folder: Boolean(contact?.sent_welcome_folder),
+      sent_stickers: Boolean(contact?.sent_stickers),
       intensity_preference: contact?.intensity_preference || '',
       dietary_restrictions: contact?.dietary_restrictions || '',
       special_date_description: contact?.special_date_description || '',
@@ -111,6 +115,10 @@ export function ContactDialog({
         favorite_coffee: form.favorite_coffee.trim(),
         roast_preference: form.roast_preference.trim(),
         brew_method_preference: form.brew_method_preference.trim(),
+        coffee_machine: form.coffee_machine.trim(),
+        sent_mug: Boolean(form.sent_mug),
+        sent_welcome_folder: Boolean(form.sent_welcome_folder),
+        sent_stickers: Boolean(form.sent_stickers),
         intensity_preference: form.intensity_preference.trim(),
         dietary_restrictions: form.dietary_restrictions.trim(),
         special_date_description: form.special_date_description.trim(),
@@ -238,12 +246,100 @@ export function ContactDialog({
             />
           </Field>
 
+          {/* SEÇÃO MIMOS DA SÃO DOMINGOS */}
+          <div className="sm:col-span-2 rounded-lg border border-amber-300 bg-amber-50/70 p-3 space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+              <span className="flex items-center gap-1.5">
+                <span>🎁 Mimos São Domingos · Envio de Boas-Vindas</span>
+              </span>
+              <span className="text-[10px] font-normal text-amber-800">
+                Marque para registrar os mimos já despachados
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3 pt-1 border-t border-amber-200">
+              <label className="flex items-start gap-2 rounded-md bg-white/80 border border-amber-200/80 p-2 cursor-pointer transition hover:bg-white text-[11px] text-[#1c1c1e]">
+                <input
+                  type="checkbox"
+                  checked={form.sent_mug}
+                  onChange={(e) => setForm({ ...form, sent_mug: e.target.checked })}
+                  className="mt-0.5 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer shrink-0"
+                />
+                <span className="leading-snug select-none font-medium">
+                  Já enviei a caneca da São Domingos
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 rounded-md bg-white/80 border border-amber-200/80 p-2 cursor-pointer transition hover:bg-white text-[11px] text-[#1c1c1e]">
+                <input
+                  type="checkbox"
+                  checked={form.sent_welcome_folder}
+                  onChange={(e) => setForm({ ...form, sent_welcome_folder: e.target.checked })}
+                  className="mt-0.5 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer shrink-0"
+                />
+                <span className="leading-snug select-none font-medium">
+                  Já enviei o folder de boas-vindas
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 rounded-md bg-white/80 border border-amber-200/80 p-2 cursor-pointer transition hover:bg-white text-[11px] text-[#1c1c1e]">
+                <input
+                  type="checkbox"
+                  checked={form.sent_stickers}
+                  onChange={(e) => setForm({ ...form, sent_stickers: e.target.checked })}
+                  className="mt-0.5 size-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer shrink-0"
+                />
+                <span className="leading-snug select-none font-medium">Já enviei os adesivos</span>
+              </label>
+            </div>
+          </div>
+
           {/* SEÇÃO DISNEY: PREFERÊNCIAS SENSORIAIS & ATENÇÃO AOS DETALHES */}
           <div className="sm:col-span-2 rounded-lg border border-amber-200 bg-amber-50/40 p-3 space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
               <span>✨ Experiência Disney · Fazer o Cliente se Sentir Único</span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Máquina de café que o cliente possui">
+                <div>
+                  <input
+                    list="coffee-machines-list"
+                    placeholder="Selecione ou digite (Espresso, Cápsula, Outro...)"
+                    value={form.coffee_machine}
+                    onChange={(e) => setForm({ ...form, coffee_machine: e.target.value })}
+                  />
+                  <datalist id="coffee-machines-list">
+                    <option value="Espresso" />
+                    <option value="Cápsula" />
+                    <option value="Prensa Francesa" />
+                    <option value="Moka" />
+                    <option value="V60" />
+                    <option value="Coador" />
+                    <option value="Aeropress" />
+                    <option value="Outro" />
+                  </datalist>
+                </div>
+              </Field>
+              <Field label="Método preferido de consumo do café">
+                <div>
+                  <input
+                    list="brew-methods-list"
+                    placeholder="Selecione ou digite (V60, Coador, Espresso...)"
+                    value={form.brew_method_preference}
+                    onChange={(e) => setForm({ ...form, brew_method_preference: e.target.value })}
+                  />
+                  <datalist id="brew-methods-list">
+                    <option value="Espresso" />
+                    <option value="Cápsula" />
+                    <option value="Prensa Francesa" />
+                    <option value="Moka" />
+                    <option value="V60" />
+                    <option value="Coador" />
+                    <option value="Aeropress" />
+                    <option value="Chemex" />
+                    <option value="Outro" />
+                  </datalist>
+                </div>
+              </Field>
               <Field label="Café Favorito / Variedade">
                 <input
                   placeholder="Ex: Geisha do Cerrado, Bourbon Amarelo..."
@@ -258,13 +354,6 @@ export function ContactDialog({
                   onChange={(e) => setForm({ ...form, roast_preference: e.target.value })}
                 />
               </Field>
-              <Field label="Método de Preparo Preferido">
-                <input
-                  placeholder="Ex: Hario V60, Prensa Francesa, Espresso..."
-                  value={form.brew_method_preference}
-                  onChange={(e) => setForm({ ...form, brew_method_preference: e.target.value })}
-                />
-              </Field>
               <Field label="Intensidade / Perfil de Paladar">
                 <input
                   placeholder="Ex: Cítrico/Frutado, Encorpado, Suave/Doce..."
@@ -272,18 +361,18 @@ export function ContactDialog({
                   onChange={(e) => setForm({ ...form, intensity_preference: e.target.value })}
                 />
               </Field>
-              <Field label="Alergias ou Restrições Alimentares" className="sm:col-span-2">
-                <input
-                  placeholder="Ex: Sem lactose, Sem glúten, Zero cafeína, Adoçante stevia..."
-                  value={form.dietary_restrictions}
-                  onChange={(e) => setForm({ ...form, dietary_restrictions: e.target.value })}
-                />
-              </Field>
               <Field label="Como conheceu a cafeteria">
                 <input
                   placeholder="Ex: Indicação de amigo, Instagram, Passou na frente..."
                   value={form.acquisition_channel}
                   onChange={(e) => setForm({ ...form, acquisition_channel: e.target.value })}
+                />
+              </Field>
+              <Field label="Alergias ou Restrições Alimentares" className="sm:col-span-2">
+                <input
+                  placeholder="Ex: Sem lactose, Sem glúten, Zero cafeína, Adoçante stevia..."
+                  value={form.dietary_restrictions}
+                  onChange={(e) => setForm({ ...form, dietary_restrictions: e.target.value })}
                 />
               </Field>
               <Field

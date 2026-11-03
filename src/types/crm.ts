@@ -234,6 +234,10 @@ export interface Contact extends RecordModel {
   nickname?: string
   roast_preference?: string
   brew_method_preference?: string
+  coffee_machine?: string
+  sent_mug?: boolean
+  sent_welcome_folder?: boolean
+  sent_stickers?: boolean
   intensity_preference?: string
   dietary_restrictions?: string
   special_date_description?: string

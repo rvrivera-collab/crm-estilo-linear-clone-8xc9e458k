@@ -91,6 +91,22 @@ routerAdd(
               applyField('acquisition_channel', item.acquisition_channel)
               applyField('coffee_preference', item.coffee_preference)
               applyField('favorite_coffee', item.favorite_coffee)
+              applyField('coffee_machine', item.coffee_machine)
+              applyField('brew_method_preference', item.brew_method_preference)
+
+              if (item.sent_mug !== undefined && item.sent_mug !== null) {
+                record.set('sent_mug', Boolean(item.sent_mug))
+                hasChanges = true
+              }
+              if (item.sent_welcome_folder !== undefined && item.sent_welcome_folder !== null) {
+                record.set('sent_welcome_folder', Boolean(item.sent_welcome_folder))
+                hasChanges = true
+              }
+              if (item.sent_stickers !== undefined && item.sent_stickers !== null) {
+                record.set('sent_stickers', Boolean(item.sent_stickers))
+                hasChanges = true
+              }
+
               applyField('notes', item.notes)
               applyField('email', item.email)
               applyField('cpf_cnpj', item.cpf_cnpj)

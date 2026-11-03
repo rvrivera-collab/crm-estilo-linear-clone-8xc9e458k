@@ -287,6 +287,11 @@ interface BatchContactPayload {
   acquisition_channel?: string
   coffee_preference?: string
   favorite_coffee?: string
+  coffee_machine?: string
+  brew_method_preference?: string
+  sent_mug?: boolean
+  sent_welcome_folder?: boolean
+  sent_stickers?: boolean
   notes?: string
   email?: string
   cpf_cnpj?: string
@@ -428,6 +433,11 @@ export async function importSpreadsheetData(
     email: rawHeaders.findIndex((h) => /e-?mail/i.test(h)),
     cpfCnpj: rawHeaders.findIndex((h) => /cpf|cnpj/i.test(h)),
     extraAddress: rawHeaders.findIndex((h) => /endere[cç]o\s*adicional/i.test(h)),
+    coffeeMachine: rawHeaders.findIndex((h) => /m[aá]quina.*caf[eé]|equipamento/i.test(h)),
+    brewMethod: rawHeaders.findIndex((h) => /m[eé]todo.*(consumo|extra[cç][aã]o|preparo)/i.test(h)),
+    sentMug: rawHeaders.findIndex((h) => /caneca/i.test(h)),
+    sentWelcomeFolder: rawHeaders.findIndex((h) => /folder/i.test(h)),
+    sentStickers: rawHeaders.findIndex((h) => /adesivo/i.test(h)),
   }
 
   if (colIndex.name === -1) {
@@ -496,6 +506,25 @@ export async function importSpreadsheetData(
     const rawNotes = colIndex.notes !== -1 ? cleanStringField(row[colIndex.notes]) : ''
     const rawEmail = colIndex.email !== -1 ? cleanStringField(row[colIndex.email]) : ''
     const rawCpf = colIndex.cpfCnpj !== -1 ? cleanStringField(row[colIndex.cpfCnpj]) : ''
+    const rawCoffeeMachine =
+      colIndex.coffeeMachine !== -1 ? cleanStringField(row[colIndex.coffeeMachine]) : ''
+    const rawBrewMethod =
+      colIndex.brewMethod !== -1 ? cleanStringField(row[colIndex.brewMethod]) : ''
+
+    const parseBoolCell = (val: unknown): boolean | undefined => {
+      if (val === undefined || val === null || val === '') return undefined
+      const s = String(val).trim().toLowerCase()
+      if (s === 'sim' || s === 'true' || s === '1' || s === 's' || s === 'x' || s === 'enviado')
+        return true
+      if (s === 'não' || s === 'nao' || s === 'false' || s === '0' || s === 'n') return false
+      return undefined
+    }
+
+    const rawSentMug = colIndex.sentMug !== -1 ? parseBoolCell(row[colIndex.sentMug]) : undefined
+    const rawSentFolder =
+      colIndex.sentWelcomeFolder !== -1 ? parseBoolCell(row[colIndex.sentWelcomeFolder]) : undefined
+    const rawSentStickers =
+      colIndex.sentStickers !== -1 ? parseBoolCell(row[colIndex.sentStickers]) : undefined
 
     const existing = contactMapByName.get(normalized)
 
@@ -512,6 +541,11 @@ export async function importSpreadsheetData(
       coffee_preference: rawCoffeePref || undefined,
       favorite_coffee:
         rawCoffeePref && !rawCoffeePref.includes('compras') ? rawCoffeePref : undefined,
+      coffee_machine: rawCoffeeMachine || undefined,
+      brew_method_preference: rawBrewMethod || undefined,
+      sent_mug: rawSentMug,
+      sent_welcome_folder: rawSentFolder,
+      sent_stickers: rawSentStickers,
       notes: rawNotes || undefined,
       email: rawEmail && rawEmail.includes('@') ? rawEmail : undefined,
       cpf_cnpj: rawCpf || undefined,
@@ -619,6 +653,27 @@ export async function importSpreadsheetData(
           if (!existingContact.favorite_coffee && item.favorite_coffee) {
             updates.favorite_coffee = item.favorite_coffee
           }
+          if (!existingContact.coffee_machine && item.coffee_machine) {
+            updates.coffee_machine = item.coffee_machine
+          }
+          if (!existingContact.brew_method_preference && item.brew_method_preference) {
+            updates.brew_method_preference = item.brew_method_preference
+          }
+          if (item.sent_mug !== undefined && existingContact.sent_mug !== item.sent_mug) {
+            updates.sent_mug = item.sent_mug
+          }
+          if (
+            item.sent_welcome_folder !== undefined &&
+            existingContact.sent_welcome_folder !== item.sent_welcome_folder
+          ) {
+            updates.sent_welcome_folder = item.sent_welcome_folder
+          }
+          if (
+            item.sent_stickers !== undefined &&
+            existingContact.sent_stickers !== item.sent_stickers
+          ) {
+            updates.sent_stickers = item.sent_stickers
+          }
           if (!existingContact.notes && item.notes) updates.notes = item.notes
           if (!existingContact.email && item.email) updates.email = item.email
           if (!existingContact.cpf_cnpj && item.cpf_cnpj) updates.cpf_cnpj = item.cpf_cnpj
@@ -656,6 +711,13 @@ export async function importSpreadsheetData(
           if (item.acquisition_channel) newPayload.acquisition_channel = item.acquisition_channel
           if (item.coffee_preference) newPayload.coffee_preference = item.coffee_preference
           if (item.favorite_coffee) newPayload.favorite_coffee = item.favorite_coffee
+          if (item.coffee_machine) newPayload.coffee_machine = item.coffee_machine
+          if (item.brew_method_preference)
+            newPayload.brew_method_preference = item.brew_method_preference
+          if (item.sent_mug !== undefined) newPayload.sent_mug = item.sent_mug
+          if (item.sent_welcome_folder !== undefined)
+            newPayload.sent_welcome_folder = item.sent_welcome_folder
+          if (item.sent_stickers !== undefined) newPayload.sent_stickers = item.sent_stickers
           if (item.notes) newPayload.notes = item.notes
           if (item.email) newPayload.email = item.email
           if (item.cpf_cnpj) newPayload.cpf_cnpj = item.cpf_cnpj

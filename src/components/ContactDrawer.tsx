@@ -410,8 +410,77 @@ export function ContactDrawer({
               )}
             </div>
 
+            {/* BOX MIMOS SÃO DOMINGOS: STATUS DE ENVIO */}
+            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50/60 p-3 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-amber-700" />
+                  <span>Mimos São Domingos Enviados</span>
+                </span>
+                <span className="font-mono text-[10px] text-amber-800 font-semibold">
+                  {
+                    [contact.sent_mug, contact.sent_welcome_folder, contact.sent_stickers].filter(
+                      Boolean,
+                    ).length
+                  }
+                  /3 enviados
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-amber-200">
+                <div
+                  className={`rounded border px-2 py-1.5 text-center transition ${
+                    contact.sent_mug
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white/70 text-slate-400'
+                  }`}
+                  title={
+                    contact.sent_mug ? 'Caneca enviada com sucesso' : 'Caneca ainda não enviada'
+                  }
+                >
+                  <span className="block text-base leading-none">☕</span>
+                  <span className="mt-1 block text-[10px] font-bold leading-tight">
+                    {contact.sent_mug ? '✓ Caneca enviada' : 'Caneca pendente'}
+                  </span>
+                </div>
+
+                <div
+                  className={`rounded border px-2 py-1.5 text-center transition ${
+                    contact.sent_welcome_folder
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white/70 text-slate-400'
+                  }`}
+                  title={
+                    contact.sent_welcome_folder
+                      ? 'Folder de boas-vindas enviado'
+                      : 'Folder ainda não enviado'
+                  }
+                >
+                  <span className="block text-base leading-none">📂</span>
+                  <span className="mt-1 block text-[10px] font-bold leading-tight">
+                    {contact.sent_welcome_folder ? '✓ Folder enviado' : 'Folder pendente'}
+                  </span>
+                </div>
+
+                <div
+                  className={`rounded border px-2 py-1.5 text-center transition ${
+                    contact.sent_stickers
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white/70 text-slate-400'
+                  }`}
+                  title={
+                    contact.sent_stickers ? 'Adesivos enviados' : 'Adesivos ainda não enviados'
+                  }
+                >
+                  <span className="block text-base leading-none">🏷️</span>
+                  <span className="mt-1 block text-[10px] font-bold leading-tight">
+                    {contact.sent_stickers ? '✓ Adesivos enviados' : 'Adesivos pendentes'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* BOX DISNEY: O QUE FAZ ESSE CLIENTE SE SENTIR ÚNICO */}
-            <div className="mt-4 rounded-lg border border-amber-300 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 p-3.5 shadow-2xs space-y-2">
+            <div className="mt-3 rounded-lg border border-amber-300 bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 p-3.5 shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
                   <Sparkles className="size-3.5 text-amber-600" />
@@ -423,6 +492,26 @@ export function ContactDrawer({
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-amber-200/60">
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
+                    Máquina de Café
+                  </span>
+                  <p className="font-semibold text-amber-950 truncate">
+                    {contact.coffee_machine || (
+                      <span className="text-[#94a3b8] font-normal">Não informada</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
+                    Método Preferido
+                  </span>
+                  <p className="font-semibold text-amber-950 truncate">
+                    {contact.brew_method_preference || (
+                      <span className="text-[#94a3b8] font-normal">Não informado</span>
+                    )}
+                  </p>
+                </div>
                 <div>
                   <span className="block text-[9px] uppercase font-bold text-[#64748b]">
                     Café Favorito
@@ -452,17 +541,7 @@ export function ContactDrawer({
                     )}
                   </p>
                 </div>
-                <div>
-                  <span className="block text-[9px] uppercase font-bold text-[#64748b]">
-                    Método Preferido
-                  </span>
-                  <p className="font-semibold text-amber-950 truncate">
-                    {contact.brew_method_preference || (
-                      <span className="text-[#94a3b8] font-normal">Não informado</span>
-                    )}
-                  </p>
-                </div>
-                <div>
+                <div className="col-span-2">
                   <span className="block text-[9px] uppercase font-bold text-[#64748b]">
                     Intensidade / Paladar
                   </span>

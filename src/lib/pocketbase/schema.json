@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T23:50:04.779Z",
+  "generatedAt": "2026-11-03T00:25:24.906Z",
   "collections": [
     {
       "name": "users",
@@ -331,6 +331,30 @@
         },
         {
           "name": "referral_code",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sent_mug",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sent_welcome_folder",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sent_stickers",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "coffee_machine",
           "type": "text",
           "required": false,
           "system": false
