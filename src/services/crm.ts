@@ -63,6 +63,7 @@ export async function sendDisneyWhatsApp(params: {
     sendMethod?: 'api' | 'link' | 'none'
     usedPhoneNumberId?: string | null
     warning?: string | null
+    metaErrorDetail?: string | null
     journeyEventId?: string
     cleanedPhone?: string
     waFallbackUrl?: string | null

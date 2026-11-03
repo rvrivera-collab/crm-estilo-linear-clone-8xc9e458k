@@ -153,14 +153,16 @@ export function SendWhatsAppModal({
         setWaFallbackUrl(res.waFallbackUrl || null)
         const friendlyWarning =
           res.warning ||
+          res.metaErrorDetail ||
           'Envio via API indisponível no momento. Use o link do WhatsApp para envio com 1 clique.'
         setLastWarning(friendlyWarning)
 
         toast({
           variant: 'default',
-          title: 'Disparo via Link WhatsApp (wa.me)',
-          description:
-            'A mensagem foi preparada e registrada na jornada! Clique em "Abrir no WhatsApp" para enviar diretamente.',
+          title: 'Aviso da Meta / Disparo wa.me',
+          description: res.metaErrorDetail
+            ? `Motivo da Meta: ${res.metaErrorDetail}. Link wa.me pronto para envio manual.`
+            : 'A mensagem foi preparada e registrada na jornada! Clique em "Abrir no WhatsApp" para enviar diretamente.',
         })
         if (onSent) onSent()
       }
@@ -467,9 +469,15 @@ export function SendWhatsAppModal({
               <div className="flex items-start gap-2">
                 <Sparkles className="size-4 text-amber-700 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-amber-900">Aviso Amigável de Envio</p>
-                  <p className="text-[11px] text-amber-800 mt-0.5">
-                    {lastWarning} O evento foi registrado na linha do tempo da jornada!
+                  <p className="font-bold text-amber-900">
+                    Retorno da Meta Cloud API / Status do Envio
+                  </p>
+                  <p className="text-[11px] text-amber-800 mt-0.5 font-mono break-words leading-relaxed">
+                    {lastWarning}
+                  </p>
+                  <p className="text-[10px] text-amber-900/80 mt-1 font-sans">
+                    O evento foi registrado na linha do tempo da jornada com o motivo real
+                    retornado.
                   </p>
                 </div>
               </div>

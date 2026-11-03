@@ -163,7 +163,7 @@ export function BatchWhatsAppModal({
               status: 'fallback_link',
               waUrl: res.waFallbackUrl || undefined,
               message: personalizedMsg,
-              errorText: res.warning || 'Disponível via link direto wa.me',
+              errorText: res.metaErrorDetail || res.warning || 'Disponível via link direto wa.me',
             },
           }))
         }
