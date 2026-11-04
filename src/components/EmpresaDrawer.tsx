@@ -10,6 +10,7 @@ import {
   Phone,
   Plus,
   Send,
+  Trash2,
   UserCheck,
   UserPlus,
   Users,
@@ -17,6 +18,9 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
+import { useToast } from '@/hooks/use-toast'
+import { deleteEmpresa } from '@/services/crm'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { ContactDialog } from '@/components/forms/ContactDialog'
 import { DealDialog } from '@/components/forms/DealDialog'
 import { EmailComposerModal } from '@/components/forms/EmailComposerModal'
@@ -35,6 +39,8 @@ export function EmpresaDrawer({
 }) {
   const { contacts, deals, activities, stages, refresh } = useCrm()
   const navigate = useNavigate()
+  const { toast } = useToast()
+  const [deleting, setDeleting] = useState(false)
 
   const [activeTab, setActiveTab] = useState<'contatos' | 'negocios' | 'timeline'>('contatos')
   const [newDealOpen, setNewDealOpen] = useState(false)
@@ -115,6 +121,34 @@ export function EmpresaDrawer({
             className="mr-1 rounded px-2 py-1 text-[10px] font-medium text-[#475569] hover:bg-[#e2e8f0] hover:text-[#1c1c1e]"
           >
             Editar
+          </button>
+          <button
+            disabled={deleting}
+            onClick={async () => {
+              const confirmed = window.confirm(
+                `Excluir a empresa "${empresa.name}"? Esta ação não pode ser desfeita.`,
+              )
+              if (!confirmed) return
+              setDeleting(true)
+              try {
+                await deleteEmpresa(empresa.id)
+                await refresh()
+                toast({ title: 'Empresa excluída', description: `${empresa.name} foi removida.` })
+                onClose()
+              } catch (error) {
+                toast({
+                  title: 'Não foi possível excluir',
+                  description: getErrorMessage(error),
+                  variant: 'destructive',
+                })
+              } finally {
+                setDeleting(false)
+              }
+            }}
+            className="mr-1 flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            <Trash2 className="size-3" />
+            Excluir
           </button>
           <button onClick={onClose} className="rounded p-1.5 text-[#64748b] hover:bg-[#e2e8f0]">
             <X className="size-4" />

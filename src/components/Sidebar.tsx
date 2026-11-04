@@ -61,13 +61,18 @@ const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
   { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
-  { to: '/contatos', label: 'Clientes', icon: ContactRound },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },
   { to: '/recuperacao', label: 'Recuperação', icon: RefreshCw },
   { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/negocios', label: 'Negócios', icon: BriefcaseBusiness },
-  { to: '/empresas', label: 'Empresas / B2B', icon: Building2 },
   { to: '/formularios', label: 'Formulário de Captação', icon: LayoutTemplate },
+]
+
+// Clientes SD: clientes, empresas/B2B e pontos de revenda, nessa ordem.
+const clientesSdNav = [
+  { to: '/contatos', label: 'Clientes', icon: ContactRound },
+  { to: '/empresas', label: 'Empresas / B2B', icon: Building2 },
+  { to: '/pontos-de-revenda', label: 'Pontos de Revenda', icon: Store },
 ]
 
 // Agrupa a jornada do cliente: pedidos, fidelidade, indicações e agenda.
@@ -78,10 +83,7 @@ const jornadaNav = [
   { to: '/agenda', label: 'Agenda', icon: Calendar, badge: 'Novo' },
 ]
 
-const productsNav = [
-  { to: '/produtos', label: 'Produtos', icon: Package },
-  { to: '/pontos-de-revenda', label: 'Pontos de Revenda', icon: Store },
-]
+const productsNav = [{ to: '/produtos', label: 'Produtos', icon: Package }]
 
 export function Sidebar({
   collapsed,
@@ -108,6 +110,7 @@ export function Sidebar({
   const { startTourForCurrentPage, tourDisabled } = useTour()
   const [salesOpen, setSalesOpen] = useState(true)
   const [jornadaOpen, setJornadaOpen] = useState(true)
+  const [clientesSdOpen, setClientesSdOpen] = useState(true)
   const [productsOpen, setProductsOpen] = useState(true)
   const [askOpen, setAskOpen] = useState(true)
   const [userOpen, setUserOpen] = useState(false)
@@ -229,6 +232,14 @@ export function Sidebar({
             <SectionLinks items={jornadaNav} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
+            title="CLIENTES SD"
+            compact={compact}
+            open={clientesSdOpen}
+            setOpen={setClientesSdOpen}
+          >
+            <SectionLinks items={clientesSdNav} compact={compact} onNavigate={closeMobile} />
+          </SidebarSection>
+          <SidebarSection
             title="Cafés & Clientes"
             compact={compact}
             open={salesOpen}
@@ -237,7 +248,7 @@ export function Sidebar({
             <SectionLinks items={sales} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
-            title="Produtos & Revenda"
+            title="Produtos"
             compact={compact}
             open={productsOpen}
             setOpen={setProductsOpen}
