@@ -240,20 +240,20 @@ export function Sidebar({
             <SectionLinks items={clientesSdNav} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
-            title="Cafés & Clientes"
-            compact={compact}
-            open={salesOpen}
-            setOpen={setSalesOpen}
-          >
-            <SectionLinks items={sales} compact={compact} onNavigate={closeMobile} />
-          </SidebarSection>
-          <SidebarSection
             title="Produtos"
             compact={compact}
             open={productsOpen}
             setOpen={setProductsOpen}
           >
             <SectionLinks items={productsNav} compact={compact} onNavigate={closeMobile} />
+          </SidebarSection>
+          <SidebarSection
+            title="Cafés & Clientes"
+            compact={compact}
+            open={salesOpen}
+            setOpen={setSalesOpen}
+          >
+            <SectionLinks items={sales} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection title="Conversas" compact={compact} open={askOpen} setOpen={setAskOpen}>
             <button
