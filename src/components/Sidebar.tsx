@@ -60,18 +60,22 @@ const primary = [
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
-  { to: '/agenda', label: 'Agenda', icon: Calendar, badge: 'Novo' },
-  { to: '/pedidos', label: 'Pedidos (Funil / Cards)', icon: ShoppingBag },
-  { to: '/indicacoes', label: 'Indicações', icon: Gift, badge: 'Clube' },
   { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
   { to: '/contatos', label: 'Clientes', icon: ContactRound },
-  { to: '/fidelidade', label: 'Fidelidade', icon: Coffee, badge: 'Novo' },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },
   { to: '/recuperacao', label: 'Recuperação', icon: RefreshCw },
   { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/negocios', label: 'Negócios', icon: BriefcaseBusiness },
   { to: '/empresas', label: 'Empresas / B2B', icon: Building2 },
   { to: '/formularios', label: 'Formulário de Captação', icon: LayoutTemplate },
+]
+
+// Agrupa a jornada do cliente: pedidos, fidelidade, indicações e agenda.
+const jornadaNav = [
+  { to: '/pedidos', label: 'Pedidos (Funil / Cards)', icon: ShoppingBag },
+  { to: '/fidelidade', label: 'Fidelidade', icon: Coffee, badge: 'Novo' },
+  { to: '/indicacoes', label: 'Indicações', icon: Gift, badge: 'Clube' },
+  { to: '/agenda', label: 'Agenda', icon: Calendar, badge: 'Novo' },
 ]
 
 const productsNav = [
@@ -103,6 +107,7 @@ export function Sidebar({
   const { toast } = useToast()
   const { startTourForCurrentPage, tourDisabled } = useTour()
   const [salesOpen, setSalesOpen] = useState(true)
+  const [jornadaOpen, setJornadaOpen] = useState(true)
   const [productsOpen, setProductsOpen] = useState(true)
   const [askOpen, setAskOpen] = useState(true)
   const [userOpen, setUserOpen] = useState(false)
@@ -221,45 +226,15 @@ export function Sidebar({
             open={salesOpen}
             setOpen={setSalesOpen}
           >
-            {sales.map(
-              ({
-                to,
-                label,
-                icon: Icon,
-                badge,
-              }: {
-                to: string
-                label: string
-                icon: any
-                badge?: string
-              }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  title={compact ? label : undefined}
-                  onClick={closeMobile}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex h-8 items-center rounded-md text-[12px] transition',
-                      compact ? 'justify-center' : 'justify-between px-2',
-                      isActive
-                        ? 'bg-[#3d2719] text-[#fff8f0] font-bold shadow-2xs border-l-2 border-amber-400 pl-1.5'
-                        : 'text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-[#ffffff]',
-                    )
-                  }
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Icon className="size-3.5 shrink-0 text-[#b5a08c]" />
-                    {!compact && <span className="truncate">{label}</span>}
-                  </div>
-                  {!compact && badge && (
-                    <span className="rounded border border-rose-400/40 bg-rose-500/20 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-300">
-                      {badge}
-                    </span>
-                  )}
-                </NavLink>
-              ),
-            )}
+            <SectionLinks items={sales} compact={compact} onNavigate={closeMobile} />
+          </SidebarSection>
+          <SidebarSection
+            title="Jornada SD"
+            compact={compact}
+            open={jornadaOpen}
+            setOpen={setJornadaOpen}
+          >
+            <SectionLinks items={jornadaNav} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
             title="Produtos & Revenda"
@@ -267,45 +242,7 @@ export function Sidebar({
             open={productsOpen}
             setOpen={setProductsOpen}
           >
-            {productsNav.map(
-              ({
-                to,
-                label,
-                icon: Icon,
-                badge,
-              }: {
-                to: string
-                label: string
-                icon: any
-                badge?: string
-              }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  title={compact ? label : undefined}
-                  onClick={closeMobile}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex h-8 items-center rounded-md text-[12px] transition',
-                      compact ? 'justify-center' : 'justify-between px-2',
-                      isActive
-                        ? 'bg-[#3d2719] text-[#fff8f0] font-bold shadow-2xs border-l-2 border-amber-400 pl-1.5'
-                        : 'text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-[#ffffff]',
-                    )
-                  }
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Icon className="size-3.5 shrink-0 text-[#b5a08c]" />
-                    {!compact && <span className="truncate">{label}</span>}
-                  </div>
-                  {!compact && badge && (
-                    <span className="rounded border border-rose-400/40 bg-rose-500/20 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-300">
-                      {badge}
-                    </span>
-                  )}
-                </NavLink>
-              ),
-            )}
+            <SectionLinks items={productsNav} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection title="Conversas" compact={compact} open={askOpen} setOpen={setAskOpen}>
             <button
@@ -478,6 +415,48 @@ export function Sidebar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  )
+}
+
+function SectionLinks({
+  items,
+  compact,
+  onNavigate,
+}: {
+  items: { to: string; label: string; icon: any; badge?: string }[]
+  compact: boolean
+  onNavigate: () => void
+}) {
+  return (
+    <>
+      {items.map(({ to, label, icon: Icon, badge }) => (
+        <NavLink
+          key={to}
+          to={to}
+          title={compact ? label : undefined}
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            cn(
+              'flex h-8 items-center rounded-md text-[12px] transition',
+              compact ? 'justify-center' : 'justify-between px-2',
+              isActive
+                ? 'bg-[#3d2719] text-[#fff8f0] font-bold shadow-2xs border-l-2 border-amber-400 pl-1.5'
+                : 'text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-[#ffffff]',
+            )
+          }
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon className="size-3.5 shrink-0 text-[#b5a08c]" />
+            {!compact && <span className="truncate">{label}</span>}
+          </div>
+          {!compact && badge && (
+            <span className="rounded border border-rose-400/40 bg-rose-500/20 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-300">
+              {badge}
+            </span>
+          )}
+        </NavLink>
+      ))}
     </>
   )
 }
