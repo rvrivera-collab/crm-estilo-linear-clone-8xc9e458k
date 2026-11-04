@@ -221,20 +221,20 @@ export function Sidebar({
           </div>
 
           <SidebarSection
-            title="Cafés & Clientes"
-            compact={compact}
-            open={salesOpen}
-            setOpen={setSalesOpen}
-          >
-            <SectionLinks items={sales} compact={compact} onNavigate={closeMobile} />
-          </SidebarSection>
-          <SidebarSection
             title="Jornada SD"
             compact={compact}
             open={jornadaOpen}
             setOpen={setJornadaOpen}
           >
             <SectionLinks items={jornadaNav} compact={compact} onNavigate={closeMobile} />
+          </SidebarSection>
+          <SidebarSection
+            title="Cafés & Clientes"
+            compact={compact}
+            open={salesOpen}
+            setOpen={setSalesOpen}
+          >
+            <SectionLinks items={sales} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
             title="Produtos & Revenda"
