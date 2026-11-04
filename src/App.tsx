@@ -25,7 +25,9 @@ import Login from '@/pages/Login'
 import Messages from '@/pages/Messages'
 import NotFound from '@/pages/NotFound'
 import Pipeline from '@/pages/Pipeline'
+import Products from '@/pages/Products'
 import Recovery from '@/pages/Recovery'
+import Resellers from '@/pages/Resellers'
 import ResetPassword from '@/pages/ResetPassword'
 import Settings from '@/pages/Settings'
 import Signup from '@/pages/Signup'
@@ -67,6 +69,8 @@ export default function App() {
                 <Route path="formularios" element={<CaptureForms />} />
                 <Route path="embed" element={<Navigate to="/formularios" replace />} />
                 <Route path="mensagens" element={<Messages />} />
+                <Route path="produtos" element={<Products />} />
+                <Route path="pontos-de-revenda" element={<Resellers />} />
                 <Route path="configuracoes" element={<Settings />} />
               </Route>
             </Route>

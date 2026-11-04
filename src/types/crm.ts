@@ -58,6 +58,16 @@ export interface CustomFieldConfig {
 
 export type EmpresaSize = 'pequena' | 'média' | 'grande'
 
+export type ProductCategory =
+  | 'cafe_250g'
+  | 'cafe_500g'
+  | 'drip_coffee'
+  | 'capsula'
+  | 'caneca'
+  | 'camisa'
+  | 'chaveiro'
+  | 'outro'
+
 export interface Empresa extends RecordModel {
   name: string
   sector?: string
@@ -824,4 +834,55 @@ export function isDealCold(deal: Deal, thresholdDays = 5): boolean {
   if (deal.status !== 'aberto') return false
   const lastContact = deal.last_contact_at || deal.created
   return daysSince(lastContact) >= thresholdDays || deal.temperature === 'frio'
+}
+
+// ==========================================
+// PRODUTOS & PONTOS DE REVENDA (CATÁLOGO + REPASSE B2B)
+// ==========================================
+
+export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
+  cafe_250g: 'Café em grãos 250g',
+  cafe_500g: 'Café em grãos 500g',
+  drip_coffee: 'Drip coffee',
+  capsula: 'Cápsula',
+  caneca: 'Caneca',
+  camisa: 'Camisa',
+  chaveiro: 'Chaveiro',
+  outro: 'Outro',
+}
+
+export const PRODUCT_CATEGORIES = Object.keys(PRODUCT_CATEGORY_LABELS) as ProductCategory[]
+
+export interface Product extends RecordModel {
+  name: string
+  category: ProductCategory
+  description?: string
+  sale_price: number
+  cost?: number
+  stock?: number
+  active: boolean
+  owner: string
+}
+
+export interface Reseller extends RecordModel {
+  name: string
+  contact_name?: string
+  phone?: string
+  city?: string
+  notes?: string
+  active: boolean
+  owner: string
+}
+
+export interface ResalePrice extends RecordModel {
+  reseller: string
+  product: string
+  resale_price: number
+  set_at?: string
+  notes?: string
+  owner: string
+  expand?: {
+    product?: Product
+    reseller?: Reseller
+  }
 }

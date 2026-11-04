@@ -20,11 +20,13 @@ import {
   Megaphone,
   MessageCircle,
   MessageSquarePlus,
+  Package,
   PanelLeft,
   RefreshCw,
   Settings,
   ShoppingBag,
   Sparkles,
+  Store,
   Trash2,
   Users,
   X,
@@ -72,6 +74,11 @@ const sales = [
   { to: '/formularios', label: 'Formulário de Captação', icon: LayoutTemplate },
 ]
 
+const productsNav = [
+  { to: '/produtos', label: 'Produtos', icon: Package },
+  { to: '/pontos-de-revenda', label: 'Pontos de Revenda', icon: Store },
+]
+
 export function Sidebar({
   collapsed,
   setCollapsed,
@@ -96,6 +103,7 @@ export function Sidebar({
   const { toast } = useToast()
   const { startTourForCurrentPage, tourDisabled } = useTour()
   const [salesOpen, setSalesOpen] = useState(true)
+  const [productsOpen, setProductsOpen] = useState(true)
   const [askOpen, setAskOpen] = useState(true)
   const [userOpen, setUserOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<AskConversation | null>(null)
@@ -214,6 +222,52 @@ export function Sidebar({
             setOpen={setSalesOpen}
           >
             {sales.map(
+              ({
+                to,
+                label,
+                icon: Icon,
+                badge,
+              }: {
+                to: string
+                label: string
+                icon: any
+                badge?: string
+              }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  title={compact ? label : undefined}
+                  onClick={closeMobile}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex h-8 items-center rounded-md text-[12px] transition',
+                      compact ? 'justify-center' : 'justify-between px-2',
+                      isActive
+                        ? 'bg-[#3d2719] text-[#fff8f0] font-bold shadow-2xs border-l-2 border-amber-400 pl-1.5'
+                        : 'text-[#d6c4b2] hover:bg-[#2a1c12] hover:text-[#ffffff]',
+                    )
+                  }
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Icon className="size-3.5 shrink-0 text-[#b5a08c]" />
+                    {!compact && <span className="truncate">{label}</span>}
+                  </div>
+                  {!compact && badge && (
+                    <span className="rounded border border-rose-400/40 bg-rose-500/20 px-1 py-0.2 font-mono text-[9px] font-bold text-rose-300">
+                      {badge}
+                    </span>
+                  )}
+                </NavLink>
+              ),
+            )}
+          </SidebarSection>
+          <SidebarSection
+            title="Produtos & Revenda"
+            compact={compact}
+            open={productsOpen}
+            setOpen={setProductsOpen}
+          >
+            {productsNav.map(
               ({
                 to,
                 label,

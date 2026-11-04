@@ -16,9 +16,13 @@ import type {
   LoyaltyLevelInfo,
   Order,
   OrderStage,
+  Product,
+  ProductCategory,
   Purchase,
   Referral,
   ReferralStatus,
+  ResalePrice,
+  Reseller,
   Stage,
   UserRecord,
 } from '@/types/crm'
@@ -1313,4 +1317,98 @@ export async function updateAgendaEvent(
 
 export async function deleteAgendaEvent(id: string): Promise<boolean> {
   return pb.collection('agenda_events').delete(id)
+}
+
+// ==========================================
+// PRODUTOS (CATÁLOGO)
+// ==========================================
+
+export async function listProducts() {
+  return pb.collection<Product>('products').getFullList({ sort: 'name' })
+}
+
+export async function createProduct(data: Record<string, unknown>) {
+  return pb.collection<Product>('products').create({
+    ...data,
+    owner: pb.authStore.record?.id,
+  })
+}
+
+export async function updateProduct(id: string, data: Record<string, unknown>) {
+  return pb.collection<Product>('products').update(id, data)
+}
+
+export async function deleteProduct(id: string) {
+  return pb.collection('products').delete(id)
+}
+
+// ==========================================
+// PONTOS DE REVENDA (B2B) + PREÇOS DE REPASSE
+// ==========================================
+
+export async function listResellers() {
+  return pb.collection<Reseller>('resellers').getFullList({ sort: 'name' })
+}
+
+export async function createReseller(data: Record<string, unknown>) {
+  return pb.collection<Reseller>('resellers').create({
+    ...data,
+    owner: pb.authStore.record?.id,
+  })
+}
+
+export async function updateReseller(id: string, data: Record<string, unknown>) {
+  return pb.collection<Reseller>('resellers').update(id, data)
+}
+
+export async function deleteReseller(id: string) {
+  return pb.collection('resellers').delete(id)
+}
+
+export async function listResalePrices(resellerId?: string) {
+  const filter = resellerId ? `reseller = "${resellerId}"` : ''
+  return pb.collection<ResalePrice>('resale_prices').getFullList({
+    filter,
+    sort: '-updated',
+    expand: 'product,reseller',
+  })
+}
+
+/**
+ * Cria ou atualiza o preço de repasse de um produto em um ponto de revenda.
+ * Existe no máximo um preço por (ponto, produto) — recriar substitui o anterior.
+ */
+export async function upsertResalePrice(params: {
+  resellerId: string
+  productId: string
+  price: number
+  notes?: string
+}) {
+  const ownerId = pb.authStore.record?.id
+  const existing = await pb
+    .collection<ResalePrice>('resale_prices')
+    .getFirstListItem(`reseller = "${params.resellerId}" && product = "${params.productId}"`)
+    .catch(() => null)
+
+  const payload = {
+    reseller: params.resellerId,
+    product: params.productId,
+    resale_price: params.price,
+    set_at: new Date().toISOString(),
+    notes: params.notes || '',
+    owner: ownerId,
+  }
+
+  if (existing) {
+    return pb.collection<ResalePrice>('resale_prices').update(existing.id, payload, {
+      expand: 'product,reseller',
+    })
+  }
+  return pb.collection<ResalePrice>('resale_prices').create(payload, {
+    expand: 'product,reseller',
+  })
+}
+
+export async function deleteResalePrice(id: string) {
+  return pb.collection('resale_prices').delete(id)
 }
