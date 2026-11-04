@@ -60,7 +60,6 @@ const primary = [
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
-  { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },
   { to: '/recuperacao', label: 'Recuperação', icon: RefreshCw },
   { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
@@ -81,9 +80,16 @@ const jornadaNav = [
   { to: '/fidelidade', label: 'Fidelidade', icon: Coffee, badge: 'Novo' },
   { to: '/indicacoes', label: 'Indicações', icon: Gift, badge: 'Clube' },
   { to: '/agenda', label: 'Agenda', icon: Calendar, badge: 'Novo' },
+  { to: '/lembretes', label: 'Lembretes & Recorrência', icon: Bell, badge: 'Hoje' },
 ]
 
 const productsNav = [{ to: '/produtos', label: 'Produtos', icon: Package }]
+
+// Campanhas: gestão de campanhas (cadastro) e formulários de captação de leads.
+const campaignsNav = [
+  { to: '/gestao-campanhas', label: 'Campanhas', icon: Megaphone },
+  { to: '/captura', label: 'Formulários de Captação', icon: LayoutTemplate },
+]
 
 export function Sidebar({
   collapsed,
@@ -112,6 +118,7 @@ export function Sidebar({
   const [jornadaOpen, setJornadaOpen] = useState(true)
   const [clientesSdOpen, setClientesSdOpen] = useState(true)
   const [productsOpen, setProductsOpen] = useState(true)
+  const [campaignsOpen, setCampaignsOpen] = useState(true)
   const [askOpen, setAskOpen] = useState(true)
   const [userOpen, setUserOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<AskConversation | null>(null)
@@ -246,6 +253,14 @@ export function Sidebar({
             setOpen={setProductsOpen}
           >
             <SectionLinks items={productsNav} compact={compact} onNavigate={closeMobile} />
+          </SidebarSection>
+          <SidebarSection
+            title="Campanhas"
+            compact={compact}
+            open={campaignsOpen}
+            setOpen={setCampaignsOpen}
+          >
+            <SectionLinks items={campaignsNav} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
             title="Cafés & Clientes"
