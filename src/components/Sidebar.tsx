@@ -263,7 +263,7 @@ export function Sidebar({
             <SectionLinks items={campaignsNav} compact={compact} onNavigate={closeMobile} />
           </SidebarSection>
           <SidebarSection
-            title="Cafés & Clientes"
+            title="Informações Extras"
             compact={compact}
             open={salesOpen}
             setOpen={setSalesOpen}
