@@ -57,14 +57,14 @@ const primary = [
   { to: '/mensagens', label: 'Mensagens (WhatsApp)', icon: MessageCircle, badge: 'Zap' },
 ]
 
+// Agrupa as telas de vendas/análise. Campanhas e Formulários ficam EXCLUSIVAMENTE
+// na seção "Campanhas" (campaignsNav) — não duplicar aqui.
 const sales = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/jornada', label: 'Jornada Disney (Quadro)', icon: Sparkles, badge: 'Visão' },
   { to: '/pipeline', label: 'Pipeline', icon: PanelLeft },
   { to: '/recuperacao', label: 'Recuperação', icon: RefreshCw },
-  { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/negocios', label: 'Negócios', icon: BriefcaseBusiness },
-  { to: '/formularios', label: 'Formulário de Captação', icon: LayoutTemplate },
 ]
 
 // Clientes SD: clientes, empresas/B2B e pontos de revenda, nessa ordem.
@@ -87,7 +87,7 @@ const productsNav = [{ to: '/produtos', label: 'Produtos', icon: Package }]
 
 // Campanhas: gestão de campanhas (cadastro) e formulários de captação de leads.
 const campaignsNav = [
-  { to: '/gestao-campanhas', label: 'Campanhas', icon: Megaphone },
+  { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/captura', label: 'Formulários de Captação', icon: LayoutTemplate },
 ]
 
