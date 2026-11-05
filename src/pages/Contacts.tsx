@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  ArrowDownUp,
   Award,
   Cake,
   ChevronDown,
@@ -55,6 +56,7 @@ export default function Contacts() {
   const [loyaltyFilter, setLoyaltyFilter] = useState<
     'todos' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10'
   >('todos')
+  const [sortBy, setSortBy] = useState<'padrao' | 'nivel_desc' | 'compras_asc'>('padrao')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
   const [isExporting, setIsExporting] = useState(false)
@@ -70,20 +72,38 @@ export default function Contacts() {
     window.addEventListener('crm:new-contact', handler)
     return () => window.removeEventListener('crm:new-contact', handler)
   }, [])
-  const filtered = useMemo(
-    () =>
-      contacts.filter((contact) => {
-        const matchesQuery =
-          `${contact.name} ${contact.email} ${contact.phone} ${contact.favorite_coffee || ''}`
-            .toLowerCase()
-            .includes(query.toLowerCase())
-        const matchesStatus = status === 'todos' || contact.status === status
-        const loyaltyLevel = getLoyaltyLevel(contact.purchase_count || 0).level
-        const matchesLoyalty = loyaltyFilter === 'todos' || String(loyaltyLevel) === loyaltyFilter
-        return matchesQuery && matchesStatus && matchesLoyalty
-      }),
-    [contacts, query, status, loyaltyFilter],
-  )
+  const filtered = useMemo(() => {
+    const list = contacts.filter((contact) => {
+      const matchesQuery =
+        `${contact.name} ${contact.email} ${contact.phone} ${contact.favorite_coffee || ''}`
+          .toLowerCase()
+          .includes(query.toLowerCase())
+      const matchesStatus = status === 'todos' || contact.status === status
+      const loyaltyLevel = getLoyaltyLevel(contact.purchase_count || 0).level
+      const matchesLoyalty = loyaltyFilter === 'todos' || String(loyaltyLevel) === loyaltyFilter
+      return matchesQuery && matchesStatus && matchesLoyalty
+    })
+    if (sortBy === 'nivel_desc') {
+      // Nível de fidelidade do maior para o menor (Embaixador → ... → Sem nível);
+      // empate: mais compras primeiro. "Sem nível" (level 0) fica por último.
+      return [...list].sort((a, b) => {
+        const levelDiff =
+          getLoyaltyLevel(b.purchase_count || 0).level -
+          getLoyaltyLevel(a.purchase_count || 0).level
+        if (levelDiff !== 0) return levelDiff
+        return (b.purchase_count || 0) - (a.purchase_count || 0)
+      })
+    }
+    if (sortBy === 'compras_asc') {
+      // Número de compras do menor para o maior; empate: ordem alfabética.
+      return [...list].sort((a, b) => {
+        const countDiff = (a.purchase_count || 0) - (b.purchase_count || 0)
+        if (countDiff !== 0) return countDiff
+        return a.name.localeCompare(b.name, 'pt-BR')
+      })
+    }
+    return list
+  }, [contacts, query, status, loyaltyFilter, sortBy])
   const isFiltered = query.trim() !== '' || status !== 'todos' || loyaltyFilter !== 'todos'
 
   const handleExport = async (scope: 'filtered' | 'all', format: 'xlsx' | 'csv' = 'xlsx') => {
@@ -314,6 +334,20 @@ export default function Contacts() {
               <option value="8">Nível 8 - Arara (80+)</option>
               <option value="9">Nível 9 - Geisha (90+)</option>
               <option value="10">Nível 10 - Embaixador (100+)</option>
+            </select>
+          </label>
+
+          <label className="flex h-8 items-center rounded-md border border-[#d6c7b6] bg-white px-2 text-[#5c4735] shadow-2xs">
+            <ArrowDownUp className="mr-1.5 size-3 text-amber-600" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              aria-label="Ordenar lista de clientes"
+              className="bg-transparent text-[10px] text-[#2b1c13] outline-none"
+            >
+              <option value="padrao">Ordenar: Padrão</option>
+              <option value="nivel_desc">Nível (maior→menor)</option>
+              <option value="compras_asc">Compras (menor→maior)</option>
             </select>
           </label>
 
