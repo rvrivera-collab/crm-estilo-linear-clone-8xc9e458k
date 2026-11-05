@@ -36,6 +36,7 @@ import {
 import { useCrm } from '@/contexts/CrmContext'
 import { toast } from '@/hooks/use-toast'
 import { exportContactsSpreadsheet } from '@/lib/export-excel'
+import { safeParseDate } from '@/lib/safe-date'
 import { cn } from '@/lib/utils'
 import {
   datePt,
@@ -56,7 +57,9 @@ export default function Contacts() {
   const [loyaltyFilter, setLoyaltyFilter] = useState<
     'todos' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10'
   >('todos')
-  const [sortBy, setSortBy] = useState<'padrao' | 'nivel_desc' | 'compras_asc'>('padrao')
+  const [sortBy, setSortBy] = useState<
+    'padrao' | 'nivel_desc' | 'compras_asc' | 'compras_desc' | 'ultima_compra_desc'
+  >('padrao')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Contact | null>(null)
   const [isExporting, setIsExporting] = useState(false)
@@ -99,6 +102,31 @@ export default function Contacts() {
       return [...list].sort((a, b) => {
         const countDiff = (a.purchase_count || 0) - (b.purchase_count || 0)
         if (countDiff !== 0) return countDiff
+        return a.name.localeCompare(b.name, 'pt-BR')
+      })
+    }
+    if (sortBy === 'compras_desc') {
+      // Número de compras do maior para o menor; empate: ordem alfabética.
+      return [...list].sort((a, b) => {
+        const countDiff = (b.purchase_count || 0) - (a.purchase_count || 0)
+        if (countDiff !== 0) return countDiff
+        return a.name.localeCompare(b.name, 'pt-BR')
+      })
+    }
+    if (sortBy === 'ultima_compra_desc') {
+      // Última compra da mais recente para a mais antiga; clientes sem última
+      // compra (vazia, zero-date ou inválida) ficam por último. Empate: ordem
+      // alfabética. safeParseDate nunca lança com data vazia/inválida.
+      const time = (contact: Contact) =>
+        safeParseDate(contact.last_purchase_date)?.getTime() ?? null
+      return [...list].sort((a, b) => {
+        const aTime = time(a)
+        const bTime = time(b)
+        if (aTime === null && bTime === null) return a.name.localeCompare(b.name, 'pt-BR')
+        if (aTime === null) return 1
+        if (bTime === null) return -1
+        const timeDiff = bTime - aTime
+        if (timeDiff !== 0) return timeDiff
         return a.name.localeCompare(b.name, 'pt-BR')
       })
     }
@@ -348,6 +376,8 @@ export default function Contacts() {
               <option value="padrao">Ordenar: Padrão</option>
               <option value="nivel_desc">Nível (maior→menor)</option>
               <option value="compras_asc">Compras (menor→maior)</option>
+              <option value="compras_desc">Compras (maior→menor)</option>
+              <option value="ultima_compra_desc">Última compra (recente→antiga)</option>
             </select>
           </label>
 
