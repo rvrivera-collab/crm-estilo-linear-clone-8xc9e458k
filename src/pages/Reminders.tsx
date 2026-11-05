@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
+import { useRealtime } from '@/hooks/use-realtime'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import { BatchWhatsAppModal } from '@/components/BatchWhatsAppModal'
 import {
@@ -44,6 +45,11 @@ export default function Reminders() {
   const { contacts, loading, refresh } = useCrm()
   const navigate = useNavigate()
   const { toast } = useToast()
+
+  // Recarrega a lista de clientes sempre que a coleção muda no banco (tempo real)
+  useRealtime('contacts', () => {
+    refresh().catch(() => {})
+  })
 
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState<'todos' | 'aniversarios' | 'recorrencia'>('todos')
