@@ -608,29 +608,50 @@ export function getLoyaltyLevel(purchasesCount = 0): LoyaltyLevelInfo {
   }
 }
 
+/**
+ * Compara o aniversário do cliente com a data de HOJE no horário LOCAL do
+ * navegador (Brasil). O campo birthday do PocketBase vem como
+ * "1992-11-02 00:00:00.000Z" — meia-noite UTC — e o padrão gravado no banco
+ * usa 12:00:00 UTC, então ler com getUTC* desloca o dia (bug de fuso: após as
+ * 21h no Brasil a lista de aniversariantes trocava de dia). Aqui extraímos o
+ * MÊS/DIA da data de nascimento e contamos quantos dias faltam para o
+ * próximo aniversário, tudo em horário local — sem ano, sem fuso.
+ */
 export function getBirthdayInfo(birthdayStr?: string) {
   if (!birthdayStr)
     return { isToday: false, isNext7Days: false, daysUntil: null, formattedDate: '—' }
   try {
-    const birthDate = new Date(birthdayStr)
+    // PocketBase devolve "YYYY-MM-DD HH:MM:SS.SSSZ" (espaço em vez de "T"),
+    // que o new Date() pode rejeitar em alguns navegadores — normaliza antes.
+    const raw = String(birthdayStr).trim()
+    const normalized = /^\d{4}-\d{2}-\d{2}( |T)/.test(raw) ? raw.replace(' ', 'T') : raw
+    const birthDate = new Date(normalized)
     if (isNaN(birthDate.getTime()))
       return { isToday: false, isNext7Days: false, daysUntil: null, formattedDate: '—' }
 
-    const now = new Date()
-    const birthMonth = birthDate.getUTCMonth()
-    const birthDay = birthDate.getUTCDate()
-
-    const currentYear = now.getUTCFullYear()
-    // Comparar considerando o dia no ano corrente
-    let nextBday = new Date(Date.UTC(currentYear, birthMonth, birthDay))
-    const todayUTC = new Date(Date.UTC(currentYear, now.getUTCMonth(), now.getUTCDate()))
-
-    // Se já passou este ano (e não é hoje), o próximo é no ano que vem
-    if (nextBday.getTime() < todayUTC.getTime()) {
-      nextBday = new Date(Date.UTC(currentYear + 1, birthMonth, birthDay))
+    // Mês/dia em UTC (o valor é gravado como meia-noite/12h UTC): ler em
+    // horário local deslocaria o dia para 20h/21h anteriores no Brasil.
+    let birthMonth = birthDate.getUTCMonth()
+    let birthDay = birthDate.getUTCDate()
+    // 29 de fevereiro: em anos não bissextos, `new Date(y, 1, 29)` cai em
+    // 1 de março — puxar a data para 28/02 para o lembrete aparecer no mesmo
+    // dia todos os anos.
+    if (birthMonth === 1 && birthDay === 29) {
+      birthDay = 28
     }
 
-    const diffMs = nextBday.getTime() - todayUTC.getTime()
+    // "Hoje" é o dia LOCAL do navegador (complementa o getUTC* acima: o ano
+    // e o dia atual vêm do relógio do usuário, como na Agenda).
+    const now = new Date()
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    // Meia-noite LOCAL do ano corrente com o mês/dia do aniversário
+    let nextBday = new Date(now.getFullYear(), birthMonth, birthDay)
+    // Se já passou este ano (e não é hoje), o próximo é no ano que vem
+    if (nextBday.getTime() < todayMidnight.getTime()) {
+      nextBday = new Date(now.getFullYear() + 1, birthMonth, birthDay)
+    }
+
+    const diffMs = nextBday.getTime() - todayMidnight.getTime()
     const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24))
 
     const isToday = daysUntil === 0
