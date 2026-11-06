@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Globe,
   Mail,
+  MapPin,
   MessageSquareText,
   Phone,
   Plus,
@@ -220,14 +221,25 @@ export function EmpresaDrawer({
               {empresa.email ? (
                 <a
                   href={`mailto:${empresa.email}`}
-                  className="flex items-center gap-1.5 hover:text-amber-600 truncate sm:col-span-2"
+                  className="flex items-center gap-1.5 hover:text-amber-600 truncate"
                 >
                   <Mail className="size-3.5 text-[#94a3b8] shrink-0" />
                   <span className="truncate">{empresa.email}</span>
                 </a>
               ) : (
-                <span className="flex items-center gap-1.5 text-[#94a3b8] sm:col-span-2">
+                <span className="flex items-center gap-1.5 text-[#94a3b8]">
                   <Mail className="size-3.5" /> Sem e-mail cadastrado
+                </span>
+              )}
+
+              {empresa.city ? (
+                <span className="flex items-center gap-1.5 truncate">
+                  <MapPin className="size-3.5 text-[#94a3b8] shrink-0" />
+                  <span className="truncate">{empresa.city}</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-[#94a3b8]">
+                  <MapPin className="size-3.5" /> Sem cidade cadastrada
                 </span>
               )}
             </div>

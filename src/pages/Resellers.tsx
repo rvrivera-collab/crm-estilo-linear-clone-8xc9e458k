@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronRight, Edit3, Plus, Store, Tag, Trash2, X } from 'lucide-react'
+import { Check, ChevronRight, Coffee, Edit3, Plus, Store, Tag, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
@@ -23,6 +23,7 @@ interface ResellerForm {
   city: string
   notes: string
   active: boolean
+  products: string[]
 }
 
 const EMPTY_RESELLER: ResellerForm = {
@@ -32,6 +33,7 @@ const EMPTY_RESELLER: ResellerForm = {
   city: '',
   notes: '',
   active: true,
+  products: [],
 }
 
 function toNumber(value: string): number | null {
@@ -259,11 +261,20 @@ export default function Resellers() {
                   {reseller.city && (
                     <p className="mt-0.5 text-[11px] text-[#64748b]">📍 {reseller.city}</p>
                   )}
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 rounded border border-amber-300/60 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800">
-                      <Tag className="size-2.5" />
-                      {resellerPrices.length} preço{resellerPrices.length === 1 ? '' : 's'}
-                    </span>
+                  <div className="mt-3 flex items-center justify-between gap-1 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded border border-amber-300/60 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800">
+                        <Tag className="size-2.5" />
+                        {resellerPrices.length} preço{resellerPrices.length === 1 ? '' : 's'}
+                      </span>
+                      {(reseller.products?.length || 0) > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded border border-[#e8ddd0] bg-[#fbf9f5] px-1.5 py-0.5 text-[9px] font-bold text-[#8c531b]">
+                          <Coffee className="size-2.5" />
+                          {reseller.products?.length} produto
+                          {reseller.products?.length === 1 ? '' : 's'}
+                        </span>
+                      )}
+                    </div>
                     {!reseller.active && (
                       <span className="rounded bg-[#f1ece5] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#8c7a68]">
                         Inativo
@@ -281,6 +292,8 @@ export default function Resellers() {
         <ResellerDialog
           open={dialogOpen}
           reseller={editing}
+          products={products}
+          prices={prices}
           onClose={() => {
             setDialogOpen(false)
             setEditing(null)
@@ -306,6 +319,10 @@ export default function Resellers() {
               const others = rows.filter((p) => p.reseller !== resellerId)
               return [...others, ...updatedRows]
             })
+          }}
+          onResellerUpdated={(updated) => {
+            setResellers((rows) => rows.map((r) => (r.id === updated.id ? updated : r)))
+            setDetail(updated)
           }}
           onToggleActive={handleToggleActive}
           onDelete={() => setDeleting(detail)}
@@ -359,6 +376,7 @@ function ResellerDetail({
   onClose,
   onEdit,
   onPricesChanged,
+  onResellerUpdated,
   onToggleActive,
   onDelete,
 }: {
@@ -368,13 +386,45 @@ function ResellerDetail({
   onClose: () => void
   onEdit: () => void
   onPricesChanged: (resellerId: string, updated: ResalePrice[]) => void
+  onResellerUpdated: (updated: Reseller) => void
   onToggleActive: (r: Reseller) => void
   onDelete: () => void
 }) {
   const { toast } = useToast()
   const [busyProduct, setBusyProduct] = useState<string | null>(null)
+  const [savingProducts, setSavingProducts] = useState(false)
+  const selectedProductIds = reseller.products || []
 
   const priceByProduct = new Map(prices.map((p) => [p.product, p]))
+
+  async function toggleResoldProduct(productId: string) {
+    if (savingProducts) return
+    const current = reseller.products || []
+    const next = current.includes(productId)
+      ? current.filter((id) => id !== productId)
+      : [...current, productId]
+
+    setSavingProducts(true)
+    try {
+      const updated = await updateReseller(reseller.id, { products: next })
+      onResellerUpdated(updated)
+      const prodName = products.find((p) => p.id === productId)?.name || 'Produto'
+      toast({
+        title: next.includes(productId)
+          ? 'Produto adicionado à revenda'
+          : 'Produto removido da revenda',
+        description: `${prodName} ${next.includes(productId) ? 'marcado como revendido' : 'desmarcado'} em ${reseller.name}.`,
+      })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar produtos',
+        description: getErrorMessage(error),
+      })
+    } finally {
+      setSavingProducts(false)
+    }
+  }
 
   // Produtos ativos primeiro, depois inativos; dentro de cada grupo por nome
   const sortedProducts = [...products].sort((a, b) => {
@@ -499,33 +549,115 @@ function ResellerDetail({
           )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#8c531b]">
-            Preços de repasse por produto
-          </p>
-          {products.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-[#ded2c3] bg-white/60 px-4 py-8 text-center text-xs text-[#64748b]">
-              Cadastre produtos na aba <strong>Produtos</strong> para definir os preços de repasse
-              aqui.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {sortedProducts.map((product) => (
-                <PriceRow
-                  key={product.id}
-                  product={product}
-                  existing={priceByProduct.get(product.id)}
-                  busy={busyProduct === product.id}
-                  onSave={(raw) => savePrice(product, raw)}
-                  onRemove={
-                    priceByProduct.get(product.id)
-                      ? () => removePrice(priceByProduct.get(product.id)!)
-                      : undefined
-                  }
-                />
-              ))}
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Seção: Produtos revendidos neste ponto */}
+          <div className="rounded-lg border border-[#e8ddd0] bg-white p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <Coffee className="size-3.5 text-amber-600" />
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[#8c531b]">
+                  Produtos revendidos neste ponto
+                </p>
+              </div>
+              <span className="font-mono text-[10px] font-bold text-[#8c531b]">
+                {selectedProductIds.length} selecionado{selectedProductIds.length === 1 ? '' : 's'}
+              </span>
             </div>
-          )}
+            <p className="mt-1 text-[11px] text-[#64748b]">
+              Marque os produtos do catálogo que estão disponíveis para revenda neste parceiro.
+            </p>
+
+            {products.length === 0 ? (
+              <p className="mt-2 text-xs text-[#8c7a68]">Nenhum produto cadastrado no catálogo.</p>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {sortedProducts.map((prod) => {
+                  const isSelected = selectedProductIds.includes(prod.id)
+                  const priceRow = priceByProduct.get(prod.id)
+                  return (
+                    <button
+                      key={prod.id}
+                      type="button"
+                      disabled={savingProducts}
+                      onClick={() => toggleResoldProduct(prod.id)}
+                      className={cn(
+                        'group flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition active:scale-95',
+                        isSelected
+                          ? 'border-amber-500 bg-amber-500 text-white shadow-2xs hover:bg-amber-600'
+                          : 'border-[#ded2c3] bg-[#fbf9f5] text-[#475569] hover:border-amber-300 hover:bg-amber-50/50',
+                        savingProducts && 'opacity-60 cursor-not-allowed',
+                      )}
+                      title={
+                        isSelected
+                          ? 'Clique para desmarcar este produto'
+                          : 'Clique para marcar este produto como revendido'
+                      }
+                    >
+                      <span
+                        className={cn(
+                          'grid size-3.5 place-items-center rounded-full text-[9px]',
+                          isSelected ? 'bg-white/20 text-white' : 'bg-[#e8ddd0] text-[#64748b]',
+                        )}
+                      >
+                        {isSelected ? '✓' : '+'}
+                      </span>
+                      <span>{prod.name}</span>
+                      {priceRow && (
+                        <span
+                          className={cn(
+                            'font-mono text-[10px]',
+                            isSelected ? 'text-amber-100 font-bold' : 'text-amber-700 font-bold',
+                          )}
+                        >
+                          ({formatPrice(priceRow.resale_price)})
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Seção: Preços de repasse */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#8c531b]">
+                Preços de repasse por produto
+              </p>
+              <span className="text-[10px] text-[#64748b]">
+                {prices.length} cadastrado{prices.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            {products.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-[#ded2c3] bg-white/60 px-4 py-8 text-center text-xs text-[#64748b]">
+                Cadastre produtos na aba <strong>Produtos</strong> para definir os preços de repasse
+                aqui.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {sortedProducts.map((product) => {
+                  const isResold = selectedProductIds.includes(product.id)
+                  return (
+                    <PriceRow
+                      key={product.id}
+                      product={product}
+                      existing={priceByProduct.get(product.id)}
+                      isResold={isResold}
+                      busy={busyProduct === product.id}
+                      onSave={(raw) => savePrice(product, raw)}
+                      onRemove={
+                        priceByProduct.get(product.id)
+                          ? () => removePrice(priceByProduct.get(product.id)!)
+                          : undefined
+                      }
+                      onToggleResold={() => toggleResoldProduct(product.id)}
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </aside>
     </div>
@@ -535,15 +667,19 @@ function ResellerDetail({
 function PriceRow({
   product,
   existing,
+  isResold,
   busy,
   onSave,
   onRemove,
+  onToggleResold,
 }: {
   product: Product
   existing?: ResalePrice
+  isResold?: boolean
   busy: boolean
   onSave: (raw: string) => void
   onRemove?: () => void
+  onToggleResold?: () => void
 }) {
   const [value, setValue] = useState(
     existing ? String(existing.resale_price).replace('.', ',') : '',
@@ -559,25 +695,54 @@ function PriceRow({
     touched && value !== (existing ? String(existing.resale_price).replace('.', ',') : '')
 
   return (
-    <div className="rounded-lg border border-[#e8ddd0] bg-white p-2.5">
+    <div
+      className={cn(
+        'rounded-lg border p-2.5 transition',
+        isResold ? 'border-amber-300/80 bg-amber-50/20' : 'border-[#e8ddd0] bg-white',
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-[12px] font-bold text-[#2b1c13]">{product.name}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="truncate text-[12px] font-bold text-[#2b1c13]">{product.name}</p>
+            {isResold && (
+              <span className="rounded bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wide text-amber-800">
+                Revendido
+              </span>
+            )}
+          </div>
           <p className="text-[10px] text-[#64748b]">
             {PRODUCT_CATEGORY_LABELS[product.category] || product.category} · venda{' '}
             {formatPrice(product.sale_price)}
             {existing ? ` · desde ${dateShort(existing.set_at)}` : ''}
           </p>
         </div>
-        {onRemove && (
-          <button
-            title="Remover preço de repasse"
-            onClick={onRemove}
-            className="shrink-0 rounded p-1 text-[#8c7a68] hover:bg-red-50 hover:text-red-600"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {onToggleResold && (
+            <button
+              type="button"
+              onClick={onToggleResold}
+              className={cn(
+                'rounded px-1.5 py-1 text-[10px] font-bold transition',
+                isResold
+                  ? 'bg-amber-500 text-white hover:bg-amber-600'
+                  : 'border border-[#ded2c3] bg-white text-[#64748b] hover:bg-[#fbf9f5] hover:text-[#2b1c13]',
+              )}
+              title={isResold ? 'Desmarcar como revendido' : 'Marcar como revendido'}
+            >
+              {isResold ? '✓ Revendido' : '+ Marcar revenda'}
+            </button>
+          )}
+          {onRemove && (
+            <button
+              title="Remover preço de repasse"
+              onClick={onRemove}
+              className="rounded p-1 text-[#8c7a68] hover:bg-red-50 hover:text-red-600"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
+        </div>
       </div>
       <div className="mt-2 flex items-center gap-2">
         <input
@@ -627,12 +792,16 @@ function dateShort(value?: string): string {
 function ResellerDialog({
   open,
   reseller,
+  products = [],
+  prices = [],
   onClose,
   onSaved,
   ownerId,
 }: {
   open: boolean
   reseller: Reseller | null
+  products?: Product[]
+  prices?: ResalePrice[]
   onClose: () => void
   onSaved: (reseller: Reseller) => void
   ownerId?: string
@@ -655,6 +824,7 @@ function ResellerDialog({
             city: reseller.city || '',
             notes: reseller.notes || '',
             active: reseller.active !== false,
+            products: reseller.products || [],
           }
         : EMPTY_RESELLER,
     )
@@ -678,6 +848,7 @@ function ResellerDialog({
         city: form.city.trim(),
         notes: form.notes.trim(),
         active: form.active,
+        products: form.products,
         owner: reseller?.owner || ownerId,
       }
       const saved = reseller ? await updateReseller(reseller.id, data) : await createReseller(data)
@@ -759,6 +930,72 @@ function ResellerDialog({
               Ponto ativo (compra/repassa produtos atualmente)
             </span>
           </label>
+
+          {/* Produtos revendidos */}
+          <div className="sm:col-span-2 rounded-lg border border-[#e8ddd0] bg-[#fbf9f5] p-3">
+            <div className="flex items-center justify-between">
+              <span className="block text-[11px] font-semibold text-[#475569]">
+                Produtos revendidos neste ponto
+              </span>
+              <span className="font-mono text-[10px] font-bold text-[#8c531b]">
+                {form.products.length} selecionado{form.products.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <p className="mt-0.5 text-[10px] text-[#64748b]">
+              Marque os produtos que este parceiro compra para revender:
+            </p>
+            {products.length === 0 ? (
+              <p className="mt-2 text-xs text-[#8c7a68]">Nenhum produto cadastrado no catálogo.</p>
+            ) : (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {products.map((prod) => {
+                  const selected = form.products.includes(prod.id)
+                  const priceRow = reseller
+                    ? prices.find((p) => p.reseller === reseller.id && p.product === prod.id)
+                    : undefined
+                  return (
+                    <button
+                      key={prod.id}
+                      type="button"
+                      onClick={() => {
+                        const next = selected
+                          ? form.products.filter((id) => id !== prod.id)
+                          : [...form.products, prod.id]
+                        setForm({ ...form, products: next })
+                      }}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition active:scale-95',
+                        selected
+                          ? 'border-amber-500 bg-amber-500 text-white shadow-2xs hover:bg-amber-600'
+                          : 'border-[#ded2c3] bg-white text-[#475569] hover:border-amber-300 hover:bg-amber-50/50',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'grid size-3.5 place-items-center rounded-full text-[9px]',
+                          selected ? 'bg-white/20 text-white' : 'bg-[#e8ddd0] text-[#64748b]',
+                        )}
+                      >
+                        {selected ? '✓' : '+'}
+                      </span>
+                      <span>{prod.name}</span>
+                      {priceRow && (
+                        <span
+                          className={cn(
+                            'font-mono text-[10px]',
+                            selected ? 'text-amber-100 font-bold' : 'text-amber-700 font-bold',
+                          )}
+                        >
+                          ({formatPrice(priceRow.resale_price)})
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           <Field label="Observações" error={errors.notes} className="sm:col-span-2">
             <textarea
               rows={3}

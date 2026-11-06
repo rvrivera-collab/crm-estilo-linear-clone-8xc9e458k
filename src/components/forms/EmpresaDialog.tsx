@@ -30,6 +30,7 @@ export function EmpresaDialog({
       website: empresa?.website || '',
       phone: empresa?.phone || '',
       email: empresa?.email || '',
+      city: empresa?.city || '',
       notes: empresa?.notes || '',
     }),
     [empresa, initialName],
@@ -70,6 +71,7 @@ export function EmpresaDialog({
         website: form.website.trim(),
         phone: form.phone.trim(),
         email: form.email.trim(),
+        city: form.city.trim(),
         notes: form.notes.trim(),
         owner: empresa?.owner || user?.id,
       }
@@ -161,6 +163,13 @@ export function EmpresaDialog({
               placeholder="+55 11 3000-0000"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </Field>
+          <Field label="Cidade" error={errors.city} className="sm:col-span-2">
+            <input
+              placeholder="Ex: São Paulo / SP"
+              value={form.city}
+              onChange={(e) => setForm({ ...form, city: e.target.value })}
             />
           </Field>
           <Field label="E-mail de contato" error={errors.email} className="sm:col-span-2">

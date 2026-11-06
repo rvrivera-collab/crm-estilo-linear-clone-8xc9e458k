@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T13:07:44.113Z",
+  "generatedAt": "2026-11-06T13:39:48.178Z",
   "collections": [
     {
       "name": "users",
@@ -1069,6 +1069,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -1756,6 +1762,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "products",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

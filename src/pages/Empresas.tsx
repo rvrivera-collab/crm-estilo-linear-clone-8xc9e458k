@@ -85,7 +85,7 @@ export default function Empresas() {
     () =>
       empresas.filter((emp) => {
         const text =
-          `${emp.name} ${emp.sector || ''} ${emp.website || ''} ${emp.email || ''}`.toLowerCase()
+          `${emp.name} ${emp.sector || ''} ${emp.city || ''} ${emp.website || ''} ${emp.email || ''}`.toLowerCase()
         const matchesQuery = text.includes(query.toLowerCase())
         const matchesSize = sizeFilter === 'todos' || emp.size === sizeFilter
         return matchesQuery && matchesSize
@@ -138,7 +138,7 @@ export default function Empresas() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nome, setor ou site…"
+              placeholder="Buscar por nome, setor, cidade ou site…"
               className="min-w-0 flex-1 bg-transparent text-[11px] text-[#1c1c1e] outline-none placeholder:text-[#94a3b8]"
             />
           </label>
@@ -196,11 +196,16 @@ export default function Empresas() {
                   </span>
                   <div className="min-w-0 truncate">
                     <span className="block truncate font-semibold text-[#1c1c1e]">{emp.name}</span>
-                    {emp.website && (
-                      <span className="block truncate font-mono text-[9px] text-[#94a3b8]">
-                        {emp.website.replace(/^https?:\/\//, '')}
-                      </span>
-                    )}
+                    <span className="block truncate font-mono text-[9px] text-[#94a3b8]">
+                      {emp.city ? (
+                        <span>
+                          {emp.city}
+                          {emp.website && ` · ${emp.website.replace(/^https?:\/\//, '')}`}
+                        </span>
+                      ) : (
+                        emp.website?.replace(/^https?:\/\//, '') || ''
+                      )}
+                    </span>
                   </div>
                 </span>
 
@@ -284,7 +289,10 @@ export default function Empresas() {
                     </span>
                     <div className="min-w-0">
                       <p className="truncate text-xs font-bold text-[#1c1c1e]">{emp.name}</p>
-                      <p className="truncate text-[10px] text-[#64748b]">{emp.sector || 'Geral'}</p>
+                      <p className="truncate text-[10px] text-[#64748b]">
+                        {emp.city ? `${emp.city} · ` : ''}
+                        {emp.sector || 'Geral'}
+                      </p>
                     </div>
                   </div>
                   {emp.size && (

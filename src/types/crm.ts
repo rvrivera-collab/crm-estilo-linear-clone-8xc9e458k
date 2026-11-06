@@ -75,6 +75,7 @@ export interface Empresa extends RecordModel {
   website?: string
   phone?: string
   email?: string
+  city?: string
   notes?: string
   owner: string
   expand?: {
@@ -904,6 +905,7 @@ export interface Reseller extends RecordModel {
   notes?: string
   active: boolean
   owner: string
+  products?: string[]
 }
 
 export interface ResalePrice extends RecordModel {
