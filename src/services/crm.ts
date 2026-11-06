@@ -15,6 +15,7 @@ import type {
   JourneyEvent,
   LoyaltyLevelInfo,
   Order,
+  OrderItem,
   OrderStage,
   Product,
   ProductCategory,
@@ -453,6 +454,7 @@ export async function createOrder(data: {
   contactId: string
   title: string
   items_description?: string
+  items?: OrderItem[]
   value?: number
   stage?: OrderStage
   tracking_code?: string
@@ -467,6 +469,7 @@ export async function createOrder(data: {
       owner: ownerId,
       title: data.title,
       items_description: data.items_description || '',
+      items: data.items || [],
       value: data.value || 0,
       stage,
       tracking_code: data.tracking_code || '',

@@ -516,12 +516,37 @@ export default function Orders() {
                               {order.title}
                             </h3>
 
-                            {/* Linha 3: Itens detalhados */}
-                            {order.items_description && (
+                            {/* Linha 3: Itens detalhados (produtos estruturados ou texto livre) */}
+                            {Array.isArray(order.items) && order.items.length > 0 ? (
+                              <div className="mt-1.5 space-y-0.5">
+                                <div className="text-[10px] text-[#705e4d] leading-tight flex flex-wrap gap-1">
+                                  {order.items.map((it, idx) => (
+                                    <span
+                                      key={it.id || idx}
+                                      className="inline-flex items-center gap-1 rounded bg-[#f7efe0] border border-[#e8d5be] px-1.5 py-0.5 text-[9.5px] font-medium text-[#4a3420]"
+                                    >
+                                      <span className="font-bold text-[#8c531b]">
+                                        {it.quantity}x
+                                      </span>
+                                      <span className="truncate max-w-[130px]">{it.name}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                                {order.items_description &&
+                                  order.items_description !==
+                                    order.items
+                                      .map((i) => `${i.quantity}x ${i.name}`)
+                                      .join(' + ') && (
+                                    <p className="text-[9.5px] text-[#8c7865] italic leading-tight line-clamp-1">
+                                      Obs: {order.items_description}
+                                    </p>
+                                  )}
+                              </div>
+                            ) : order.items_description ? (
                               <p className="mt-1 text-[10px] text-[#64748b] leading-tight line-clamp-2">
                                 ☕ {order.items_description}
                               </p>
-                            )}
+                            ) : null}
 
                             {/* Rastreio dos Correios: Código clicável para cópia + Link oficial */}
                             <div

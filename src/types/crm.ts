@@ -213,11 +213,22 @@ export type OrderStage =
   | 'pedir_avaliacao_google'
   | 'concluido'
 
+export interface OrderItem {
+  id: string
+  product_id?: string
+  name: string
+  quantity: number
+  unit_price: number
+  total: number
+  notes?: string
+}
+
 export interface Order extends RecordModel {
   contact: string
   owner: string
   title: string
   items_description?: string
+  items?: OrderItem[]
   value?: number
   stage: OrderStage
   tracking_code?: string

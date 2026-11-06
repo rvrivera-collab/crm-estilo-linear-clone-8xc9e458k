@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   CheckCircle2,
   DollarSign,
@@ -10,12 +10,14 @@ import {
   User,
   X,
   Pencil,
+  Calculator,
 } from 'lucide-react'
 import { useCrm } from '@/contexts/CrmContext'
-import { createOrder, updateOrder, ORDER_STAGE_LABELS } from '@/services/crm'
-import type { Contact, Order, OrderStage } from '@/types/crm'
+import { createOrder, updateOrder, listProducts, ORDER_STAGE_LABELS } from '@/services/crm'
+import type { Contact, Order, OrderStage, OrderItem, Product } from '@/types/crm'
 import type { LoyaltyProgressResult } from '@/services/crm'
 import { useToast } from '@/hooks/use-toast'
+import { OrderItemsManager } from './OrderItemsManager'
 import { cn } from '@/lib/utils'
 
 interface OrderDialogProps {
@@ -45,12 +47,27 @@ export function OrderDialog({
   const [contactId, setContactId] = useState(presetContactId || '')
   const [title, setTitle] = useState('')
   const [itemsDescription, setItemsDescription] = useState('')
+  const [items, setItems] = useState<OrderItem[]>([])
   const [value, setValue] = useState('')
   const [stage, setStage] = useState<OrderStage>(presetStage)
   const [trackingCode, setTrackingCode] = useState('')
   const [notes, setNotes] = useState('')
   const [registerPurchase, setRegisterPurchase] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
+
+  // Carregar produtos quando o diálogo for aberto
+  useEffect(() => {
+    if (open) {
+      setProductsLoading(true)
+      listProducts()
+        .then((prods) => setProducts(prods))
+        .catch(() => setProducts([]))
+        .finally(() => setProductsLoading(false))
+    }
+  }, [open])
 
   useEffect(() => {
     if (open) {
@@ -59,6 +76,8 @@ export function OrderDialog({
         setStage(order.stage || 'pedido_feito')
         setTitle(order.title || '')
         setItemsDescription(order.items_description || '')
+        const loadedItems = Array.isArray(order.items) ? order.items : []
+        setItems(loadedItems)
         setValue(order.value !== undefined && order.value !== null ? String(order.value) : '')
         setTrackingCode(order.tracking_code || '')
         setNotes(order.notes || '')
@@ -68,6 +87,7 @@ export function OrderDialog({
         setStage(presetStage)
         setTitle('')
         setItemsDescription('')
+        setItems([])
         setValue('')
         setTrackingCode('')
         setNotes('')
@@ -75,6 +95,28 @@ export function OrderDialog({
       }
     }
   }, [open, order, presetContactId, presetStage, contacts])
+
+  // Atualizar valor total e gerar título/resumo automático se o usuário estiver montando itens
+  const handleItemsChange = (newItems: OrderItem[]) => {
+    setItems(newItems)
+    const newTotal = newItems.reduce(
+      (sum, item) => sum + (item.total || item.unit_price * item.quantity),
+      0,
+    )
+    if (newItems.length > 0) {
+      // Atualiza o valor total automaticamente
+      setValue(newTotal > 0 ? newTotal.toFixed(2).replace('.', ',') : '')
+
+      // Se o título do pedido estiver vazio ou se já era gerado a partir dos itens,
+      // sugere automaticamente um resumo limpo (ex: "2x Cápsulas + 1x Café 250g")
+      const summaryText = newItems.map((i) => `${i.quantity}x ${i.name}`).join(' + ')
+      setItemsDescription(summaryText)
+
+      if (!title.trim() || title.includes('x ')) {
+        setTitle(summaryText)
+      }
+    }
+  }
 
   if (!open) return null
 
@@ -100,11 +142,18 @@ export function OrderDialog({
     const numValue = value ? parseFloat(value.replace(',', '.')) : 0
     setSaving(true)
     try {
+      // Se não preencheu items_description explicitamente mas tem items estruturados,
+      // gera a descrição a partir deles
+      const finalItemsDescription =
+        itemsDescription.trim() ||
+        (items.length > 0 ? items.map((i) => `${i.quantity}x ${i.name}`).join(' + ') : '')
+
       if (isEditing && order) {
         const updated = await updateOrder(order.id, {
           contact: contactId,
           title: title.trim(),
-          items_description: itemsDescription.trim(),
+          items_description: finalItemsDescription,
+          items: items,
           value: isNaN(numValue) ? 0 : numValue,
           stage,
           tracking_code: trackingCode.trim(),
@@ -122,7 +171,8 @@ export function OrderDialog({
         const created = await createOrder({
           contactId,
           title: title.trim(),
-          items_description: itemsDescription.trim(),
+          items_description: finalItemsDescription,
+          items: items,
           value: isNaN(numValue) ? 0 : numValue,
           stage,
           tracking_code: trackingCode.trim(),
@@ -224,11 +274,35 @@ export function OrderDialog({
             </select>
           </div>
 
+          {/* Seção de Itens Integrada com o Catálogo de Produtos */}
+          <OrderItemsManager
+            items={items}
+            onChange={handleItemsChange}
+            products={products}
+            productsLoading={productsLoading}
+            manualFallbackText={itemsDescription}
+            onManualFallbackTextChange={setItemsDescription}
+          />
+
           {/* Título do Pedido */}
           <div>
-            <label className="block text-[11px] font-bold text-[#475569] mb-1">
-              Título / Resumo do Pedido *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-[#475569]">
+                Título / Resumo do Pedido *
+              </label>
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const summary = items.map((i) => `${i.quantity}x ${i.name}`).join(' + ')
+                    setTitle(summary)
+                  }}
+                  className="text-[10px] text-[#8c531b] hover:underline"
+                >
+                  Usar resumo dos itens
+                </button>
+              )}
+            </div>
             <input
               type="text"
               required
@@ -239,14 +313,14 @@ export function OrderDialog({
             />
           </div>
 
-          {/* Itens detalhados */}
+          {/* Itens detalhados / observações dos itens (opcional) */}
           <div>
             <label className="block text-[11px] font-bold text-[#475569] mb-1">
-              Itens / Descrição detalhada
+              Descrição complementar dos itens (opcional)
             </label>
             <input
               type="text"
-              placeholder="Ex: 1x Microlote Frutado 250g em grãos + 1x Filtro V60 tamanho 02"
+              placeholder="Ex: 1x moído para Prensa Francesa, 1x em grãos"
               value={itemsDescription}
               onChange={(e) => setItemsDescription(e.target.value)}
               className="w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500"
@@ -256,9 +330,16 @@ export function OrderDialog({
           {/* Valor e Estágio */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-[#475569] mb-1">
-                Valor Total (R$)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-[#475569]">
+                  Valor Total (R$)
+                </label>
+                {items.length > 0 && (
+                  <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5">
+                    <Calculator className="size-2.5" /> Calculado dos itens
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <span className="absolute left-2.5 top-1.5 text-[#94a3b8] font-bold text-xs">
                   R$
@@ -268,7 +349,7 @@ export function OrderDialog({
                   placeholder="85,00"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500"
+                  className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
                 />
               </div>
             </div>
