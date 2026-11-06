@@ -13,11 +13,18 @@ import {
   Calculator,
 } from 'lucide-react'
 import { useCrm } from '@/contexts/CrmContext'
-import { createOrder, updateOrder, listProducts, ORDER_STAGE_LABELS } from '@/services/crm'
+import {
+  createOrder,
+  updateOrder,
+  listProducts,
+  createContact,
+  ORDER_STAGE_LABELS,
+} from '@/services/crm'
 import type { Contact, Order, OrderStage, OrderItem, Product } from '@/types/crm'
 import type { LoyaltyProgressResult } from '@/services/crm'
 import { useToast } from '@/hooks/use-toast'
 import { OrderItemsManager } from './OrderItemsManager'
+import { ContactAutocomplete } from './ContactAutocomplete'
 import { cn } from '@/lib/utils'
 
 interface OrderDialogProps {
@@ -83,7 +90,7 @@ export function OrderDialog({
         setNotes(order.notes || '')
         setRegisterPurchase(false)
       } else {
-        setContactId(presetContactId || (contacts[0]?.id ?? ''))
+        setContactId(presetContactId || '')
         setStage(presetStage)
         setTitle('')
         setItemsDescription('')
@@ -94,7 +101,32 @@ export function OrderDialog({
         setRegisterPurchase(true)
       }
     }
-  }, [open, order, presetContactId, presetStage, contacts])
+  }, [open, order, presetContactId, presetStage])
+
+  // Cadastro rápido de cliente avulso caso o usuário digite um nome que ainda não existe na base
+  const handleCreateQuickContact = async (name: string): Promise<Contact | null> => {
+    try {
+      const created = await createContact({
+        name: name.trim(),
+        acquisition_channel: 'balcao',
+        status: 'ativo',
+        notes: 'Cliente avulso cadastrado rapidamente pelo lançamento de pedido.',
+      })
+      await refresh()
+      toast({
+        title: '👤 Cliente avulso cadastrado!',
+        description: `"${created.name}" foi adicionado à base e vinculado a este pedido.`,
+      })
+      return created
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao cadastrar cliente',
+        description: err instanceof Error ? err.message : 'Não foi possível cadastrar o cliente.',
+      })
+      return null
+    }
+  }
 
   // Atualizar valor total e gerar título/resumo automático se o usuário estiver montando itens
   const handleItemsChange = (newItems: OrderItem[]) => {
@@ -253,25 +285,20 @@ export function OrderDialog({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
-          {/* Cliente */}
+          {/* Cliente com Autocomplete */}
           <div>
-            <label className="block text-[11px] font-bold text-[#475569] mb-1">Cliente *</label>
-            <select
-              value={contactId}
-              onChange={(e) => setContactId(e.target.value)}
-              className="w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-[#475569]">Cliente *</label>
+              <span className="text-[10px] text-[#705e4d]">{contacts.length} clientes na base</span>
+            </div>
+            <ContactAutocomplete
+              contacts={contacts}
+              selectedContactId={contactId}
+              onSelectContact={(c) => setContactId(c.id)}
+              onClear={() => setContactId('')}
+              onCreateQuickContact={handleCreateQuickContact}
               required
-            >
-              <option value="" disabled>
-                Selecione o cliente...
-              </option>
-              {contacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} {c.nickname ? `("${c.nickname}")` : ''}{' '}
-                  {c.favorite_coffee ? `· ${c.favorite_coffee}` : ''}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* Seção de Itens Integrada com o Catálogo de Produtos */}
