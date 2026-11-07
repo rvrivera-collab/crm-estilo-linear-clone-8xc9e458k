@@ -278,14 +278,30 @@ export default function Fidelidade() {
                           <span className="ml-2 text-purple-700">nível máximo atingido 👑</span>
                         )}
                       </p>
-                      <div className="mt-1.5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-[#ece4d8]">
-                        <div
-                          className={cn(
-                            'h-full rounded-full transition-all',
-                            loyalty.level > 0 ? 'bg-amber-600' : 'bg-slate-300',
-                          )}
-                          style={{ width: `${Math.max(3, loyalty.progressPct)}%` }}
-                        />
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-[#ece4d8]">
+                          <div
+                            className={cn(
+                              'h-full rounded-full transition-all',
+                              loyalty.level > 0 ? 'bg-amber-600' : 'bg-slate-300',
+                            )}
+                            style={{ width: `${Math.max(3, loyalty.progressPct)}%` }}
+                          />
+                        </div>
+                        {(() => {
+                          const inLevel = Math.max(
+                            0,
+                            Math.min(10, (contact.purchase_count || 0) - loyalty.minPurchases),
+                          )
+                          return inLevel > 0 ? (
+                            <span
+                              className="shrink-0 text-[10px] tracking-tighter"
+                              title={`${inLevel}/10 cafezinhos no nível atual`}
+                            >
+                              {'☕'.repeat(inLevel)}
+                            </span>
+                          ) : null
+                        })()}
                       </div>
                     </div>
                   </button>

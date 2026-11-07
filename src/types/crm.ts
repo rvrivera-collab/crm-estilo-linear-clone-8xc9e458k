@@ -506,11 +506,12 @@ export function buildDisneyWhatsAppMessage(params: {
   if (moment === 'nivel_fidelidade') {
     // IMPORTANTE: nunca revelar a recompensa do nível em mensagem ao cliente (uso interno do CRM)
     let msg = `Parabéns, ${displayName}! ⭐☕ Você atingiu o *Nível ${loyalty.level} — ${loyalty.name}* no nosso Clube de Fidelidade!\n\n`
+    msg += `Progresso no nível: ☕☕☕☕☕☕☕☕☕☕ (10/10 — Nível Conquistado!)\n\n`
     msg += `Cada visita sua enriquece a nossa história e nos enche de orgulho. A sua preferência pelo nosso trabalho artesanal e pelo café especial é motivo de muita comemoração.`
     if (coffeeDetail) {
       msg += `\n\nO seu amor por *${coffeeDetail}* faz toda a diferença para o nosso time!`
     }
-    msg += `\n\nObrigado por confiar no nosso trabalho artesanal. Esperamos você em breve para brindar essa conquista! ✨🏆`
+    msg += `\n\nTemos uma surpresa especial reservada para celebrar você! Esperamos você em breve para brindar essa conquista! ✨🏆`
     return msg
   }
 
@@ -533,18 +534,84 @@ export function buildDisneyWhatsAppMessage(params: {
  * - levelUp = true → parabeniza o novo nível (reaproveita o texto de "nivel_fidelidade")
  * - caso contrário → mostra compra atual, nível atual e quantas faltam para o próximo nível.
  */
+/**
+ * Gera a barrinha visual de cafezinhos (☕) representando as compras acumuladas dentro do nível atual.
+ * - Cada nível tem 10 compras (ex.: nível 1 = 10 a 19 compras; 13 compras = 3 cafezinhos).
+ * - Para clientes ainda sem nível (< 10 compras), a contagem é o total rumo ao Nível 1 (ex.: 4 compras = 4 cafezinhos: ☕☕☕☕).
+ * - Ao subir de nível (ex.: 20 compras), a contagem zera no novo nível (0 cafezinhos ou 10/10 no parabéns).
+ * - Para o nível máximo (100+ compras), exibe 10 cafezinhos completos.
+ */
+export function getCoffeeProgressInLevel(purchasesCount = 0): {
+  coffeesCount: number
+  totalInSpan: number
+  coffeeBar: string
+  level: number
+  levelName: string
+} {
+  const count = Math.max(0, purchasesCount)
+  const loyalty = getLoyaltyLevel(count)
+
+  let coffeesCount = 0
+  const totalInSpan = 10
+
+  if (loyalty.level >= MAX_LOYALTY_LEVEL) {
+    coffeesCount = totalInSpan
+  } else if (loyalty.level === 0) {
+    // Rumo ao nível 1 (threshold 10)
+    coffeesCount = Math.min(totalInSpan, count)
+  } else {
+    // Compras realizadas a partir do threshold do nível atual
+    coffeesCount = Math.max(0, Math.min(totalInSpan, count - loyalty.minPurchases))
+  }
+
+  const coffeeBar = coffeesCount > 0 ? '☕'.repeat(coffeesCount) : ''
+
+  return {
+    coffeesCount,
+    totalInSpan,
+    coffeeBar,
+    level: loyalty.level,
+    levelName: loyalty.name,
+  }
+}
+
+/**
+ * Mensagem automática de PROGRESSO DE FIDELIDADE enviada a cada nova compra registrada.
+ * Tom Disney, personalizada com nome/apelido, data da compra, café favorito e método preferido.
+ * - levelUp = true → parabeniza o novo nível com barrinha completa de comemoração
+ * - caso contrário → mostra compra atual, data, nível atual do cliente, barrinha de cafezinhos
+ *   proporcional às compras dentro do nível atual e quantas compras faltam para o próximo nível.
+ * REGRAS FIXAS:
+ * - Nunca citar ou mostrar a recompensa do nível (uso exclusivamente interno do CRM).
+ * - Barrinha visual de cafezinhos (☕) com contagem que recomeça a cada nível.
+ */
 export function buildLoyaltyProgressMessage(params: {
   contact: Contact
   purchaseCount: number
   leveledUp?: boolean
   newLevel?: number
+  purchaseDate?: string | Date
 }): string {
-  const { contact, purchaseCount, leveledUp } = params
+  const { contact, purchaseCount, leveledUp, purchaseDate } = params
   const displayName = contact.nickname?.trim() || contact.name.trim().split(' ')[0] || 'Cliente'
   const coffeeDetail = contact.favorite_coffee?.trim()
   const brewMethod = contact.brew_method_preference?.trim()
   const count = Math.max(1, purchaseCount)
   const loyalty = getLoyaltyLevel(count)
+  const progress = getCoffeeProgressInLevel(count)
+
+  // Data formatada para a mensagem (ex.: 06/11/2026)
+  const dateObj = purchaseDate
+    ? typeof purchaseDate === 'string'
+      ? new Date(purchaseDate)
+      : purchaseDate
+    : new Date()
+  const validDate = isNaN(dateObj.getTime()) ? new Date() : dateObj
+  const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(validDate)
 
   const coffeeLine = coffeeDetail
     ? ` Sabemos do seu bom gosto pelo nosso café *${coffeeDetail}*${brewMethod ? ` preparado na ${brewMethod}` : ''} — cada xícara sua é um momento único.`
@@ -553,10 +620,12 @@ export function buildLoyaltyProgressMessage(params: {
       : ''
 
   if (leveledUp) {
-    // Reaproveita o texto caloroso de parabéns por novo nível
+    // Parabéns caloroso por novo nível
     // IMPORTANTE: nunca revelar a recompensa do nível em mensagem ao cliente (uso interno do CRM)
     let msg = `Parabéns, ${displayName}! ⭐☕ Você atingiu o *Nível ${loyalty.level} — ${loyalty.name}* no nosso Clube de Fidelidade!\n\n`
-    msg += `Essa conquista veio com a sua *compra nº ${count}* e cada visita sua enriquece a nossa história. Temos uma surpresa especial reservada para celebrar você!`
+    msg += `Data da compra: *${formattedDate}* (sua *compra nº ${count}*).\n`
+    msg += `Progresso no nível: ☕☕☕☕☕☕☕☕☕☕ (10/10 — Nível Conquistado!)\n\n`
+    msg += `Cada visita sua enriquece a nossa história e nos enche de orgulho. Temos uma surpresa especial reservada para celebrar você na cafeteria!`
     if (coffeeDetail) {
       msg += `\n\nO seu amor por *${coffeeDetail}* faz toda a diferença para o nosso time!`
     }
@@ -568,10 +637,25 @@ export function buildLoyaltyProgressMessage(params: {
   // Nome do próximo nível: o nível alcançado ao completar o limite atual (nextThreshold)
   const nextLevelName = getLoyaltyLevel(loyalty.nextThreshold).name
 
-  let msg = `Oi, ${displayName}! ☕✨ Obrigado pela sua *compra nº ${count}* — é uma alegria imensa fazer parte do seu dia!`
-  msg += `\n\n📊 *Seu progresso no Clube de Fidelidade:*\n• Nível atual: *${loyalty.level} — ${loyalty.name}*`
+  const levelLabel =
+    loyalty.level > 0
+      ? `Nível ${loyalty.level} — ${loyalty.name}`
+      : `Iniciante (Rumo ao Nível 1 — ${nextLevelName})`
+
+  // Linha da barrinha de cafezinhos:
+  // Se coffeesCount > 0 mostra os cafezinhos; se for 0 mostra o início da contagem
+  const barDisplay =
+    progress.coffeesCount > 0
+      ? `${progress.coffeeBar} (${progress.coffeesCount}/${progress.totalInSpan})`
+      : `☕ (1ª compra rumo ao próximo nível)`
+
+  let msg = `Oi, ${displayName}! ☕✨ Obrigado pela sua compra realizada em *${formattedDate}* (sua *compra nº ${count}*) — é uma alegria imensa fazer parte do seu dia!`
+  msg += `\n\n📊 *Seu progresso no Clube de Fidelidade:*\n`
+  msg += `• Nível atual: *${levelLabel}*\n`
+  msg += `• Progresso do nível: ${barDisplay}`
+
   if (remaining > 0) {
-    msg += `\n• Faltam só *${remaining} ${remaining === 1 ? 'compra' : 'compras'}* para você desbloquear o seu próximo nível: *${nextLevelName}*!`
+    msg += `\n• Faltam só *${remaining} ${remaining === 1 ? 'compra' : 'compras'}* para você subir de nível (*${nextLevelName}*)!`
   } else {
     msg += `\n• Você já conquistou o nível máximo *${loyalty.name}* — você faz parte do seleto clube VIP da casa! 👑`
   }

@@ -1,5 +1,5 @@
 import type { Contact } from '@/types/crm'
-import { getLoyaltyLevel } from '@/types/crm'
+import { getLoyaltyLevel, getCoffeeProgressInLevel } from '@/types/crm'
 
 export interface MessageTemplate {
   id: string
@@ -8,6 +8,7 @@ export interface MessageTemplate {
     | 'recorrencia_30d'
     | 'aniversario'
     | 'nivel_fidelidade'
+    | 'progresso_fidelidade'
     | 'avaliacao_google'
     | 'personalizado'
   description: string
@@ -121,21 +122,43 @@ Que seu dia seja maravilhoso! Te esperamos para um brinde com a xícara perfeita
   },
 
   // ==========================================
-  // NOVO NÍVEL DE FIDELIDADE
+  // PROGRESSO & NÍVEL DE FIDELIDADE
   // ==========================================
+  {
+    id: 'fidelidade_progresso_cafezinhos',
+    title: 'Progresso com Barrinha de Cafezinhos',
+    category: 'progresso_fidelidade',
+    description:
+      'Mensagem pós-compra com barrinha visual de cafezinhos ☕ acumulados no nível e contagem para subir de nível.',
+    tags: ['Fidelidade', 'Clube', 'Cafezinhos', 'Pós-compra'],
+    text: `Oi, {apelido}! ☕✨ Obrigado pela sua compra realizada em *{data_hoje}* (sua *compra nº {compras_total}*) — é uma alegria imensa fazer parte do seu dia!
+
+📊 *Seu progresso no Clube de Fidelidade:*
+• Nível atual: *{nivel}*
+• Progresso do nível: {barra_cafezinhos}
+• {faltam_compras}
+
+Sabemos do seu bom gosto pelo nosso café *{cafe_favorito}* preparado na {metodo} — cada xícara sua é um momento único.
+
+Te esperamos de braços abertos para a próxima xícara! ✨💛`,
+  },
   {
     id: 'fidelidade_novo_patamar',
     title: 'Parabéns por Novo Nível de Fidelidade',
     category: 'nivel_fidelidade',
-    description: 'Reconhecimento do avanço de nível, sem revelar a recompensa (uso interno).',
+    description:
+      'Reconhecimento do avanço de nível com barrinha completa de cafezinhos, sem revelar a recompensa (uso interno).',
     tags: ['Fidelidade', 'Clube', 'VIP'],
-    text: `Parabéns, {apelido}! ⭐🏆 Você atingiu o *{nivel}* no nosso Clube de Fidelidade!
+    text: `Parabéns, {apelido}! ⭐☕ Você atingiu o *{nivel}* no nosso Clube de Fidelidade!
 
-Cada encontro com você enriquece a nossa trajetória e nos enche de orgulho. A sua preferência pelo nosso trabalho artesanal e pelo café *{cafe_favorito}* é motivo de muita comemoração para toda a nossa equipe.
+Data da compra: *{data_hoje}* (sua *compra nº {compras_total}*).
+Progresso no nível: ☕☕☕☕☕☕☕☕☕☕ (10/10 — Nível Conquistado!)
 
-Temos uma surpresa especial reservada para celebrar você — é só pedir na próxima visita!
+Cada visita sua enriquece a nossa história e nos enche de orgulho. Temos uma surpresa especial reservada para celebrar você na cafeteria!
 
-Obrigado por nos escolher. Esperamos você em breve para celebrarmos essa conquista juntos! ✨☕`,
+O seu amor por *{cafe_favorito}* faz toda a diferença para o nosso time!
+
+Obrigado por confiar no nosso trabalho artesanal. Esperamos você em breve para brindar essa conquista! ✨🏆`,
   },
 
   // ==========================================
@@ -177,10 +200,35 @@ export function formatTemplateText(
     overrides?.customCoffee || contact.favorite_coffee?.trim() || 'café especial fresquinho'
   const method = contact.brew_method_preference?.trim() || 'seu método favorito'
   const roast = contact.roast_preference?.trim() || 'torra artesanal'
-  const loyalty = getLoyaltyLevel(contact.purchase_count || 0)
+  const count = contact.purchase_count || 0
+  const loyalty = getLoyaltyLevel(count)
+  const progress = getCoffeeProgressInLevel(count)
   const coupon = overrides?.couponCode || contact.last_coupon_code || 'CAFE-ESPECIAL'
   const discount = overrides?.discountText || '10% OFF'
   const reviewUrl = overrides?.googleReviewUrl || 'https://g.page/r/sua-cafeteria/review' // URL de exemplo padrão configurável
+
+  const todayStr = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date())
+
+  const remaining = loyalty.remainingToNext
+  const nextLevelName = getLoyaltyLevel(loyalty.nextThreshold).name
+  const faltamComprasText =
+    remaining > 0
+      ? `Faltam só *${remaining} ${remaining === 1 ? 'compra' : 'compras'}* para você subir de nível (*${nextLevelName}*)!`
+      : `Você já conquistou o nível máximo *${loyalty.name}* — clube VIP da casa! 👑`
+
+  const barText =
+    progress.coffeesCount > 0
+      ? `${progress.coffeeBar} (${progress.coffeesCount}/${progress.totalInSpan})`
+      : `☕ (1ª compra rumo ao próximo nível)`
+
+  const levelDisplay =
+    loyalty.level > 0
+      ? `Nível ${loyalty.level} — ${loyalty.name}`
+      : `Iniciante (Rumo ao Nível 1 — ${nextLevelName})`
 
   return templateText
     .replace(/\{nome\}/g, firstName)
@@ -188,7 +236,11 @@ export function formatTemplateText(
     .replace(/\{cafe_favorito\}/g, coffee)
     .replace(/\{metodo\}/g, method)
     .replace(/\{torra\}/g, roast)
-    .replace(/\{nivel\}/g, `Nível ${loyalty.level} (${loyalty.name})`)
+    .replace(/\{nivel\}/g, levelDisplay)
+    .replace(/\{barra_cafezinhos\}/g, barText)
+    .replace(/\{faltam_compras\}/g, faltamComprasText)
+    .replace(/\{compras_total\}/g, String(Math.max(1, count)))
+    .replace(/\{data_hoje\}/g, todayStr)
     .replace(/\{cupom\}/g, coupon)
     .replace(/\{desconto\}/g, discount)
     .replace(/\{link_avaliacao\}/g, reviewUrl)

@@ -525,6 +525,7 @@ export async function resendLoyaltyProgress(contactId: string) {
     contact,
     purchaseCount: count,
     leveledUp: false,
+    purchaseDate: contact.last_purchase_date || new Date(),
   })
   return sendDisneyWhatsApp({
     contactId,
@@ -773,6 +774,7 @@ export async function registerPurchase(params: {
           purchaseCount: currentCount + 1,
           leveledUp,
           newLevel: leveledUp ? newLevel : undefined,
+          purchaseDate: params.purchaseDate || new Date(),
         })
         const sendRes = await sendDisneyWhatsApp({
           contactId: params.contactId,

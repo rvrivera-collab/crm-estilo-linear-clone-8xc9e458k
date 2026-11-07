@@ -693,6 +693,35 @@ export function ContactDrawer({
                     style={{ width: `${loyalty.progressPct}%` }}
                   />
                 </div>
+
+                {/* Barrinha visual de cafezinhos do nível (espelho do WhatsApp pós-compra) */}
+                <div className="mt-2 rounded-md bg-amber-100/70 p-2 text-[10px] text-amber-900">
+                  <div className="flex items-center justify-between font-medium">
+                    <span className="flex items-center gap-1 font-semibold">
+                      ☕ Progresso no Nível:
+                    </span>
+                    <span className="font-mono font-bold">
+                      {Math.max(0, (contact.purchase_count || 0) - loyalty.minPurchases)} / 10
+                      compras
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-[13px] tracking-wide">
+                    {(() => {
+                      const inLevel = Math.max(
+                        0,
+                        Math.min(10, (contact.purchase_count || 0) - loyalty.minPurchases),
+                      )
+                      return inLevel > 0 ? (
+                        <span>{'☕'.repeat(inLevel)}</span>
+                      ) : (
+                        <span className="text-[10px] text-amber-700 italic">
+                          Nenhum cafezinho ainda neste nível (0/10)
+                        </span>
+                      )
+                    })()}
+                  </div>
+                </div>
+
                 {/* RECOMPENSA: uso EXCLUSIVAMENTE interno (nunca em WhatsApp ao cliente) */}
                 {loyalty.level > 0 && (
                   <p className="mt-2 border-t border-amber-200/60 pt-2 text-[10px] text-amber-800">
