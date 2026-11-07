@@ -98,10 +98,11 @@ export interface LoyaltyProgressResult {
   skipped?: 'disabled' | 'no-phone'
   attempted: boolean
   whatsappSent?: boolean
-  sendMethod?: 'api' | 'link' | 'none'
+  sendMethod?: 'api' | 'link' | 'none' | 'internal'
   waFallbackUrl?: string | null
   warning?: string | null
   message?: string
+  internalOnly?: boolean
 }
 
 /** A mensagem automática de progresso está ligada? (padrão: ligada) */
@@ -759,34 +760,103 @@ export async function registerPurchase(params: {
     }
   }
 
-  // 6. Mensagem AUTOMÁTICA de progresso de fidelidade via WhatsApp (respeita o toggle em Configurações;
-  //    usa exatamente o mesmo pipeline do hook crm_send_whatsapp — API oficial com fallback wa.me)
+  // 6. Mensagem AUTOMÁTICA de progresso de fidelidade (respeita o toggle em Configurações;
+  //    gera o texto via buildLoyaltyProgressMessage. Se o cliente tiver WhatsApp, dispara via hook crm_send_whatsapp.
+  //    Se NÃO tiver WhatsApp, gera a mensagem de forma interna, registra na jornada/atividades e exibe no CRM para cópia manual).
   let loyaltyProgress: LoyaltyProgressResult = { attempted: false }
   if (await isLoyaltyProgressEnabled()) {
+    const message = buildLoyaltyProgressMessage({
+      contact: updatedContact,
+      purchaseCount: currentCount + 1,
+      leveledUp,
+      newLevel: leveledUp ? newLevel : undefined,
+      purchaseDate: params.purchaseDate || new Date(),
+    })
+
+    const title = leveledUp
+      ? '⭐ Parabéns por Novo Nível de Fidelidade'
+      : '☕ Progresso no Clube de Fidelidade'
+
     const phoneDigits = (updatedContact.phone || '').replace(/\D/g, '')
+
     if (!phoneDigits) {
-      // Cliente sem WhatsApp cadastrado: a compra segue normalmente, sem tentativa de envio
-      loyaltyProgress = { attempted: false, skipped: 'no-phone' }
+      // Cliente sem WhatsApp cadastrado: mensagem gerada internamente no CRM (sem tentativa de disparo externo)
+      try {
+        await pb.collection('journey_events').create({
+          contact: params.contactId,
+          owner: ownerId,
+          type: 'atendimento_especial',
+          title,
+          description: message,
+          channel: 'crm',
+          metadata: {
+            isInternal: true,
+            reason: 'sem_whatsapp',
+            momentType: leveledUp ? 'nivel_fidelidade' : 'personalizado',
+            purchaseCount: currentCount + 1,
+            leveledUp,
+            phone: '',
+          },
+        })
+      } catch (evtErr) {
+        console.warn('Não foi possível gravar journey_event da mensagem interna:', evtErr)
+      }
+
+      try {
+        await pb.collection('activities').create({
+          contact: params.contactId,
+          author: ownerId,
+          type: 'sistema',
+          content: `📝 Mensagem de progresso de fidelidade gerada internamente (cliente sem WhatsApp):\n\n"${message}"`,
+        })
+      } catch (actErr) {
+        console.warn('Não foi possível gravar atividade da mensagem interna:', actErr)
+      }
+
+      loyaltyProgress = {
+        attempted: false,
+        skipped: 'no-phone',
+        internalOnly: true,
+        sendMethod: 'internal',
+        message,
+      }
     } else {
       try {
-        const message = buildLoyaltyProgressMessage({
-          contact: updatedContact,
-          purchaseCount: currentCount + 1,
-          leveledUp,
-          newLevel: leveledUp ? newLevel : undefined,
-          purchaseDate: params.purchaseDate || new Date(),
-        })
         const sendRes = await sendDisneyWhatsApp({
           contactId: params.contactId,
           message,
           momentType: leveledUp ? 'nivel_fidelidade' : 'personalizado',
-          title: leveledUp
-            ? '⭐ Parabéns por Novo Nível de Fidelidade'
-            : '☕ Progresso no Clube de Fidelidade',
+          title,
         })
         if (sendRes.phoneMissing) {
-          // Número ausente/inválido no cadastro: tratado como "sem WhatsApp"
-          loyaltyProgress = { attempted: false, skipped: 'no-phone' }
+          // Número retornado como inválido/ausente: registrar internamente
+          try {
+            await pb.collection('journey_events').create({
+              contact: params.contactId,
+              owner: ownerId,
+              type: 'atendimento_especial',
+              title,
+              description: message,
+              channel: 'crm',
+              metadata: {
+                isInternal: true,
+                reason: 'sem_whatsapp',
+                momentType: leveledUp ? 'nivel_fidelidade' : 'personalizado',
+                purchaseCount: currentCount + 1,
+                leveledUp,
+                phone: updatedContact.phone || '',
+              },
+            })
+          } catch {
+            /* intentionally ignored */
+          }
+          loyaltyProgress = {
+            attempted: false,
+            skipped: 'no-phone',
+            internalOnly: true,
+            sendMethod: 'internal',
+            message,
+          }
         } else {
           loyaltyProgress = {
             attempted: true,
@@ -803,6 +873,7 @@ export async function registerPurchase(params: {
           attempted: true,
           whatsappSent: false,
           sendMethod: 'link',
+          message,
           warning: 'Não foi possível disparar automaticamente — mensagem registrada como pendente.',
         }
       }
