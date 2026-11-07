@@ -217,8 +217,9 @@ export function OrderDialog({
         let progressSuffix = ''
         const lp = (created as Order & { loyaltyProgress?: LoyaltyProgressResult }).loyaltyProgress
         if (lp) {
-          if (lp.skipped === 'no-phone') {
-            progressSuffix = ' Cliente sem WhatsApp cadastrado — mensagem automática não enviada.'
+          if (lp.internalOnly || lp.skipped === 'no-phone') {
+            progressSuffix =
+              ' Mensagem de progresso gerada internamente e salva no CRM (cliente sem WhatsApp). 📝'
           } else if (lp.skipped === 'disabled') {
             progressSuffix = ' Mensagem automática de progresso está desligada nas Configurações.'
           } else if (lp.whatsappSent) {

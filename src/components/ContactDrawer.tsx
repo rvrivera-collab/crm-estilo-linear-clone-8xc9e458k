@@ -3,10 +3,13 @@ import {
   Award,
   Cake,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
   Coffee,
+  Copy,
   ExternalLink,
+  FileText,
   Flame,
   HeartHandshake,
   History,
@@ -86,6 +89,20 @@ export function ContactDrawer({
   // Linha do tempo de jornada oficial
   const [journeyEvents, setJourneyEvents] = useState<JourneyEvent[]>([])
   const [loadingJourney, setLoadingJourney] = useState(false)
+  const [copiedJourneyEventId, setCopiedJourneyEventId] = useState<string | null>(null)
+
+  const handleCopyJourneyText = async (eventId: string, text: string) => {
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedJourneyEventId(eventId)
+      setTimeout(() => {
+        setCopiedJourneyEventId((curr) => (curr === eventId ? null : curr))
+      }, 2000)
+    } catch (err) {
+      console.error('Erro ao copiar texto da jornada:', err)
+    }
+  }
 
   // Pedidos e Compras do cliente
   const [clientOrders, setClientOrders] = useState<Order[]>([])
@@ -209,17 +226,20 @@ export function ContactDrawer({
       // Confirmação discreta do disparo automático da mensagem de progresso de fidelidade
       let progressSuffix = ''
       const lp: LoyaltyProgressResult = res.loyaltyProgress
-      if (lp.skipped === 'no-phone') {
-        progressSuffix = ' Cliente sem WhatsApp cadastrado — mensagem automática não enviada.'
-      } else if (lp.skipped === 'disabled') {
-        progressSuffix = ' Mensagem automática de progresso está desligada nas Configurações.'
-      } else if (lp.whatsappSent) {
-        progressSuffix =
-          lp.sendMethod === 'api'
-            ? ' Mensagem de progresso enviada via WhatsApp API Oficial. ✅'
-            : ' Mensagem de progresso pronta via link wa.me (WhatsApp Web). ✅'
-      } else if (lp.attempted) {
-        progressSuffix = ' Mensagem de progresso pendente — link wa.me disponível em Mensagens.'
+      if (lp) {
+        if (lp.internalOnly || lp.skipped === 'no-phone') {
+          progressSuffix =
+            ' Mensagem de progresso gerada internamente e salva no CRM (cliente sem WhatsApp). 📝'
+        } else if (lp.skipped === 'disabled') {
+          progressSuffix = ' Mensagem automática de progresso está desligada nas Configurações.'
+        } else if (lp.whatsappSent) {
+          progressSuffix =
+            lp.sendMethod === 'api'
+              ? ' Mensagem de progresso enviada via WhatsApp API Oficial. ✅'
+              : ' Mensagem de progresso pronta via link wa.me (WhatsApp Web). ✅'
+        } else if (lp.attempted) {
+          progressSuffix = ' Mensagem de progresso pendente — link wa.me disponível em Mensagens.'
+        }
       }
 
       toast({
@@ -1115,11 +1135,20 @@ export function ContactDrawer({
             ) : (
               <div className="relative pl-4 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#e2e8f0]">
                 {journeyEvents.map((evt) => {
+                  const meta = evt.metadata as Record<string, unknown> | undefined
+                  const isInternal =
+                    Boolean(meta?.isInternal) ||
+                    Boolean((evt as unknown as { mensagem_interna?: boolean }).mensagem_interna) ||
+                    (evt.channel === 'crm' && meta?.reason === 'sem_whatsapp')
+
                   const isWhatsApp =
                     evt.type === 'whatsapp_enviado' || evt.type === 'whatsapp_falha'
                   const isLevel = evt.type === 'nivel_alcancado'
                   const isCoupon = evt.type === 'cupom_aniversario'
                   const isPurchase = evt.type === 'compra'
+
+                  const hasCopied = copiedJourneyEventId === evt.id
+                  const messageText = evt.description || evt.title || ''
 
                   return (
                     <div key={evt.id} className="relative group flex gap-3 text-left">
@@ -1127,18 +1156,22 @@ export function ContactDrawer({
                       <span
                         className={cn(
                           'absolute -left-4 mt-0.5 grid size-5 place-items-center rounded-full border bg-white shadow-2xs',
-                          isWhatsApp
-                            ? 'border-emerald-400 text-emerald-600'
-                            : isLevel
-                              ? 'border-purple-400 text-purple-600'
-                              : isCoupon
-                                ? 'border-rose-400 text-rose-600'
-                                : isPurchase
-                                  ? 'border-amber-400 text-amber-600'
-                                  : 'border-blue-400 text-blue-600',
+                          isInternal
+                            ? 'border-amber-500 text-amber-700'
+                            : isWhatsApp
+                              ? 'border-emerald-400 text-emerald-600'
+                              : isLevel
+                                ? 'border-purple-400 text-purple-600'
+                                : isCoupon
+                                  ? 'border-rose-400 text-rose-600'
+                                  : isPurchase
+                                    ? 'border-amber-400 text-amber-600'
+                                    : 'border-blue-400 text-blue-600',
                         )}
                       >
-                        {isWhatsApp ? (
+                        {isInternal ? (
+                          <FileText className="size-2.5" />
+                        ) : isWhatsApp ? (
                           <MessageCircle className="size-2.5" />
                         ) : isLevel ? (
                           <Award className="size-2.5" />
@@ -1151,11 +1184,25 @@ export function ContactDrawer({
                         )}
                       </span>
 
-                      <div className="min-w-0 flex-1 rounded-md border border-[#e2e8f0] bg-white p-2.5 shadow-2xs">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-bold text-[11px] text-[#1c1c1e] truncate">
-                            {evt.title}
-                          </span>
+                      <div
+                        className={cn(
+                          'min-w-0 flex-1 rounded-md border p-2.5 shadow-2xs transition',
+                          isInternal
+                            ? 'border-amber-300 bg-amber-50/30'
+                            : 'border-[#e2e8f0] bg-white',
+                        )}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                            <span className="font-bold text-[11px] text-[#1c1c1e] truncate">
+                              {evt.title}
+                            </span>
+                            {isInternal && (
+                              <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 text-[8px] font-semibold">
+                                Gerada internamente
+                              </span>
+                            )}
+                          </div>
                           <span className="font-mono text-[9px] text-[#94a3b8] shrink-0">
                             {relativeTime(evt.created)}
                           </span>
@@ -1165,9 +1212,45 @@ export function ContactDrawer({
                             {evt.description}
                           </p>
                         )}
-                        <div className="mt-1.5 flex items-center justify-between text-[9px] text-[#94a3b8] font-mono border-t border-[#f1f5f9] pt-1">
-                          <span>Canal: {evt.channel || 'crm'}</span>
-                          <span>{datePt(evt.created)}</span>
+                        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-1 text-[9px] text-[#94a3b8] font-mono border-t border-[#f1f5f9] pt-1">
+                          <span className="flex items-center gap-1">
+                            <span>Canal: {evt.channel || 'crm'}</span>
+                            {isInternal && (
+                              <span className="text-amber-800 font-bold">· Sem WhatsApp</span>
+                            )}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            <span>{datePt(evt.created)}</span>
+                            {/* Botão Copiar Texto para mensagens da jornada (especialmente internas de progresso) */}
+                            {Boolean(evt.description) && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyJourneyText(evt.id, messageText)}
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-semibold transition active:scale-95 cursor-pointer',
+                                  hasCopied
+                                    ? 'bg-emerald-600 text-white'
+                                    : isInternal
+                                      ? 'bg-[#8c531b] text-white hover:bg-[#724214]'
+                                      : 'bg-[#f1f5f9] text-[#334155] hover:bg-[#e2e8f0]',
+                                )}
+                                title="Copiar texto da mensagem"
+                              >
+                                {hasCopied ? (
+                                  <>
+                                    <Check className="size-2.5" />
+                                    <span>Copiado!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="size-2.5" />
+                                    <span>Copiar Texto</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

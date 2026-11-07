@@ -3,9 +3,12 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   ExternalLink,
+  FileText,
   Filter,
   Flame,
   Info,
@@ -80,6 +83,22 @@ export default function Messages() {
   // Modal de envio em lote / campanha
   const [batchModalOpen, setBatchModalOpen] = useState(false)
   const [selectedBatchContactIds, setSelectedBatchContactIds] = useState<string[]>([])
+
+  // Estado para feedback de cópia de mensagem (por id do evento)
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null)
+
+  const handleCopyMessageText = async (eventId: string, text: string) => {
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedEventId(eventId)
+      setTimeout(() => {
+        setCopiedEventId((curr) => (curr === eventId ? null : curr))
+      }, 2000)
+    } catch (err) {
+      console.error('Erro ao copiar texto:', err)
+    }
+  }
 
   // Carregar status do conector
   const loadConnector = () => {
@@ -895,6 +914,14 @@ export default function Messages() {
                 {activeConversation?.events && activeConversation.events.length > 0 ? (
                   <div className="relative pl-5 sm:pl-6 space-y-5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#e2e8f0]">
                     {activeConversation.events.map((evt) => {
+                      const meta = evt.metadata as Record<string, unknown> | undefined
+                      const isInternal =
+                        Boolean(meta?.isInternal) ||
+                        Boolean(
+                          (evt as unknown as { mensagem_interna?: boolean }).mensagem_interna,
+                        ) ||
+                        (evt.channel === 'crm' && meta?.reason === 'sem_whatsapp')
+
                       const isZapSent = evt.type === 'whatsapp_enviado'
                       const isZapFail = evt.type === 'whatsapp_falha'
                       const isCoupon = evt.type === 'cupom_aniversario'
@@ -904,8 +931,15 @@ export default function Messages() {
                       let iconColor = 'border-emerald-500 text-emerald-600'
                       let cardBorder = 'border-[#e2e8f0]'
                       let badge = isZapSent ? 'WhatsApp API Oficial' : 'WhatsApp'
+                      let badgeStyle = 'bg-[#f1f5f9] text-[#475569] border border-transparent'
 
-                      if (isCoupon) {
+                      if (isInternal) {
+                        iconColor = 'border-amber-500 text-amber-700'
+                        cardBorder = 'border-amber-200 bg-amber-50/20'
+                        badge = 'Gerada internamente — cliente sem WhatsApp'
+                        badgeStyle =
+                          'bg-amber-100/90 text-amber-900 border border-amber-300 font-semibold'
+                      } else if (isCoupon) {
                         iconColor = 'border-rose-400 text-rose-600'
                         badge = '🎂 Aniversário'
                       } else if (isReengagement) {
@@ -919,6 +953,9 @@ export default function Messages() {
                         badge = 'WhatsApp Web (Link)'
                       }
 
+                      const hasCopied = copiedEventId === evt.id
+                      const messageText = evt.description || evt.title || ''
+
                       return (
                         <div key={evt.id} className="relative group flex gap-3 text-left">
                           {/* Marcador na linha */}
@@ -928,7 +965,9 @@ export default function Messages() {
                               iconColor,
                             )}
                           >
-                            {isCoupon ? (
+                            {isInternal ? (
+                              <FileText className="size-3" />
+                            ) : isCoupon ? (
                               <Ticket className="size-3" />
                             ) : isReengagement ? (
                               <Clock className="size-3" />
@@ -948,12 +987,17 @@ export default function Messages() {
                               cardBorder,
                             )}
                           >
-                            <div className="flex items-center justify-between gap-2 border-b border-[#f1f5f9] pb-2">
-                              <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f1f5f9] pb-2">
+                              <div className="flex flex-wrap items-center gap-2 min-w-0">
                                 <span className="font-extrabold text-xs text-[#1c1c1e]">
                                   {evt.title}
                                 </span>
-                                <span className="rounded-full bg-[#f1f5f9] px-2 py-0.5 text-[9px] font-mono text-[#475569]">
+                                <span
+                                  className={cn(
+                                    'rounded-full px-2 py-0.5 text-[9px] font-mono shrink-0',
+                                    badgeStyle,
+                                  )}
+                                >
                                   {badge}
                                 </span>
                               </div>
@@ -968,10 +1012,17 @@ export default function Messages() {
                               </div>
                             )}
 
-                            {/* Rodapé com detalhes de entrega e fallback */}
-                            <div className="mt-3 flex items-center justify-between text-[10px] text-[#64748b]">
-                              <span className="font-mono text-[9px] flex items-center gap-1.5">
-                                <span>Canal: {evt.channel || 'whatsapp'}</span>
+                            {/* Rodapé com detalhes de entrega, botão Copiar Texto e fallback */}
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#64748b]">
+                              <span className="font-mono text-[9px] flex items-center gap-1.5 flex-wrap">
+                                <span>
+                                  Canal: {evt.channel || (isInternal ? 'crm' : 'whatsapp')}
+                                </span>
+                                {isInternal && (
+                                  <span className="text-amber-800 font-bold">
+                                    · Disponível no CRM (sem WhatsApp)
+                                  </span>
+                                )}
                                 {isZapSent && (
                                   <span className="text-emerald-700 font-bold">
                                     · Enviado via API
@@ -984,23 +1035,52 @@ export default function Messages() {
                                 )}
                               </span>
 
-                              {activeContact.phone && (
-                                <a
-                                  href={`https://wa.me/${activeContact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                    evt.description
-                                      ? evt.description.replace(/^[\s\S]*?"([\s\S]*?)"$/, '$1')
-                                      : evt.title,
-                                  )}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800"
+                              <div className="flex items-center gap-2">
+                                {/* Botão Copiar Texto — presente em mensagens internas e útil também para qualquer mensagem */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyMessageText(evt.id, messageText)}
+                                  className={cn(
+                                    'inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition active:scale-95 cursor-pointer',
+                                    hasCopied
+                                      ? 'bg-emerald-600 text-white'
+                                      : isInternal
+                                        ? 'bg-[#8c531b] text-white hover:bg-[#724214] shadow-2xs'
+                                        : 'bg-[#f1f5f9] text-[#334155] hover:bg-[#e2e8f0]',
+                                  )}
+                                  title="Copiar texto da mensagem para a área de transferência"
                                 >
-                                  {isZapSent
-                                    ? 'Abrir conversa no WhatsApp Web'
-                                    : 'Disparar via WhatsApp Web'}{' '}
-                                  <ExternalLink className="size-2.5" />
-                                </a>
-                              )}
+                                  {hasCopied ? (
+                                    <>
+                                      <Check className="size-3" />
+                                      <span>Copiado!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="size-3" />
+                                      <span>Copiar Texto</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                {!isInternal && activeContact.phone && (
+                                  <a
+                                    href={`https://wa.me/${activeContact.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                                      evt.description
+                                        ? evt.description.replace(/^[\s\S]*?"([\s\S]*?)"$/, '$1')
+                                        : evt.title,
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800"
+                                  >
+                                    {isZapSent
+                                      ? 'Abrir conversa no WhatsApp Web'
+                                      : 'Disparar via WhatsApp Web'}{' '}
+                                    <ExternalLink className="size-2.5" />
+                                  </a>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
