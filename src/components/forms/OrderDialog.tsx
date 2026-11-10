@@ -391,6 +391,7 @@ export function OrderDialog({
                 onChange={(e) => setStage(e.target.value as OrderStage)}
                 className="w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500"
               >
+                <option value="orcamento">Orçamento</option>
                 <option value="pedido_feito">Pedido feito</option>
                 <option value="pedido_enviado">Pedido enviado</option>
                 <option value="pedido_recebido">Pedido recebido</option>

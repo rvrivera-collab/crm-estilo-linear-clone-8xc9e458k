@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-07T10:21:51.742Z",
+  "generatedAt": "2026-11-10T17:36:47.229Z",
   "collections": [
     {
       "name": "users",
@@ -1291,6 +1291,7 @@
           "required": true,
           "system": false,
           "selectValues": [
+            "orcamento",
             "pedido_feito",
             "pedido_enviado",
             "pedido_recebido",

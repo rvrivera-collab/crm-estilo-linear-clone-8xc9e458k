@@ -537,6 +537,7 @@ export async function resendLoyaltyProgress(contactId: string) {
 }
 
 export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
+  orcamento: 'Orçamento',
   pedido_feito: 'Pedido feito',
   pedido_enviado: 'Pedido enviado',
   pedido_recebido: 'Pedido recebido',

@@ -208,6 +208,7 @@ export interface Purchase extends RecordModel {
 }
 
 export type OrderStage =
+  | 'orcamento'
   | 'pedido_feito'
   | 'pedido_enviado'
   | 'pedido_recebido'

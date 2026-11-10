@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Copy,
   ExternalLink,
@@ -62,6 +63,17 @@ interface OrderFunnelColumn {
 }
 
 const ORDER_COLUMNS: OrderFunnelColumn[] = [
+  {
+    key: 'orcamento',
+    label: 'Orçamento',
+    subtitle: 'Cotação em levantamento, aguardando aprovação antes de virar pedido',
+    icon: ClipboardList,
+    accentBg: 'bg-[#f1e6d2]',
+    accentBorder: 'border-[#d9c39c]',
+    accentBadge: 'bg-[#f3dfae] text-[#6b4d0e] border border-[#d9b96a]',
+    textColor: 'text-[#7a5a17]',
+    columnBg: 'bg-[#faf5ea]',
+  },
   {
     key: 'pedido_feito',
     label: 'Pedido feito',
@@ -204,6 +216,7 @@ export default function Orders() {
   // Agrupados por coluna
   const ordersByStage = useMemo(() => {
     const map: Record<OrderStage, Order[]> = {
+      orcamento: [],
       pedido_feito: [],
       pedido_enviado: [],
       pedido_recebido: [],

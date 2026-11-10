@@ -913,7 +913,7 @@ export function ContactDrawer({
                         )}
                       </div>
                       <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] font-bold text-slate-800 border border-slate-200">
-                        {ORDER_STAGE_LABELS[ord.stage] || ord.stage}
+                        {ORDER_STAGE_LABELS[ord.stage] ?? ord.stage}
                       </span>
                     </div>
 

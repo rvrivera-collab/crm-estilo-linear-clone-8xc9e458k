@@ -10,6 +10,7 @@ export function formatDateFull(date: Date): string {
 
 /** Estágios a partir de "Pedido recebido" (inclusive): o contador de envio para. */
 const DELIVERED_STAGES: OrderStage[] = ['pedido_recebido', 'pedir_avaliacao_google', 'concluido']
+// "orcamento" (Orçamento) ainda não é pedido: não conta como entregue nem como enviado.
 
 /**
  * Número do dia no calendário LOCAL do navegador. Usa os componentes locais
