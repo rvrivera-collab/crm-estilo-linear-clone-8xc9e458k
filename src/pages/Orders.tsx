@@ -48,6 +48,7 @@ import {
 } from '@/types/crm'
 import { useToast } from '@/hooks/use-toast'
 import { isSameLocalDay } from '@/lib/order-shipping'
+import { orderTotalWithShipping } from '@/lib/order-total'
 import { cn } from '@/lib/utils'
 
 interface OrderFunnelColumn {
@@ -260,7 +261,7 @@ export default function Orders() {
 
   // Total negociado
   const totalValue = useMemo(() => {
-    return orders.reduce((acc, o) => acc + (Number(o.value) || 0), 0)
+    return orders.reduce((acc, o) => acc + orderTotalWithShipping(o), 0)
   }, [orders])
 
   // Drag and drop handler
@@ -423,7 +424,7 @@ export default function Orders() {
           {ORDER_COLUMNS.map((col) => {
             const Icon = col.icon
             const items = ordersByStage[col.key] || []
-            const columnTotal = items.reduce((sum, o) => sum + (Number(o.value) || 0), 0)
+            const columnTotal = items.reduce((sum, o) => sum + orderTotalWithShipping(o), 0)
             const isOver = overStage === col.key
 
             return (
@@ -688,10 +689,18 @@ export default function Orders() {
 
                             {/* Valor e Data */}
                             <div className="mt-2.5 flex items-center justify-between text-[10px] font-mono border-t border-[#f1f5f9] pt-2">
-                              <span className="font-bold text-[#1c1c1e]">
-                                {money.format(order.value || 0)}
+                              <span className="inline-flex items-baseline gap-1.5 min-w-0">
+                                <span className="font-bold text-[#1c1c1e]">
+                                  {money.format(orderTotalWithShipping(order))}
+                                </span>
+                                {(Number(order.shipping_fee) || 0) > 0 && (
+                                  <span className="text-[8.5px] text-[#8c7865] whitespace-nowrap">
+                                    (produtos {money.format(Number(order.value) || 0)} + frete{' '}
+                                    {money.format(Number(order.shipping_fee) || 0)})
+                                  </span>
+                                )}
                               </span>
-                              <span className="text-[#94a3b8] text-[9px]">
+                              <span className="text-[#94a3b8] text-[9px] shrink-0 ml-1">
                                 {relativeTime(order.created)}
                               </span>
                             </div>

@@ -64,6 +64,7 @@ import { EmailComposerModal } from '@/components/forms/EmailComposerModal'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import { OrderDialog } from '@/components/forms/OrderDialog'
 import { useToast } from '@/hooks/use-toast'
+import { orderTotalWithShipping } from '@/lib/order-total'
 import { cn } from '@/lib/utils'
 
 export function ContactDrawer({
@@ -919,7 +920,7 @@ export function ContactDrawer({
 
                     <div className="mt-2 flex items-center justify-between text-[10px] font-mono border-t border-[#f1f5f9] pt-1.5">
                       <span className="font-bold text-[#1c1c1e]">
-                        {money.format(ord.value || 0)}
+                        {money.format(orderTotalWithShipping(ord))}
                       </span>
                       {ord.google_review_requested ? (
                         <span className="text-purple-700 font-semibold text-[9px]">

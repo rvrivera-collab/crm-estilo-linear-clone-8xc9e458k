@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-15T15:54:28.130Z",
+  "generatedAt": "2026-11-15T15:59:17.190Z",
   "collections": [
     {
       "name": "users",
@@ -1358,6 +1358,12 @@
         {
           "name": "items",
           "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "shipping_fee",
+          "type": "number",
           "required": false,
           "system": false
         }

@@ -457,6 +457,7 @@ export async function createOrder(data: {
   items_description?: string
   items?: OrderItem[]
   value?: number
+  shipping_fee?: number
   stage?: OrderStage
   tracking_code?: string
   notes?: string
@@ -472,6 +473,7 @@ export async function createOrder(data: {
       items_description: data.items_description || '',
       items: data.items || [],
       value: data.value || 0,
+      shipping_fee: data.shipping_fee || 0,
       stage,
       tracking_code: data.tracking_code || '',
       // Data do envio: registrada no momento em que o rastreio entra no pedido
@@ -492,7 +494,12 @@ export async function createOrder(data: {
       title: `🛍️ Pedido Feito: ${data.title}`,
       description: `Novo pedido registrado no valor de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.value || 0)}.${data.items_description ? ` Itens: ${data.items_description}` : ''}`,
       channel: 'pedidos',
-      metadata: { orderId: newOrder.id, value: data.value, stage },
+      metadata: {
+        orderId: newOrder.id,
+        value: data.value,
+        shippingFee: data.shipping_fee || 0,
+        stage,
+      },
     })
   } catch {
     /* intentionally ignored */
@@ -600,6 +607,14 @@ export async function updateOrder(id: string, data: Partial<Order>) {
       if (data.value !== undefined && Number(data.value) !== Number(previous.value)) {
         changedSummary.push(
           `Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.value) || 0)}`,
+        )
+      }
+      if (
+        data.shipping_fee !== undefined &&
+        Number(data.shipping_fee || 0) !== Number(previous.shipping_fee || 0)
+      ) {
+        changedSummary.push(
+          `Frete: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.shipping_fee) || 0)}`,
         )
       }
       if (data.tracking_code && data.tracking_code !== previous.tracking_code) {

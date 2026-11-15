@@ -56,6 +56,7 @@ export function OrderDialog({
   const [itemsDescription, setItemsDescription] = useState('')
   const [items, setItems] = useState<OrderItem[]>([])
   const [value, setValue] = useState('')
+  const [shippingFee, setShippingFee] = useState('')
   const [stage, setStage] = useState<OrderStage>(presetStage)
   const [trackingCode, setTrackingCode] = useState('')
   const [notes, setNotes] = useState('')
@@ -86,6 +87,7 @@ export function OrderDialog({
         const loadedItems = Array.isArray(order.items) ? order.items : []
         setItems(loadedItems)
         setValue(order.value !== undefined && order.value !== null ? String(order.value) : '')
+        setShippingFee(order.shipping_fee ? String(order.shipping_fee).replace('.', ',') : '')
         setTrackingCode(order.tracking_code || '')
         setNotes(order.notes || '')
         setRegisterPurchase(false)
@@ -96,6 +98,7 @@ export function OrderDialog({
         setItemsDescription('')
         setItems([])
         setValue('')
+        setShippingFee('')
         setTrackingCode('')
         setNotes('')
         setRegisterPurchase(true)
@@ -128,6 +131,14 @@ export function OrderDialog({
     }
   }
 
+  // Frete informado (0 quando vazio)
+  const parsedShippingFee = (() => {
+    const raw = shippingFee.trim()
+    if (!raw) return 0
+    const n = parseFloat(raw.replace(',', '.'))
+    return isNaN(n) || n < 0 ? 0 : n
+  })()
+
   // Atualizar valor total e gerar título/resumo automático se o usuário estiver montando itens
   const handleItemsChange = (newItems: OrderItem[]) => {
     setItems(newItems)
@@ -136,8 +147,9 @@ export function OrderDialog({
       0,
     )
     if (newItems.length > 0) {
-      // Atualiza o valor total automaticamente
-      setValue(newTotal > 0 ? newTotal.toFixed(2).replace('.', ',') : '')
+      // Atualiza o valor total automaticamente (produtos + frete)
+      const totalComFrete = newTotal + parsedShippingFee
+      setValue(totalComFrete > 0 ? totalComFrete.toFixed(2).replace('.', ',') : '')
 
       // Se o título do pedido estiver vazio ou se já era gerado a partir dos itens,
       // sugere automaticamente um resumo limpo (ex: "2x Cápsulas + 1x Café 250g")
@@ -147,6 +159,25 @@ export function OrderDialog({
       if (!title.trim() || title.includes('x ')) {
         setTitle(summaryText)
       }
+    }
+  }
+
+  // Ao alterar o frete, recalcula o total a partir dos itens (quando houver itens montados)
+  const handleShippingFeeChange = (raw: string) => {
+    setShippingFee(raw)
+    const fee = (() => {
+      const t = raw.trim()
+      if (!t) return 0
+      const n = parseFloat(t.replace(',', '.'))
+      return isNaN(n) || n < 0 ? 0 : n
+    })()
+    if (items.length > 0) {
+      const itemsTotal = items.reduce(
+        (sum, item) => sum + (item.total || item.unit_price * item.quantity),
+        0,
+      )
+      const total = itemsTotal + fee
+      setValue(total > 0 ? total.toFixed(2).replace('.', ',') : '')
     }
   }
 
@@ -171,7 +202,15 @@ export function OrderDialog({
       return
     }
 
-    const numValue = value ? parseFloat(value.replace(',', '.')) : 0
+    let numValue = value ? parseFloat(value.replace(',', '.')) : 0
+    if (items.length > 0) {
+      // Garante que o total persistido seja sempre produtos + frete
+      const itemsTotal = items.reduce(
+        (sum, item) => sum + (item.total || item.unit_price * item.quantity),
+        0,
+      )
+      numValue = itemsTotal + parsedShippingFee
+    }
     setSaving(true)
     try {
       // Se não preencheu items_description explicitamente mas tem items estruturados,
@@ -187,6 +226,7 @@ export function OrderDialog({
           items_description: finalItemsDescription,
           items: items,
           value: isNaN(numValue) ? 0 : numValue,
+          shipping_fee: parsedShippingFee,
           stage,
           tracking_code: trackingCode.trim(),
           notes: notes.trim(),
@@ -206,6 +246,7 @@ export function OrderDialog({
           items_description: finalItemsDescription,
           items: items,
           value: isNaN(numValue) ? 0 : numValue,
+          shipping_fee: parsedShippingFee,
           stage,
           tracking_code: trackingCode.trim(),
           notes: notes.trim(),
@@ -355,7 +396,7 @@ export function OrderDialog({
             />
           </div>
 
-          {/* Valor e Estágio */}
+          {/* Valor, Frete e Estágio */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -364,7 +405,10 @@ export function OrderDialog({
                 </label>
                 {items.length > 0 && (
                   <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5">
-                    <Calculator className="size-2.5" /> Calculado dos itens
+                    <Calculator className="size-2.5" />{' '}
+                    {parsedShippingFee > 0
+                      ? `Itens + frete ${parsedShippingFee.toFixed(2).replace('.', ',')}`
+                      : 'Calculado dos itens'}
                   </span>
                 )}
               </div>
@@ -374,10 +418,11 @@ export function OrderDialog({
                 </span>
                 <input
                   type="text"
+                  inputMode="decimal"
                   placeholder="85,00"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
+                  className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
                 />
               </div>
             </div>
@@ -401,18 +446,39 @@ export function OrderDialog({
             </div>
           </div>
 
-          {/* Código de Rastreio */}
-          <div>
-            <label className="block text-[11px] font-bold text-[#475569] mb-1">
-              Código de Rastreio / Envio (opcional)
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: BR123456789SP ou Motoboy / Balcão"
-              value={trackingCode}
-              onChange={(e) => setTrackingCode(e.target.value)}
-              className="w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono text-[11px]"
-            />
+          {/* Frete e Código de Rastreio */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                Frete (R$) — opcional
+              </label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1.5 text-[#94a3b8] font-bold text-xs">
+                  R$
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={shippingFee}
+                  onChange={(e) => handleShippingFeeChange(e.target.value)}
+                  className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-[#475569] mb-1">
+                Código de Rastreio / Envio (opcional)
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: BR123456789SP ou Motoboy / Balcão"
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value)}
+                className="w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono text-[11px]"
+              />
+            </div>
           </div>
 
           {/* Observações */}
