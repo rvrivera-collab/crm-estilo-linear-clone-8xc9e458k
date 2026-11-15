@@ -36,15 +36,6 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         <span className="font-bold text-[#2b1c13]">{current[1]}</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="hidden items-center gap-1.5 text-[9px] text-[#8c7865] lg:flex">
-          <kbd className="rounded border border-[#d6c7b6] bg-[#f3ece0] px-1.5 py-0.5 font-mono text-[#5c4735]">
-            G
-          </kbd>
-          <span>então</span>
-          <kbd className="rounded border border-[#d6c7b6] bg-[#f3ece0] px-1.5 py-0.5 font-mono text-[#5c4735]">
-            A/D/P/R/N/C/E
-          </kbd>
-        </div>
         {pathname !== '/ask' && (
           <button
             onClick={() => setOpen(true)}
