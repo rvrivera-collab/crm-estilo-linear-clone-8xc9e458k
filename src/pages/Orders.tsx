@@ -31,6 +31,7 @@ import { OrderDialog } from '@/components/forms/OrderDialog'
 import { ContactDialog } from '@/components/forms/ContactDialog'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import { OrderShippingStatus } from '@/components/OrderShippingStatus'
+import { OrderTrackingInline } from '@/components/OrderTrackingInline'
 import {
   deleteOrder,
   markGoogleReviewRequested,
@@ -516,6 +517,8 @@ export default function Orders() {
                       const contact = order.expand?.contact
                       const loyalty = contact ? getLoyaltyLevel(contact.purchase_count || 0) : null
                       const isGoogleStage = order.stage === 'pedir_avaliacao_google'
+                      // Orçamento ainda não virou pedido: sem edição de rastreio no card
+                      const isQuoteStage = order.stage === 'orcamento'
 
                       return (
                         <article
@@ -616,6 +619,12 @@ export default function Orders() {
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
+                              {/* Edição inline do rastreio: direto no card, sem abrir o pedido.
+                                  Não aparece na coluna Orçamento (pedido ainda não enviado). */}
+                              {!isQuoteStage && (
+                                <OrderTrackingInline order={order} onSaved={refresh} />
+                              )}
+
                               {/* Link Correios Empresas (portal de login) — acima do rastreio */}
                               <a
                                 href="https://empresas.correios.com.br/#/login"
