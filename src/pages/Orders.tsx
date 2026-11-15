@@ -23,10 +23,12 @@ import {
   Trash2,
   Truck,
   User,
+  UserPlus,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useCrm } from '@/contexts/CrmContext'
 import { OrderDialog } from '@/components/forms/OrderDialog'
+import { ContactDialog } from '@/components/forms/ContactDialog'
 import { SendWhatsAppModal } from '@/components/SendWhatsAppModal'
 import { OrderShippingStatus } from '@/components/OrderShippingStatus'
 import {
@@ -170,6 +172,7 @@ export default function Orders() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [presetStage, setPresetStage] = useState<OrderStage>('pedido_feito')
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [contactDialogOpen, setContactDialogOpen] = useState(false)
 
   // Drag-and-drop state
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null)
@@ -378,16 +381,25 @@ export default function Orders() {
               <RefreshCw className="size-3.5" />
             </button>
 
-            <button
-              onClick={() => {
-                setEditingOrder(null)
-                setPresetStage('pedido_feito')
-                setDialogOpen(true)
-              }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#724113] transition"
-            >
-              <Plus className="size-3.5" /> Novo Pedido
-            </button>
+            <div className="flex flex-col items-stretch gap-1.5">
+              <button
+                onClick={() => {
+                  setEditingOrder(null)
+                  setPresetStage('pedido_feito')
+                  setDialogOpen(true)
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-[#8c531b] border border-[#6f3f12] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#724113] transition"
+              >
+                <Plus className="size-3.5" /> Novo Pedido
+              </button>
+              <button
+                type="button"
+                onClick={() => setContactDialogOpen(true)}
+                className="inline-flex min-h-9 sm:min-h-0 items-center justify-center gap-1.5 rounded-md border border-dashed border-[#8c531b] bg-[#fbf9f5] px-3.5 py-1.5 text-xs font-semibold text-[#8c531b] shadow-2xs hover:bg-[#f3ece0] transition"
+              >
+                <UserPlus className="size-3.5" /> Novo Cliente
+              </button>
+            </div>
           </div>
         </div>
 
@@ -819,6 +831,9 @@ export default function Orders() {
         order={editingOrder}
         presetStage={presetStage}
       />
+
+      {/* Dialog para cadastrar novo cliente (mesmo formulário da aba Clientes) */}
+      <ContactDialog open={contactDialogOpen} onOpenChange={setContactDialogOpen} contact={null} />
 
       {/* Modal de Disparo WhatsApp para Avaliação do Google */}
       <SendWhatsAppModal
