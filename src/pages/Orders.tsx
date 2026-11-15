@@ -60,6 +60,11 @@ interface OrderFunnelColumn {
   accentBadge: string
   textColor: string
   columnBg: string
+  // Cores de texto do cabeçalho (subtítulo e totais) — garantem contraste
+  // quando o header da coluna tem fundo escuro (ex.: vinho e vermelho)
+  subtitleColor: string
+  totalColor: string
+  totalValueColor: string
 }
 
 const ORDER_COLUMNS: OrderFunnelColumn[] = [
@@ -68,22 +73,30 @@ const ORDER_COLUMNS: OrderFunnelColumn[] = [
     label: 'Orçamento',
     subtitle: 'Cotação em levantamento, aguardando aprovação antes de virar pedido',
     icon: ClipboardList,
-    accentBg: 'bg-[#f1e6d2]',
-    accentBorder: 'border-[#d9c39c]',
-    accentBadge: 'bg-[#f3dfae] text-[#6b4d0e] border border-[#d9b96a]',
-    textColor: 'text-[#7a5a17]',
-    columnBg: 'bg-[#faf5ea]',
+    // VINHO (bordô): momento crítico — orçamento aguardando aprovação
+    accentBg: 'bg-[#5c1a24]',
+    accentBorder: 'border-[#7a2330]',
+    accentBadge: 'bg-white/90 text-[#5c1a24] border border-[#7a2330]',
+    textColor: 'text-[#f7dfe2]',
+    columnBg: 'bg-[#f7ecee]',
+    subtitleColor: 'text-[#dcb4bb]',
+    totalColor: 'text-[#dcb4bb]',
+    totalValueColor: 'text-white',
   },
   {
     key: 'pedido_feito',
-    label: 'Pedido feito',
+    label: 'Pedido feito (pago)',
     subtitle: 'Pedido recebido, separando cafés frescos e calibrando moagem',
     icon: ShoppingBag,
-    accentBg: 'bg-[#f7efe0]',
-    accentBorder: 'border-[#e8d5be]',
-    accentBadge: 'bg-amber-100 text-amber-900 border border-amber-300',
-    textColor: 'text-[#633a10]',
-    columnBg: 'bg-[#fbf7f0]',
+    // VERMELHO vivo: momento crítico — pedido pago, em separação
+    accentBg: 'bg-[#991b1b]',
+    accentBorder: 'border-[#b91c1c]',
+    accentBadge: 'bg-white/90 text-[#991b1b] border border-[#b91c1c]',
+    textColor: 'text-[#fee2e2]',
+    columnBg: 'bg-[#faefee]',
+    subtitleColor: 'text-[#f0b9b9]',
+    totalColor: 'text-[#f0b9b9]',
+    totalValueColor: 'text-white',
   },
   {
     key: 'pedido_enviado',
@@ -95,6 +108,9 @@ const ORDER_COLUMNS: OrderFunnelColumn[] = [
     accentBadge: 'bg-blue-100 text-blue-900 border border-blue-300',
     textColor: 'text-[#1d4f8f]',
     columnBg: 'bg-[#f5f8fc]',
+    subtitleColor: 'text-[#64748b]',
+    totalColor: 'text-[#64748b]',
+    totalValueColor: 'text-[#1c1c1e]',
   },
   {
     key: 'pedido_recebido',
@@ -106,17 +122,23 @@ const ORDER_COLUMNS: OrderFunnelColumn[] = [
     accentBadge: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
     textColor: 'text-[#126343]',
     columnBg: 'bg-[#f3f9f6]',
+    subtitleColor: 'text-[#64748b]',
+    totalColor: 'text-[#64748b]',
+    totalValueColor: 'text-[#1c1c1e]',
   },
   {
     key: 'pedir_avaliacao_google',
     label: 'Pedir avaliação do Google',
-    subtitle: 'Acolher a experiência e convidar com carinho para avaliar no Google',
+    subtitle: 'Acolher a experiência e convidar para avaliar no Google',
     icon: Star,
     accentBg: 'bg-[#efe9fa]',
     accentBorder: 'border-[#decff7]',
     accentBadge: 'bg-purple-100 text-purple-900 border border-purple-300',
     textColor: 'text-[#5b299e]',
     columnBg: 'bg-[#f8f5fc]',
+    subtitleColor: 'text-[#64748b]',
+    totalColor: 'text-[#64748b]',
+    totalValueColor: 'text-[#1c1c1e]',
   },
   {
     key: 'concluido',
@@ -128,6 +150,9 @@ const ORDER_COLUMNS: OrderFunnelColumn[] = [
     accentBadge: 'bg-[#dfd3c3] text-[#4d3a2b] border border-[#cbbca9]',
     textColor: 'text-[#3d2c1e]',
     columnBg: 'bg-[#f5ede2]',
+    subtitleColor: 'text-[#64748b]',
+    totalColor: 'text-[#64748b]',
+    totalValueColor: 'text-[#1c1c1e]',
   },
 ]
 
@@ -446,13 +471,20 @@ export default function Orders() {
                     </span>
                   </div>
 
-                  <p className="mt-1 text-[10px] text-[#64748b] leading-tight line-clamp-2">
+                  <p
+                    className={cn('mt-1 text-[10px] leading-tight line-clamp-2', col.subtitleColor)}
+                  >
                     {col.subtitle}
                   </p>
 
-                  <div className="mt-2 pt-1 border-t border-black/5 flex items-center justify-between text-[10px] font-mono text-[#64748b]">
+                  <div
+                    className={cn(
+                      'mt-2 pt-1 border-t border-black/5 flex items-center justify-between text-[10px] font-mono',
+                      col.totalColor,
+                    )}
+                  >
                     <span>Total coluna:</span>
-                    <strong className="text-[#1c1c1e]">{money.format(columnTotal)}</strong>
+                    <strong className={col.totalValueColor}>{money.format(columnTotal)}</strong>
                   </div>
                 </header>
 
