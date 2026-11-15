@@ -397,7 +397,7 @@ export function ContactDialog({
                   onChange={(e) => setForm({ ...form, intensity_preference: e.target.value })}
                 />
               </Field>
-              <Field label="Como conheceu a cafeteria">
+              <Field label="Como ele conheceu o café">
                 <input
                   placeholder="Ex: Indicação de amigo, Instagram, Passou na frente..."
                   value={form.acquisition_channel}
