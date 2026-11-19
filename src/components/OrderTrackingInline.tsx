@@ -88,15 +88,11 @@ export function OrderTrackingInline({ order, onSaved }: OrderTrackingInlineProps
           e.preventDefault()
           setEditing(true)
         }}
-        title={
-          currentCode
-            ? 'Editar o código de rastreio direto no card'
-            : 'Adicionar o código de rastreio direto no card'
-        }
-        className="inline-flex min-h-[26px] w-fit items-center gap-1 rounded border border-dashed border-blue-300/80 bg-blue-50/60 px-2 py-0.5 text-[10px] font-semibold text-blue-800 transition hover:border-blue-400 hover:bg-blue-100/80 active:bg-blue-100"
+        title={currentCode ? 'Editar rastreio' : 'Adicionar rastreio'}
+        aria-label={currentCode ? 'Editar rastreio' : 'Adicionar rastreio'}
+        className="inline-flex size-8 w-fit shrink-0 items-center justify-center rounded border border-dashed border-blue-300/80 bg-blue-50/60 text-blue-800 transition hover:border-blue-400 hover:bg-blue-100/80 active:bg-blue-100"
       >
-        <Pencil className="size-2.5 shrink-0" />
-        <span>{currentCode ? 'Editar rastreio' : 'Adicionar rastreio'}</span>
+        <Pencil className="size-3.5 shrink-0" />
       </button>
     )
   }
