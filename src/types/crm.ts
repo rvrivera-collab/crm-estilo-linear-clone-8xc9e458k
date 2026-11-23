@@ -234,6 +234,8 @@ export interface Order extends RecordModel {
   value?: number
   /** Valor do frete (taxa de entrega), opcional — tratado como 0 quando ausente. */
   shipping_fee?: number
+  /** Desconto em R$ aplicado no valor final (produtos + frete − desconto), opcional — 0 quando ausente. */
+  discount?: number
   stage: OrderStage
   tracking_code?: string
   /** Dia em que o rastreio foi adicionado (data do envio). */

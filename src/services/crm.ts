@@ -458,6 +458,7 @@ export async function createOrder(data: {
   items?: OrderItem[]
   value?: number
   shipping_fee?: number
+  discount?: number
   stage?: OrderStage
   tracking_code?: string
   notes?: string
@@ -474,6 +475,7 @@ export async function createOrder(data: {
       items: data.items || [],
       value: data.value || 0,
       shipping_fee: data.shipping_fee || 0,
+      discount: data.discount || 0,
       stage,
       tracking_code: data.tracking_code || '',
       // Data do envio: registrada no momento em que o rastreio entra no pedido
@@ -498,6 +500,7 @@ export async function createOrder(data: {
         orderId: newOrder.id,
         value: data.value,
         shippingFee: data.shipping_fee || 0,
+        discount: data.discount || 0,
         stage,
       },
     })
@@ -615,6 +618,14 @@ export async function updateOrder(id: string, data: Partial<Order>) {
       ) {
         changedSummary.push(
           `Frete: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.shipping_fee) || 0)}`,
+        )
+      }
+      if (
+        data.discount !== undefined &&
+        Number(data.discount || 0) !== Number(previous.discount || 0)
+      ) {
+        changedSummary.push(
+          `Desconto: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.discount) || 0)}`,
         )
       }
       if (data.tracking_code && data.tracking_code !== previous.tracking_code) {

@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast'
 import { OrderItemsManager } from './OrderItemsManager'
 import { ContactAutocomplete } from './ContactAutocomplete'
 import { cn } from '@/lib/utils'
+import { computeOrderTotals, parseMoneyInput } from '@/lib/order-total'
 
 interface OrderDialogProps {
   open: boolean
@@ -57,6 +58,7 @@ export function OrderDialog({
   const [items, setItems] = useState<OrderItem[]>([])
   const [value, setValue] = useState('')
   const [shippingFee, setShippingFee] = useState('')
+  const [discount, setDiscount] = useState('')
   const [stage, setStage] = useState<OrderStage>(presetStage)
   const [trackingCode, setTrackingCode] = useState('')
   const [notes, setNotes] = useState('')
@@ -86,8 +88,13 @@ export function OrderDialog({
         setItemsDescription(order.items_description || '')
         const loadedItems = Array.isArray(order.items) ? order.items : []
         setItems(loadedItems)
-        setValue(order.value !== undefined && order.value !== null ? String(order.value) : '')
-        setShippingFee(order.shipping_fee ? String(order.shipping_fee).replace('.', ',') : '')
+        const savedFee = Number(order.shipping_fee) || 0
+        const savedDiscount = Number(order.discount) || 0
+        // O valor salvo é o total final: o campo de produtos volta a ser total − frete + desconto
+        const savedProducts = Math.max(0, (Number(order.value) || 0) - savedFee + savedDiscount)
+        setValue(savedProducts ? savedProducts.toFixed(2).replace('.', ',') : '')
+        setShippingFee(savedFee ? String(savedFee).replace('.', ',') : '')
+        setDiscount(savedDiscount ? String(savedDiscount).replace('.', ',') : '')
         setTrackingCode(order.tracking_code || '')
         setNotes(order.notes || '')
         setRegisterPurchase(false)
@@ -99,6 +106,7 @@ export function OrderDialog({
         setItems([])
         setValue('')
         setShippingFee('')
+        setDiscount('')
         setTrackingCode('')
         setNotes('')
         setRegisterPurchase(true)
@@ -139,18 +147,29 @@ export function OrderDialog({
     return isNaN(n) || n < 0 ? 0 : n
   })()
 
-  // Atualizar valor total e gerar título/resumo automático se o usuário estiver montando itens
+  // Desconto informado (0 quando vazio ou negativo)
+  const parsedDiscount = parseMoneyInput(discount)
+
+  // Valor dos produtos: soma dos itens quando há itens montados, senão o valor digitado
+  const itemsTotal = items.reduce(
+    (sum, item) => sum + (item.total || item.unit_price * item.quantity),
+    0,
+  )
+  const productsBase = items.length > 0 ? itemsTotal : parseMoneyInput(value)
+
+  // Total final em tempo real: produtos + frete − desconto (nunca abaixo de zero)
+  const totals = computeOrderTotals({
+    products: productsBase,
+    shippingFee: parsedShippingFee,
+    discount: parsedDiscount,
+  })
+
+  const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+  // Gerar título/resumo automático se o usuário estiver montando itens
   const handleItemsChange = (newItems: OrderItem[]) => {
     setItems(newItems)
-    const newTotal = newItems.reduce(
-      (sum, item) => sum + (item.total || item.unit_price * item.quantity),
-      0,
-    )
     if (newItems.length > 0) {
-      // Atualiza o valor total automaticamente (produtos + frete)
-      const totalComFrete = newTotal + parsedShippingFee
-      setValue(totalComFrete > 0 ? totalComFrete.toFixed(2).replace('.', ',') : '')
-
       // Se o título do pedido estiver vazio ou se já era gerado a partir dos itens,
       // sugere automaticamente um resumo limpo (ex: "2x Cápsulas + 1x Café 250g")
       const summaryText = newItems.map((i) => `${i.quantity}x ${i.name}`).join(' + ')
@@ -159,25 +178,6 @@ export function OrderDialog({
       if (!title.trim() || title.includes('x ')) {
         setTitle(summaryText)
       }
-    }
-  }
-
-  // Ao alterar o frete, recalcula o total a partir dos itens (quando houver itens montados)
-  const handleShippingFeeChange = (raw: string) => {
-    setShippingFee(raw)
-    const fee = (() => {
-      const t = raw.trim()
-      if (!t) return 0
-      const n = parseFloat(t.replace(',', '.'))
-      return isNaN(n) || n < 0 ? 0 : n
-    })()
-    if (items.length > 0) {
-      const itemsTotal = items.reduce(
-        (sum, item) => sum + (item.total || item.unit_price * item.quantity),
-        0,
-      )
-      const total = itemsTotal + fee
-      setValue(total > 0 ? total.toFixed(2).replace('.', ',') : '')
     }
   }
 
@@ -202,15 +202,8 @@ export function OrderDialog({
       return
     }
 
-    let numValue = value ? parseFloat(value.replace(',', '.')) : 0
-    if (items.length > 0) {
-      // Garante que o total persistido seja sempre produtos + frete
-      const itemsTotal = items.reduce(
-        (sum, item) => sum + (item.total || item.unit_price * item.quantity),
-        0,
-      )
-      numValue = itemsTotal + parsedShippingFee
-    }
+    // Total persistido: produtos + frete − desconto (já limitado a zero)
+    const numValue = totals.total
     setSaving(true)
     try {
       // Se não preencheu items_description explicitamente mas tem items estruturados,
@@ -227,6 +220,7 @@ export function OrderDialog({
           items: items,
           value: isNaN(numValue) ? 0 : numValue,
           shipping_fee: parsedShippingFee,
+          discount: totals.discount,
           stage,
           tracking_code: trackingCode.trim(),
           notes: notes.trim(),
@@ -247,6 +241,7 @@ export function OrderDialog({
           items: items,
           value: isNaN(numValue) ? 0 : numValue,
           shipping_fee: parsedShippingFee,
+          discount: totals.discount,
           stage,
           tracking_code: trackingCode.trim(),
           notes: notes.trim(),
@@ -401,14 +396,11 @@ export function OrderDialog({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] font-bold text-[#475569]">
-                  Valor Total (R$)
+                  Valor dos produtos (R$)
                 </label>
                 {items.length > 0 && (
                   <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5">
-                    <Calculator className="size-2.5" />{' '}
-                    {parsedShippingFee > 0
-                      ? `Itens + frete ${parsedShippingFee.toFixed(2).replace('.', ',')}`
-                      : 'Calculado dos itens'}
+                    <Calculator className="size-2.5" /> Calculado dos itens
                   </span>
                 )}
               </div>
@@ -420,7 +412,8 @@ export function OrderDialog({
                   type="text"
                   inputMode="decimal"
                   placeholder="85,00"
-                  value={value}
+                  value={items.length > 0 ? productsBase.toFixed(2).replace('.', ',') : value}
+                  readOnly={items.length > 0}
                   onChange={(e) => setValue(e.target.value)}
                   className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
                 />
@@ -461,7 +454,7 @@ export function OrderDialog({
                   inputMode="decimal"
                   placeholder="0,00"
                   value={shippingFee}
-                  onChange={(e) => handleShippingFeeChange(e.target.value)}
+                  onChange={(e) => setShippingFee(e.target.value)}
                   className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
                 />
               </div>
@@ -480,6 +473,40 @@ export function OrderDialog({
               />
             </div>
           </div>
+
+          {/* Desconto no valor final e total em tempo real */}
+          <div>
+            <label className="block text-[11px] font-bold text-[#475569] mb-1">
+              Desconto (R$) — opcional
+            </label>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1.5 text-[#94a3b8] font-bold text-xs">R$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5 flex items-center justify-between gap-3">
+            <div className="text-[10.5px] text-[#475569]">
+              <span className="font-bold text-[#1c1c1e] block">Total do pedido</span>
+              produtos {brl(totals.products)} + frete {brl(totals.shippingFee)} − desconto{' '}
+              {brl(totals.discount)}
+            </div>
+            <span className="font-mono font-extrabold text-sm text-[#1c1c1e] whitespace-nowrap">
+              {brl(totals.total)}
+            </span>
+          </div>
+          {totals.capped && (
+            <p className="text-[11px] font-semibold text-red-700">
+              Desconto maior que produtos + frete: o total foi ajustado para {brl(0)}.
+            </p>
+          )}
 
           {/* Observações */}
           <div>
