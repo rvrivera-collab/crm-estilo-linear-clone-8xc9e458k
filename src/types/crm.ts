@@ -225,6 +225,9 @@ export interface OrderItem {
   notes?: string
 }
 
+/** Modo de entrada do desconto no formulário de pedido: 'money' (R$ fixo) ou 'percent' (%). */
+export type OrderDiscountMode = 'money' | 'percent'
+
 export interface Order extends RecordModel {
   contact: string
   owner: string
@@ -236,6 +239,11 @@ export interface Order extends RecordModel {
   shipping_fee?: number
   /** Desconto em R$ aplicado no valor final (produtos + frete − desconto), opcional — 0 quando ausente. */
   discount?: number
+  /**
+   * Modo em que o desconto foi digitado no formulário: 'money' (R$ fixo, padrão) ou 'percent' (%).
+   * `discount` guarda sempre o valor convertido em R$; pedidos antigos sem modo são tratados como 'money'.
+   */
+  discount_mode?: OrderDiscountMode
   stage: OrderStage
   tracking_code?: string
   /** Dia em que o rastreio foi adicionado (data do envio). */

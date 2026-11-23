@@ -11,6 +11,7 @@ import {
   X,
   Pencil,
   Calculator,
+  Percent,
 } from 'lucide-react'
 import { useCrm } from '@/contexts/CrmContext'
 import {
@@ -26,7 +27,7 @@ import { useToast } from '@/hooks/use-toast'
 import { OrderItemsManager } from './OrderItemsManager'
 import { ContactAutocomplete } from './ContactAutocomplete'
 import { cn } from '@/lib/utils'
-import { computeOrderTotals, parseMoneyInput } from '@/lib/order-total'
+import { computeOrderTotals, parseMoneyInput, parsePercentInput } from '@/lib/order-total'
 
 interface OrderDialogProps {
   open: boolean
@@ -59,6 +60,7 @@ export function OrderDialog({
   const [value, setValue] = useState('')
   const [shippingFee, setShippingFee] = useState('')
   const [discount, setDiscount] = useState('')
+  const [discountMode, setDiscountMode] = useState<'money' | 'percent'>('money')
   const [stage, setStage] = useState<OrderStage>(presetStage)
   const [trackingCode, setTrackingCode] = useState('')
   const [notes, setNotes] = useState('')
@@ -90,11 +92,22 @@ export function OrderDialog({
         setItems(loadedItems)
         const savedFee = Number(order.shipping_fee) || 0
         const savedDiscount = Number(order.discount) || 0
+        const savedMode = order.discount_mode === 'percent' ? 'percent' : 'money'
         // O valor salvo é o total final: o campo de produtos volta a ser total − frete + desconto
         const savedProducts = Math.max(0, (Number(order.value) || 0) - savedFee + savedDiscount)
         setValue(savedProducts ? savedProducts.toFixed(2).replace('.', ',') : '')
         setShippingFee(savedFee ? String(savedFee).replace('.', ',') : '')
-        setDiscount(savedDiscount ? String(savedDiscount).replace('.', ',') : '')
+        setDiscountMode(savedMode)
+        if (savedMode === 'percent') {
+          // Pedido salvo em %: restaura o percentual original a partir do desconto em R$
+          const savedPercent =
+            savedProducts + savedFee > 0 ? (savedDiscount / (savedProducts + savedFee)) * 100 : 0
+          setDiscount(
+            savedPercent ? String(Math.round(savedPercent * 100) / 100).replace('.', ',') : '',
+          )
+        } else {
+          setDiscount(savedDiscount ? String(savedDiscount).replace('.', ',') : '')
+        }
         setTrackingCode(order.tracking_code || '')
         setNotes(order.notes || '')
         setRegisterPurchase(false)
@@ -107,6 +120,7 @@ export function OrderDialog({
         setValue('')
         setShippingFee('')
         setDiscount('')
+        setDiscountMode('money')
         setTrackingCode('')
         setNotes('')
         setRegisterPurchase(true)
@@ -147,8 +161,9 @@ export function OrderDialog({
     return isNaN(n) || n < 0 ? 0 : n
   })()
 
-  // Desconto informado (0 quando vazio ou negativo)
-  const parsedDiscount = parseMoneyInput(discount)
+  // Desconto informado (0 quando vazio ou negativo), no modo escolhido (R$ fixo ou %)
+  const parsedDiscountInput =
+    discountMode === 'percent' ? parsePercentInput(discount) : parseMoneyInput(discount)
 
   // Valor dos produtos: soma dos itens quando há itens montados, senão o valor digitado
   const itemsTotal = items.reduce(
@@ -157,11 +172,13 @@ export function OrderDialog({
   )
   const productsBase = items.length > 0 ? itemsTotal : parseMoneyInput(value)
 
-  // Total final em tempo real: produtos + frete − desconto (nunca abaixo de zero)
+  // Total final em tempo real: produtos + frete − desconto (nunca abaixo de zero).
+  // Em modo %, o desconto é calculado sobre produtos + frete.
   const totals = computeOrderTotals({
     products: productsBase,
     shippingFee: parsedShippingFee,
-    discount: parsedDiscount,
+    discount: parsedDiscountInput,
+    ...(discountMode === 'percent' ? { discountPercent: parsedDiscountInput } : {}),
   })
 
   const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -221,6 +238,8 @@ export function OrderDialog({
           value: isNaN(numValue) ? 0 : numValue,
           shipping_fee: parsedShippingFee,
           discount: totals.discount,
+          discount_mode: discountMode,
+          ...(discountMode === 'percent' ? { discount_mode_pct: parsedDiscountInput } : {}),
           stage,
           tracking_code: trackingCode.trim(),
           notes: notes.trim(),
@@ -242,6 +261,7 @@ export function OrderDialog({
           value: isNaN(numValue) ? 0 : numValue,
           shipping_fee: parsedShippingFee,
           discount: totals.discount,
+          discount_mode: discountMode,
           stage,
           tracking_code: trackingCode.trim(),
           notes: notes.trim(),
@@ -474,17 +494,50 @@ export function OrderDialog({
             </div>
           </div>
 
-          {/* Desconto no valor final e total em tempo real */}
+          {/* Desconto no valor final (R$ fixo ou %) e total em tempo real */}
           <div>
-            <label className="block text-[11px] font-bold text-[#475569] mb-1">
-              Desconto (R$) — opcional
-            </label>
+            <div className="flex items-center justify-between mb-1 gap-2">
+              <label className="block text-[11px] font-bold text-[#475569]">
+                {discountMode === 'percent'
+                  ? 'Desconto (%) — opcional'
+                  : 'Desconto (R$) — opcional'}
+              </label>
+              {/* Alternador de modo do desconto: R$ fixo (padrão) ou porcentagem */}
+              <div className="inline-flex rounded-md border border-[#ded2c3] bg-[#f7efe0] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setDiscountMode('money')}
+                  className={cn(
+                    'rounded px-2 py-0.5 text-[10px] font-bold transition',
+                    discountMode === 'money'
+                      ? 'bg-[#8c531b] text-white shadow-xs'
+                      : 'text-[#8c531b] hover:bg-[#f3ece0]',
+                  )}
+                >
+                  R$
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiscountMode('percent')}
+                  className={cn(
+                    'rounded px-2 py-0.5 text-[10px] font-bold transition',
+                    discountMode === 'percent'
+                      ? 'bg-[#8c531b] text-white shadow-xs'
+                      : 'text-[#8c531b] hover:bg-[#f3ece0]',
+                  )}
+                >
+                  %
+                </button>
+              </div>
+            </div>
             <div className="relative">
-              <span className="absolute left-2.5 top-1.5 text-[#94a3b8] font-bold text-xs">R$</span>
+              <span className="absolute left-2.5 top-1.5 text-[#94a3b8] font-bold text-xs">
+                {discountMode === 'percent' ? <Percent className="size-3.5" /> : 'R$'}
+              </span>
               <input
                 type="text"
                 inputMode="decimal"
-                placeholder="0,00"
+                placeholder={discountMode === 'percent' ? '10' : '0,00'}
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
                 className="w-full rounded-md border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-2 text-xs text-[#1c1c1e] outline-none focus:border-amber-500 font-mono font-bold"
@@ -495,8 +548,13 @@ export function OrderDialog({
           <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5 flex items-center justify-between gap-3">
             <div className="text-[10.5px] text-[#475569]">
               <span className="font-bold text-[#1c1c1e] block">Total do pedido</span>
-              produtos {brl(totals.products)} + frete {brl(totals.shippingFee)} − desconto{' '}
-              {brl(totals.discount)}
+              produtos {brl(totals.products)} + frete {brl(totals.shippingFee)} −{' '}
+              {discountMode === 'percent'
+                ? `desconto ${parsedDiscountInput ? `${parsedDiscountInput.toLocaleString('pt-BR')}%` : '0%'}`
+                : `desconto ${brl(totals.discount)}`}
+              {discountMode === 'percent' && parsedDiscountInput > 0 && (
+                <span> ({brl(totals.discount)})</span>
+              )}
             </div>
             <span className="font-mono font-extrabold text-sm text-[#1c1c1e] whitespace-nowrap">
               {brl(totals.total)}

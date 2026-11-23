@@ -17,25 +17,41 @@ export function parseMoneyInput(raw: string): number {
   return isNaN(n) || n < 0 ? 0 : n
 }
 
+/** Converte um campo de porcentagem digitado (pt-BR) em número; vazio, inválido ou negativo vira 0. */
+export function parsePercentInput(raw: string): number {
+  return parseMoneyInput(raw)
+}
+
+/** Desconto em R$ equivalente a uma porcentagem sobre produtos + frete. */
+export function percentToMoneyDiscount(percent: number, products: number, shippingFee: number) {
+  return (Math.max(0, products) + Math.max(0, shippingFee)) * (Math.max(0, percent) / 100)
+}
+
 /**
  * Calcula o total final do pedido: produtos + frete − desconto.
- * O desconto nunca deixa o total abaixo de zero: é limitado a produtos + frete,
- * e `capped` indica que o valor digitado foi ajustado.
+ * O desconto pode vir em R$ (`discount`) ou em % (`discountPercent`) — quando os dois chegam,
+ * o desconto em % tem precedência. O desconto nunca deixa o total abaixo de zero:
+ * é limitado a produtos + frete, e `capped` indica que o valor digitado foi ajustado.
  */
 export function computeOrderTotals(input: {
   products: number
   shippingFee: number
   discount: number
+  discountPercent?: number
 }) {
   const products = Math.max(0, input.products)
   const shippingFee = Math.max(0, input.shippingFee)
   const gross = products + shippingFee
-  const discount = Math.min(Math.max(0, input.discount), gross)
+  const rawDiscount =
+    input.discountPercent !== undefined
+      ? percentToMoneyDiscount(input.discountPercent, products, shippingFee)
+      : input.discount
+  const discount = Math.min(Math.max(0, rawDiscount), gross)
   return {
     products,
     shippingFee,
     discount,
     total: gross - discount,
-    capped: input.discount > gross,
+    capped: rawDiscount > gross,
   }
 }

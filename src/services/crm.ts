@@ -15,6 +15,7 @@ import type {
   JourneyEvent,
   LoyaltyLevelInfo,
   Order,
+  OrderDiscountMode,
   OrderItem,
   OrderStage,
   Product,
@@ -459,6 +460,8 @@ export async function createOrder(data: {
   value?: number
   shipping_fee?: number
   discount?: number
+  /** Modo em que o desconto foi digitado no formulário: 'money' (R$) ou 'percent' (%). */
+  discount_mode?: OrderDiscountMode
   stage?: OrderStage
   tracking_code?: string
   notes?: string
@@ -476,6 +479,7 @@ export async function createOrder(data: {
       value: data.value || 0,
       shipping_fee: data.shipping_fee || 0,
       discount: data.discount || 0,
+      discount_mode: data.discount_mode === 'percent' ? 'percent' : 'money',
       stage,
       tracking_code: data.tracking_code || '',
       // Data do envio: registrada no momento em que o rastreio entra no pedido
@@ -501,6 +505,7 @@ export async function createOrder(data: {
         value: data.value,
         shippingFee: data.shipping_fee || 0,
         discount: data.discount || 0,
+        discountMode: data.discount_mode === 'percent' ? 'percent' : 'money',
         stage,
       },
     })
@@ -555,7 +560,15 @@ export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
   concluido: 'Concluído',
 }
 
-export async function updateOrder(id: string, data: Partial<Order>) {
+export async function updateOrder(
+  id: string,
+  data: Partial<Order> & {
+    /** Modo em que o desconto foi digitado no formulário: 'money' (R$) ou 'percent' (%). */
+    discount_mode?: OrderDiscountMode
+    /** Percentual digitado quando o desconto foi informado em % (só para exibição na jornada). */
+    discount_mode_pct?: number
+  },
+) {
   const previous = await pb
     .collection<Order>('orders')
     .getOne(id)
@@ -625,7 +638,9 @@ export async function updateOrder(id: string, data: Partial<Order>) {
         Number(data.discount || 0) !== Number(previous.discount || 0)
       ) {
         changedSummary.push(
-          `Desconto: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.discount) || 0)}`,
+          data.discount_mode === 'percent'
+            ? `Desconto: ${Number(data.discount_mode_pct ?? 0).toLocaleString('pt-BR')}%`
+            : `Desconto: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(data.discount) || 0)}`,
         )
       }
       if (data.tracking_code && data.tracking_code !== previous.tracking_code) {

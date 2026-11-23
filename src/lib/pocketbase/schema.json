@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-23T09:56:18.157Z",
+  "generatedAt": "2026-11-23T10:04:39.825Z",
   "collections": [
     {
       "name": "users",
@@ -1372,6 +1372,13 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "discount_mode",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["money", "percent"]
         }
       ],
       "indexes": [

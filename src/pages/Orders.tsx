@@ -719,26 +719,35 @@ export default function Orders() {
                                   {money.format(orderTotalWithShipping(order))}
                                 </span>
                                 {((Number(order.shipping_fee) || 0) > 0 ||
-                                  (Number(order.discount) || 0) > 0) && (
-                                  <span className="text-[8.5px] text-[#8c7865] whitespace-nowrap">
-                                    (produtos{' '}
-                                    {money.format(
-                                      Math.max(
-                                        0,
-                                        (Number(order.value) || 0) -
-                                          (Number(order.shipping_fee) || 0) +
-                                          (Number(order.discount) || 0),
-                                      ),
-                                    )}
-                                    {(Number(order.shipping_fee) || 0) > 0 && (
-                                      <> + frete {money.format(Number(order.shipping_fee) || 0)}</>
-                                    )}
-                                    {(Number(order.discount) || 0) > 0 && (
-                                      <> − desconto {money.format(Number(order.discount) || 0)}</>
-                                    )}
+                                  (Number(order.discount) || 0) > 0) &&
+                                  (() => {
+                                    const savedFee = Number(order.shipping_fee) || 0
+                                    const savedDiscount = Number(order.discount) || 0
+                                    const gross =
+                                      Math.max(0, (Number(order.value) || 0) - savedFee) +
+                                      savedDiscount
+                                    return (
+                                      <span className="text-[8.5px] text-[#8c7865] whitespace-nowrap">
+                                        (produtos {money.format(Math.max(0, gross - savedDiscount))}
+                                        {(Number(order.shipping_fee) || 0) > 0 && (
+                                          <>
+                                            {' '}
+                                            + frete {money.format(Number(order.shipping_fee) || 0)}
+                                          </>
+                                        )}
+                                        {(Number(order.discount) || 0) > 0 && (
+                                          <>
+                                            {' '}
+                                            − desconto{' '}
+                                            {order.discount_mode === 'percent'
+                                              ? `${Math.round(((Number(order.discount) || 0) / gross) * 10000) / 100}%`
+                                              : money.format(Number(order.discount) || 0)}
+                                          </>
+                                        )}
+                                        )
+                                      </span>
                                     )
-                                  </span>
-                                )}
+                                  })()}
                               </span>
                               <span className="text-[#94a3b8] text-[9px] shrink-0 ml-1">
                                 {relativeTime(order.created)}
